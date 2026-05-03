@@ -55,7 +55,7 @@ export default function SavedPage() {
 
       <main className="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
         {savedRecipes.length > 0 ? (
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {savedRecipes.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={{ ...recipe, isSaved: true }} />
             ))}

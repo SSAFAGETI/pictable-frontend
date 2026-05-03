@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { Bookmark, CheckCircle2, ChefHat, Circle, Clock, Heart, MessageCircle, Send, Share2, Users } from 'lucide-react'
+import { Bookmark, CheckCircle2, ChefHat, Circle, Clock, Heart, MessageCircle, Send, Share2, UserCheck, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +39,8 @@ export default function RecipeDetailPage() {
     addPublicComment,
     addReply,
     addPublicReply,
+    toggleSubscription,
+    isSubscribedTo,
   } = useRecipes()
   const userRecipe = getRecipe(recipeId)
   const recipe: Recipe = userRecipe ? userRecipeToRecipe(userRecipe) : mockRecipes.find((item) => item.id === recipeId) || mockRecipes[0]
@@ -54,6 +56,7 @@ export default function RecipeDetailPage() {
   const comments = useMemo(() => userRecipe?.comments ?? publicInteraction?.comments ?? [], [publicInteraction, userRecipe])
   const displayedComments = userRecipe ? getCommentCount(userRecipe) : comments.reduce((total, comment) => total + 1 + (comment.replies?.length ?? 0), 0)
   const isAuthor = Boolean(user && user.id === recipe.author.id)
+  const isSubscribed = Boolean(user && isSubscribedTo(user.id, recipe.author.id))
 
   const difficultyColors = {
     easy: 'bg-accent text-accent-foreground',
@@ -101,6 +104,27 @@ export default function RecipeDetailPage() {
     } catch {
       toast.error('링크 복사에 실패했습니다.')
     }
+  }
+
+  const handleSubscribe = () => {
+    if (!user) {
+      toast.error('로그인 후 구독할 수 있습니다.')
+      return
+    }
+
+    if (isAuthor) {
+      toast.error('내 레시피 작성자는 구독할 수 없습니다.')
+      return
+    }
+
+    toggleSubscription(
+      {
+        ...user,
+        createdAt: new Date(user.createdAt),
+      },
+      recipe.author
+    )
+    toast.success(isSubscribed ? '구독을 취소했습니다.' : `${recipe.author.name}님을 구독했습니다.`)
   }
 
   const handleCommentSubmit = () => {
@@ -235,9 +259,12 @@ export default function RecipeDetailPage() {
                       <p className="text-xs text-muted-foreground">레시피 작성자</p>
                     </div>
                   </Link>
-                  <Button variant="outline" size="sm" onClick={handleShare}>
-                    공유
-                  </Button>
+                  {!isAuthor && (
+                    <Button variant={isSubscribed ? 'secondary' : 'outline'} size="sm" className="gap-1.5" onClick={handleSubscribe}>
+                      {isSubscribed ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                      {isSubscribed ? '구독중' : '구독'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

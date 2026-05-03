@@ -10,9 +10,16 @@ export interface PublicRecipeInteraction {
   comments: Comment[]
 }
 
+export interface Subscription {
+  subscriber: User
+  author: User
+  subscribedAt: Date
+}
+
 interface RecipeContextType {
   userRecipes: UserRecipe[]
   publicInteractions: Record<string, PublicRecipeInteraction>
+  subscriptions: Subscription[]
   addRecipe: (recipe: Omit<UserRecipe, 'id' | 'likes' | 'comments' | 'isLiked' | 'createdAt'>) => void
   toggleLike: (recipeId: string, userId: string) => void
   addComment: (recipeId: string, comment: Omit<Comment, 'id' | 'createdAt' | 'replies'>) => void
@@ -22,10 +29,15 @@ interface RecipeContextType {
   togglePublicLike: (recipeId: string, baseLikes: number) => void
   addPublicComment: (recipeId: string, baseLikes: number, comment: Omit<Comment, 'id' | 'createdAt' | 'replies'>) => void
   addPublicReply: (recipeId: string, baseLikes: number, commentId: string, reply: Omit<Comment, 'id' | 'createdAt' | 'replies'>) => void
+  toggleSubscription: (subscriber: User, author: User) => void
+  isSubscribedTo: (subscriberId: string, authorId: string) => boolean
+  getSubscribedAuthors: (subscriberId: string) => User[]
+  getFollowers: (user: User) => User[]
 }
 
 const USER_RECIPES_KEY = 'chalkak_user_recipes'
 const PUBLIC_INTERACTIONS_KEY = 'chalkak_public_recipe_interactions'
+const SUBSCRIPTIONS_KEY = 'chalkak_subscriptions'
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined)
 
@@ -151,6 +163,30 @@ const initialRecipes: UserRecipe[] = [
   },
 ]
 
+const demoFollowers: User[] = [
+  {
+    id: 'follower-1',
+    email: 'reader1@example.com',
+    name: '든든한 하루',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+    createdAt: new Date('2024-03-10'),
+  },
+  {
+    id: 'follower-2',
+    email: 'reader2@example.com',
+    name: '야식탐험가',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
+    createdAt: new Date('2024-03-18'),
+  },
+]
+
+function reviveUser(user: User): User {
+  return {
+    ...user,
+    createdAt: new Date(user.createdAt),
+  }
+}
+
 function reviveComment(comment: Comment): Comment {
   return {
     ...comment,
@@ -163,10 +199,7 @@ function reviveRecipe(recipe: UserRecipe): UserRecipe {
   return {
     ...recipe,
     createdAt: new Date(recipe.createdAt),
-    author: {
-      ...recipe.author,
-      createdAt: new Date(recipe.author.createdAt),
-    },
+    author: reviveUser(recipe.author),
     comments: recipe.comments.map(reviveComment),
   }
 }
@@ -175,6 +208,15 @@ function reviveInteraction(interaction: PublicRecipeInteraction): PublicRecipeIn
   return {
     ...interaction,
     comments: interaction.comments.map(reviveComment),
+  }
+}
+
+function reviveSubscription(subscription: Subscription): Subscription {
+  return {
+    ...subscription,
+    subscriber: reviveUser(subscription.subscriber),
+    author: reviveUser(subscription.author),
+    subscribedAt: new Date(subscription.subscribedAt),
   }
 }
 
@@ -190,10 +232,12 @@ function createInteraction(recipeId: string, baseLikes: number): PublicRecipeInt
 export function RecipeProvider({ children }: { children: ReactNode }) {
   const [userRecipes, setUserRecipes] = useState<UserRecipe[]>(initialRecipes)
   const [publicInteractions, setPublicInteractions] = useState<Record<string, PublicRecipeInteraction>>({})
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
 
   useEffect(() => {
     const storedRecipes = localStorage.getItem(USER_RECIPES_KEY)
     const storedInteractions = localStorage.getItem(PUBLIC_INTERACTIONS_KEY)
+    const storedSubscriptions = localStorage.getItem(SUBSCRIPTIONS_KEY)
 
     if (storedRecipes) {
       try {
@@ -213,6 +257,14 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         setPublicInteractions({})
       }
     }
+
+    if (storedSubscriptions) {
+      try {
+        setSubscriptions(JSON.parse(storedSubscriptions).map(reviveSubscription))
+      } catch {
+        setSubscriptions([])
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -222,6 +274,10 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(PUBLIC_INTERACTIONS_KEY, JSON.stringify(publicInteractions))
   }, [publicInteractions])
+
+  useEffect(() => {
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions))
+  }, [subscriptions])
 
   const addRecipe: RecipeContextType['addRecipe'] = (recipe) => {
     const newRecipe: UserRecipe = {
@@ -330,10 +386,46 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const toggleSubscription: RecipeContextType['toggleSubscription'] = (subscriber, author) => {
+    if (subscriber.id === author.id) return
+
+    setSubscriptions((prev) => {
+      const exists = prev.some((subscription) => subscription.subscriber.id === subscriber.id && subscription.author.id === author.id)
+
+      if (exists) {
+        return prev.filter((subscription) => !(subscription.subscriber.id === subscriber.id && subscription.author.id === author.id))
+      }
+
+      return [
+        {
+          subscriber,
+          author,
+          subscribedAt: new Date(),
+        },
+        ...prev,
+      ]
+    })
+  }
+
+  const isSubscribedTo: RecipeContextType['isSubscribedTo'] = (subscriberId, authorId) =>
+    subscriptions.some((subscription) => subscription.subscriber.id === subscriberId && subscription.author.id === authorId)
+
+  const getSubscribedAuthors: RecipeContextType['getSubscribedAuthors'] = (subscriberId) =>
+    subscriptions.filter((subscription) => subscription.subscriber.id === subscriberId).map((subscription) => subscription.author)
+
+  const getFollowers: RecipeContextType['getFollowers'] = (user) => {
+    const subscribers = subscriptions
+      .filter((subscription) => subscription.author.id === user.id)
+      .map((subscription) => subscription.subscriber)
+    const followerMap = new Map([...demoFollowers, ...subscribers].map((follower) => [follower.id, follower]))
+    return Array.from(followerMap.values())
+  }
+
   const value = useMemo(
     () => ({
       userRecipes,
       publicInteractions,
+      subscriptions,
       addRecipe,
       toggleLike,
       addComment,
@@ -343,8 +435,12 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       togglePublicLike,
       addPublicComment,
       addPublicReply,
+      toggleSubscription,
+      isSubscribedTo,
+      getSubscribedAuthors,
+      getFollowers,
     }),
-    [publicInteractions, userRecipes]
+    [publicInteractions, subscriptions, userRecipes]
   )
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>

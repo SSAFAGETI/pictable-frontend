@@ -106,19 +106,17 @@ export function RecipeCard({ recipe, variant = 'default', onLike, onSave }: Reci
         <CardContent className="p-3">
           <h3 className="line-clamp-1 font-semibold">{recipe.title}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{recipe.description}</p>
-          <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {recipe.cookTime}분
-              </span>
-              <span className="flex items-center gap-1">
-                <ChefHat className="h-4 w-4" />
-                {recipe.servings}인분
-              </span>
-            </div>
-            <span className="flex items-center gap-1">
-              <Heart className="h-4 w-4" />
+          <div className="mt-3 grid grid-cols-3 items-center gap-1 text-xs text-muted-foreground sm:text-sm">
+            <span className="flex min-w-0 items-center gap-1 whitespace-nowrap">
+              <Clock className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              {recipe.cookTime}분
+            </span>
+            <span className="flex min-w-0 items-center justify-center gap-1 whitespace-nowrap">
+              <ChefHat className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+              {recipe.servings}인분
+            </span>
+            <span className="flex min-w-0 items-center justify-end gap-1 whitespace-nowrap">
+              <Heart className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
               {recipe.likes.toLocaleString()}
             </span>
           </div>

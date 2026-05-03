@@ -53,7 +53,7 @@ export default function NewRecipePage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header title="레시피 등록" showBack />
-        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
+        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 pb-28 lg:pb-16">
           <div className="text-center">
             <ChefHat className="mx-auto h-16 w-16 text-muted-foreground" />
             <h2 className="mt-4 text-xl font-bold text-foreground">로그인이 필요합니다</h2>
@@ -138,10 +138,10 @@ export default function NewRecipePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col pb-20 lg:pb-6">
+    <div className="flex min-h-screen flex-col pb-28 lg:pb-6">
       <Header title="레시피 등록" showBack />
 
-      <main className="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+      <main className="flex-1 px-4 py-4 pb-32 sm:px-6 lg:px-8 lg:py-6">
         <form onSubmit={handleSubmit} className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)] lg:items-start">
           <div className="space-y-6 lg:sticky lg:top-24">
           <Card>

@@ -85,6 +85,11 @@ export default function RecipeDetailPage() {
   }
 
   const handleSave = () => {
+    if (!user) {
+      toast.error('로그인 후 레시피를 저장할 수 있습니다.')
+      return
+    }
+
     setIsSaved((prev) => !prev)
     toast.success(isSaved ? '저장을 취소했습니다.' : '레시피를 저장했습니다.')
   }

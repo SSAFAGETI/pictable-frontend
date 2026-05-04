@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
@@ -11,18 +11,16 @@ import {
   ChevronRight,
   Circle,
   Clock,
-  Droplets,
-  GlassWater,
   Heart,
   ListChecks,
   MessageCircle,
   Pencil,
   Send,
   Share2,
-  Utensils,
   UserCheck,
   UserPlus,
   Users,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -46,51 +44,7 @@ function formatDate(date: Date) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(date)
 }
 
-type MKitConversion = {
-  source: string
-  label: string
-  type: 'spoon' | 'cup' | 'ml'
-}
-
-const MEASUREMENT_PATTERN = /(\d+(?:\.\d+)?)\s*(ml|mL|ML|cc|CC|T|t|큰술|작은술)/g
-
-function formatCount(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, '')
-}
-
-function convertMeasurement(value: number, unit: string): MKitConversion | null {
-  const normalized = unit.toLowerCase()
-
-  if (unit === 't' || unit === '작은술') {
-    return { source: `${formatCount(value)}${unit}`, label: `${formatCount(value)}작은술`, type: 'spoon' }
-  }
-
-  if (unit === 'T' || unit === '큰술') {
-    return { source: `${formatCount(value)}${unit}`, label: `${formatCount(value)}스푼`, type: 'spoon' }
-  }
-
-  if (normalized === 'ml' || normalized === 'cc') {
-    if (value >= 180) {
-      return { source: `${formatCount(value)}${unit}`, label: `${formatCount(value / 200)}컵`, type: 'cup' }
-    }
-
-    if (value >= 5) {
-      return { source: `${formatCount(value)}${unit}`, label: `${formatCount(value / 15)}스푼`, type: 'spoon' }
-    }
-
-    return { source: `${formatCount(value)}${unit}`, label: `${formatCount(value)}ml`, type: 'ml' }
-  }
-
-  return null
-}
-
-function getMKitConversions(text: string) {
-  const matches = Array.from(text.matchAll(MEASUREMENT_PATTERN))
-
-  return matches
-    .map((match) => convertMeasurement(Number(match[1]), match[2]))
-    .filter((item): item is MKitConversion => Boolean(item))
-}
+const COOK_MODE_HINT_STORAGE_KEY = 'chalcak:cook-mode-hint-seen'
 
 export default function RecipeDetailPage() {
   const params = useParams()
@@ -116,8 +70,9 @@ export default function RecipeDetailPage() {
   const [isLiked, setIsLiked] = useState(recipe.isLiked || false)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [activeCookStep, setActiveCookStep] = useState(0)
-  const [showMKit, setShowMKit] = useState(true)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
+  const [isCookModeDismissed, setIsCookModeDismissed] = useState(false)
+  const [showCookModeHint, setShowCookModeHint] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
@@ -134,10 +89,19 @@ export default function RecipeDetailPage() {
     hard: 'bg-destructive/20 text-destructive',
   }
 
+  useEffect(() => {
+    setShowCookModeHint(window.localStorage.getItem(COOK_MODE_HINT_STORAGE_KEY) !== 'true')
+  }, [])
+
+  const dismissCookModeHint = () => {
+    window.localStorage.setItem(COOK_MODE_HINT_STORAGE_KEY, 'true')
+    setShowCookModeHint(false)
+  }
+
   const handleLike = () => {
     if (!user) {
       toast.error('로그인 후 좋아요를 누를 수 있습니다.')
-      return
+      return false
     }
 
     if (userRecipe) {
@@ -150,7 +114,7 @@ export default function RecipeDetailPage() {
           href: `/recipe/${userRecipe.id}`,
         })
       }
-      return
+      return true
     }
 
     togglePublicLike(recipe.id, recipe.likes)
@@ -257,6 +221,24 @@ export default function RecipeDetailPage() {
       }
       return next
     })
+  }
+
+  const completeCookStep = (stepOrder: number) => {
+    const currentIndex = recipe.steps.findIndex((step) => step.order === stepOrder)
+    const isLastStep = currentIndex === recipe.steps.length - 1
+
+    setCompletedSteps((prev) => {
+      const next = prev.includes(stepOrder) ? prev : [...prev, stepOrder]
+      if (next.length === recipe.steps.length) {
+        setShowCompletionDialog(true)
+        setShowCookModeHint(false)
+      }
+      return next
+    })
+
+    if (!isLastStep) {
+      setActiveCookStep(currentIndex + 1)
+    }
   }
 
   const scrollToComments = () => {
@@ -366,41 +348,22 @@ export default function RecipeDetailPage() {
             <section id="ingredients-section" className="scroll-mt-24">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between gap-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Users className="h-5 w-5" />
                     재료 · {recipe.servings}인분 기준
                   </CardTitle>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={showMKit ? 'default' : 'outline'}
-                      className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs"
-                      onClick={() => setShowMKit((prev) => !prev)}
-                    >
-                      <Utensils className="h-3.5 w-3.5" />
-                      M-kit
-                    </Button>
-                  </div>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {recipe.ingredients.map((item, index) => {
-                      const conversions = getMKitConversions(item.amount)
-
-                      return (
-                        <li key={`${item.ingredient.name}-${index}`} className="flex items-center justify-between gap-3">
-                          <span className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                            {item.ingredient.name}
-                          </span>
-                          <span className="text-right text-muted-foreground">
-                            <span className="block">{item.amount}</span>
-                            {showMKit && conversions.length > 0 && <MKitBadges conversions={conversions} align="end" />}
-                          </span>
-                        </li>
-                      )
-                    })}
+                    {recipe.ingredients.map((item, index) => (
+                      <li key={`${item.ingredient.name}-${index}`} className="flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                          {item.ingredient.name}
+                        </span>
+                        <span className="text-right text-muted-foreground">{item.amount}</span>
+                      </li>
+                    ))}
                   </ul>
                 </CardContent>
               </Card>
@@ -433,7 +396,6 @@ export default function RecipeDetailPage() {
                           <span className="font-semibold text-primary">Step {step.order}</span>
                         </div>
                         <p className={cn('text-sm', completedSteps.includes(step.order) && 'line-through opacity-60')}>{step.description}</p>
-                        {showMKit && <MKitBadges conversions={getMKitConversions(step.description)} className="mt-3" />}
                         {step.image && <img src={step.image} alt="" className="mt-3 h-36 w-full rounded-md object-cover" />}
                       </div>
                     </div>
@@ -470,15 +432,23 @@ export default function RecipeDetailPage() {
         recipe={recipe}
         activeStep={activeCookStep}
         completedSteps={completedSteps}
-        showMKit={showMKit}
+        isDismissed={isCookModeDismissed}
         onStepChange={setActiveCookStep}
         onPrev={goToPrevCookStep}
         onNext={goToNextCookStep}
-        onToggleStep={toggleStep}
+        onCompleteStep={completeCookStep}
       />
 
       <Dialog open={showCompletionDialog}>
         <DialogContent showCloseButton={false} className="max-w-[360px] text-center">
+          <button
+            type="button"
+            aria-label="닫기"
+            className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => setShowCompletionDialog(false)}
+          >
+            <X className="h-5 w-5" />
+          </button>
           <DialogHeader className="items-center text-center">
             <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
               <ChefHat className="h-7 w-7" />
@@ -492,8 +462,13 @@ export default function RecipeDetailPage() {
             size="lg"
             className="mt-2 w-full gap-2"
             onClick={() => {
-              handleLike()
+              const didLike = handleLike()
+              if (didLike === false) return
               setShowCompletionDialog(false)
+              setIsCookModeDismissed(true)
+              setShowCookModeHint(false)
+              setActiveCookStep(0)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
             }}
           >
             <Heart className="h-5 w-5" />
@@ -501,6 +476,54 @@ export default function RecipeDetailPage() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {showCookModeHint && !showCompletionDialog && (
+        <div className="cook-mode-hint fixed inset-x-0 top-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[45] flex items-end bg-black/35 backdrop-blur-[2px] lg:left-72 lg:bottom-0">
+          <div className="cook-mode-hint-sheet w-full rounded-t-[2rem] border-x border-t border-primary/15 bg-background shadow-2xl shadow-primary/20">
+            <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+            <div className="mx-auto flex max-h-[calc(100dvh-64px-env(safe-area-inset-bottom))] max-w-xl flex-col overflow-y-auto px-5 pb-5 pt-4">
+              <div className="cook-mode-onboarding-visual">
+                <img src={recipe.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/20" />
+                <div className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg">
+                  요리모드
+                </div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="mb-3 max-w-[14rem] text-white">
+                    <p className="text-lg font-bold leading-6">큰 화면으로 보는 조리 단계</p>
+                    <p className="mt-1 text-xs text-white/70">완료 버튼으로 다음 Step까지 이어져요</p>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/25">
+                    <div className="cook-mode-progress-bar h-full rounded-full bg-primary" />
+                  </div>
+                </div>
+                <div className="cook-mode-rotate-demo" aria-hidden="true">
+                  <div className="cook-mode-device-outline">
+                    <span className="h-1.5 w-7 rounded-full bg-muted" />
+                    <span className="h-1.5 w-12 rounded-full bg-muted/80" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 text-center">
+                <p className="text-xl font-bold leading-7">화면을 돌리면 요리모드가 열려요</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  단계별 사진과 조리법을 크게 보고, 완료 버튼으로 다음 단계까지 이어서 진행할 수 있어요.
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 p-3 text-xs font-semibold text-primary">
+                <span>가로 화면 전용 조리 UX</span>
+                <span className="rounded-full bg-primary px-2.5 py-1 text-primary-foreground">Cooking mode</span>
+              </div>
+
+              <Button className="mt-4 h-12 w-full rounded-2xl" onClick={dismissCookModeHint}>
+                알겠어요
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {true && (
         <div className="fixed inset-x-0 bottom-16 z-40 px-4 py-3 lg:bottom-4 lg:left-72">
@@ -545,56 +568,24 @@ interface CommentSectionProps {
   onReplyingToChange: (commentId: string | null) => void
 }
 
-function MKitBadges({
-  conversions,
-  className,
-  align = 'start',
-}: {
-  conversions: MKitConversion[]
-  className?: string
-  align?: 'start' | 'end'
-}) {
-  if (conversions.length === 0) return null
-
-  return (
-    <span className={cn('flex flex-wrap gap-1.5', align === 'end' && 'justify-end', className)}>
-      {conversions.map((conversion, index) => {
-        const Icon = conversion.type === 'cup' ? GlassWater : conversion.type === 'ml' ? Droplets : Utensils
-
-        return (
-          <span
-            key={`${conversion.source}-${conversion.label}-${index}`}
-            className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary"
-          >
-            <Icon className="h-3 w-3" />
-            <span>{conversion.source}</span>
-            <span className="text-muted-foreground">→</span>
-            <span>{conversion.label}</span>
-          </span>
-        )
-      })}
-    </span>
-  )
-}
-
 function CookingModeOverlay({
   recipe,
   activeStep,
   completedSteps,
-  showMKit,
+  isDismissed,
   onStepChange,
   onPrev,
   onNext,
-  onToggleStep,
+  onCompleteStep,
 }: {
   recipe: Recipe
   activeStep: number
   completedSteps: number[]
-  showMKit: boolean
+  isDismissed: boolean
   onStepChange: (index: number) => void
   onPrev: () => void
   onNext: () => void
-  onToggleStep: (stepOrder: number) => void
+  onCompleteStep: (stepOrder: number) => void
 }) {
   const step = recipe.steps[activeStep] || recipe.steps[0]
   const progress = `${activeStep + 1}/${recipe.steps.length}`
@@ -611,13 +602,13 @@ function CookingModeOverlay({
     setTouchStartX(null)
   }
 
-  if (!step) return null
+  if (!step || isDismissed) return null
 
   return (
-    <div className="cook-mode-landscape fixed inset-0 z-[70] hidden bg-background text-foreground">
-      <div className="cook-mode-grid grid h-full grid-cols-[minmax(0,1fr)_clamp(220px,28vw,280px)] overflow-hidden">
+    <div className="cook-mode-landscape fixed inset-0 z-[45] hidden h-[100dvh] max-h-[100dvh] bg-background text-foreground">
+      <div className="cook-mode-grid grid h-[100dvh] max-h-[100dvh] min-h-0 grid-cols-[minmax(0,1fr)_clamp(220px,28vw,280px)] overflow-hidden">
         <section
-          className="relative min-w-0 touch-pan-y bg-black"
+          className="relative h-[100dvh] max-h-[100dvh] min-w-0 touch-pan-y overflow-hidden bg-black"
           onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
           onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0]?.clientX ?? touchStartX ?? 0)}
         >
@@ -627,9 +618,9 @@ function CookingModeOverlay({
             <Badge className="bg-primary text-primary-foreground">요리모드</Badge>
             <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold backdrop-blur">Step {progress}</span>
           </div>
-          <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-6">
-            <div className="cook-mode-step-card max-w-2xl rounded-2xl border border-white/15 bg-black/45 p-4 shadow-2xl backdrop-blur-md">
-              <div className="mb-3 flex items-center gap-3">
+          <div className="cook-mode-step-panel absolute inset-x-0 text-white">
+            <div className="cook-mode-step-card max-w-[min(680px,calc(100vw-340px))] space-y-3">
+              <div className="flex items-end gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-lg font-black text-primary shadow-lg">
                   {step.order}
                 </span>
@@ -638,16 +629,15 @@ function CookingModeOverlay({
                   <h2 className="text-2xl font-bold">Step {step.order}</h2>
                 </div>
               </div>
-              <div className="cook-mode-step-copy">
+              <div className="cook-mode-step-copy rounded-xl bg-black/65 px-4 py-3 shadow-2xl backdrop-blur-md">
                 <p className="text-lg leading-8 text-white">{step.description}</p>
-                {showMKit && <MKitBadges conversions={getMKitConversions(step.description)} className="mt-4" />}
               </div>
             </div>
           </div>
         </section>
 
-        <aside className="flex min-h-0 flex-col border-l border-border bg-card/95 backdrop-blur">
-          <div className="border-b border-border p-4">
+        <aside className="flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden border-l border-border bg-card/95 backdrop-blur">
+          <div className="shrink-0 border-b border-border p-4">
             <p className="line-clamp-1 text-sm font-semibold text-muted-foreground">{recipe.title}</p>
             <div className="mt-3 flex items-center justify-between">
               <Button size="icon" variant="outline" className="rounded-full" onClick={onPrev} disabled={activeStep === 0}>
@@ -663,7 +653,7 @@ function CookingModeOverlay({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-bold">
+          <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3 text-sm font-bold">
             <ListChecks className="h-4 w-4 text-primary" />
             레시피 순서
           </div>
@@ -692,17 +682,16 @@ function CookingModeOverlay({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className={cn('line-clamp-2 text-sm font-medium', isDone && 'line-through opacity-60')}>{item.description}</span>
-                    {showMKit && <MKitBadges conversions={getMKitConversions(item.description)} className="mt-2" />}
                   </span>
                 </button>
               )
             })}
           </div>
 
-          <div className="border-t border-border p-3">
-            <Button className="w-full gap-2" onClick={() => onToggleStep(step.order)}>
-              {completedSteps.includes(step.order) ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
-              {completedSteps.includes(step.order) ? '완료 취소' : '이 단계 완료'}
+          <div className="shrink-0 border-t border-border bg-card/95 p-3">
+            <Button className="w-full gap-2" onClick={() => onCompleteStep(step.order)}>
+              <CheckCircle2 className="h-4 w-4" />
+              {completedSteps.includes(step.order) ? '다음 단계로' : '이 단계 완료'}
             </Button>
           </div>
         </aside>

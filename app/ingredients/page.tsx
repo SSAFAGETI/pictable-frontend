@@ -16,6 +16,8 @@ import { mockIngredients } from '@/lib/mock-data'
 import { INGREDIENT_CATEGORIES } from '@/lib/types'
 import type { Ingredient } from '@/lib/types'
 
+const MAX_INGREDIENT_QUERY_LENGTH = 20
+
 function IngredientsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -81,6 +83,13 @@ function IngredientsContent() {
     toast.success(`${detected.length}개의 재료를 인식했습니다!`)
     setIsAnalyzing(false)
   }, [uploadedImage])
+
+  const handleSearchQueryChange = useCallback((value: string) => {
+    if (value.length > MAX_INGREDIENT_QUERY_LENGTH) {
+      toast.warning(`재료명은 ${MAX_INGREDIENT_QUERY_LENGTH}자까지만 입력할 수 있어요.`)
+    }
+    setSearchQuery(value.slice(0, MAX_INGREDIENT_QUERY_LENGTH))
+  }, [])
 
   const addIngredient = useCallback((ingredient: Ingredient) => {
     setSelectedIngredients((prev) => [...prev, ingredient])
@@ -190,10 +199,14 @@ function IngredientsContent() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="재료 검색..."
-                className="pl-10"
+                className="pl-10 pr-14"
+                maxLength={MAX_INGREDIENT_QUERY_LENGTH}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchQueryChange(e.target.value)}
               />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
+                {searchQuery.length}/{MAX_INGREDIENT_QUERY_LENGTH}
+              </span>
             </div>
 
             <div className="space-y-4">

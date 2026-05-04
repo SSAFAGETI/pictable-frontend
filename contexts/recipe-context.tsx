@@ -21,6 +21,7 @@ interface RecipeContextType {
   publicInteractions: Record<string, PublicRecipeInteraction>
   subscriptions: Subscription[]
   addRecipe: (recipe: Omit<UserRecipe, 'id' | 'likes' | 'comments' | 'isLiked' | 'createdAt'>) => void
+  updateRecipe: (recipeId: string, recipe: Omit<UserRecipe, 'id' | 'likes' | 'comments' | 'isLiked' | 'createdAt'>) => void
   toggleLike: (recipeId: string, userId: string) => void
   addComment: (recipeId: string, comment: Omit<Comment, 'id' | 'createdAt' | 'replies'>) => void
   addReply: (recipeId: string, commentId: string, reply: Omit<Comment, 'id' | 'createdAt' | 'replies'>) => void
@@ -291,6 +292,23 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     setUserRecipes((prev) => [newRecipe, ...prev])
   }
 
+  const updateRecipe: RecipeContextType['updateRecipe'] = (recipeId, recipe) => {
+    setUserRecipes((prev) =>
+      prev.map((item) =>
+        item.id === recipeId
+          ? {
+              ...item,
+              ...recipe,
+              author: {
+                ...recipe.author,
+                createdAt: new Date(recipe.author.createdAt),
+              },
+            }
+          : item
+      )
+    )
+  }
+
   const toggleLike = (recipeId: string) => {
     setUserRecipes((prev) =>
       prev.map((recipe) =>
@@ -427,6 +445,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       publicInteractions,
       subscriptions,
       addRecipe,
+      updateRecipe,
       toggleLike,
       addComment,
       addReply,

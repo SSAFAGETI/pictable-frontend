@@ -220,4 +220,49 @@
       width: 0;
     }
   }
+
+  @media (orientation: landscape) and (max-height: 520px) and (max-width: 1280px) {
+    .cook-mode-landscape {
+      display: block;
+    }
+
+    .cook-mode-step-card {
+      max-height: min(58vh, 260px);
+      overflow: hidden;
+    }
+
+    .cook-mode-step-copy {
+      max-height: min(28vh, 132px);
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .cook-mode-step-copy::-webkit-scrollbar {
+      display: none;
+    }
+
+    body:has(.cook-mode-landscape) {
+      overflow: hidden;
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 420px) and (max-width: 900px) {
+    .cook-mode-grid {
+      grid-template-columns: minmax(0, 1fr) 220px;
+    }
+
+    .cook-mode-step-card {
+      padding: 0.875rem;
+    }
+
+    .cook-mode-step-card h2 {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+
+    .cook-mode-step-card p {
+      font-size: 0.95rem;
+      line-height: 1.65rem;
+    }
+  }
 }

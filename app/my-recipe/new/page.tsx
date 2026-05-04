@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Camera, ChefHat, Clock, Plus, Trash2, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { AuthRequiredState } from '@/components/auth-required-state'
@@ -30,10 +30,14 @@ interface Step {
 
 const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&h=400&fit=crop'
 
-export default function NewRecipePage() {
+function NewRecipeContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
-  const { addRecipe } = useRecipes()
+  const { addRecipe, getRecipe, updateRecipe } = useRecipes()
+  const editRecipeId = searchParams.get('edit')
+  const editingRecipe = editRecipeId ? getRecipe(editRecipeId) : undefined
+  const isEditing = Boolean(editRecipeId)
   const mainImageRef = useRef<HTMLInputElement>(null)
   const stepImageRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,10 +53,49 @@ export default function NewRecipePage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ id: '1', name: '', amount: '' }])
   const [steps, setSteps] = useState<Step[]>([{ id: '1', description: '' }])
 
+  useEffect(() => {
+    if (!editRecipeId) return
+    if (!editingRecipe) return
+
+    if (user && editingRecipe.author.id !== user.id) {
+      toast.error('내가 작성한 레시피만 수정할 수 있습니다.')
+      router.replace(`/recipe/${editRecipeId}`)
+      return
+    }
+
+    setFormData({
+      title: editingRecipe.title,
+      description: editingRecipe.description,
+      cookTime: String(editingRecipe.cookTime),
+      servings: String(editingRecipe.servings),
+      difficulty: editingRecipe.difficulty,
+      mainImage: editingRecipe.image,
+      tags: editingRecipe.tags.join(', '),
+    })
+    setIngredients(
+      editingRecipe.ingredients.length > 0
+        ? editingRecipe.ingredients.map((ingredient, index) => ({
+            id: `${index + 1}`,
+            name: ingredient.name,
+            amount: ingredient.amount,
+          }))
+        : [{ id: '1', name: '', amount: '' }]
+    )
+    setSteps(
+      editingRecipe.steps.length > 0
+        ? editingRecipe.steps.map((step, index) => ({
+            id: `${index + 1}`,
+            description: step.description,
+            image: step.image,
+          }))
+        : [{ id: '1', description: '' }]
+    )
+  }, [editRecipeId, editingRecipe, router, user])
+
   if (!user) {
     return (
       <div className="flex min-h-screen flex-col pb-24 lg:pb-0">
-        <Header title="레시피 등록" />
+      <Header title={isEditing ? '레시피 수정' : '레시피 등록'} />
         <AuthRequiredState icon="utensils" description="나만의 레시피를 등록하려면 먼저 로그인해주세요." />
         <BottomNav />
       </div>
@@ -97,8 +140,13 @@ export default function NewRecipePage() {
       return
     }
 
+    if (isEditing && !editingRecipe) {
+      toast.error('수정할 레시피를 찾을 수 없습니다.')
+      return
+    }
+
     setIsSubmitting(true)
-    addRecipe({
+    const recipePayload = {
       title: formData.title.trim(),
       description: formData.description.trim() || '직접 등록한 마이 레시피입니다.',
       image: formData.mainImage || fallbackImage,
@@ -116,8 +164,16 @@ export default function NewRecipePage() {
         .map((tag) => tag.trim())
         .filter(Boolean)
         .slice(0, 5),
-    })
+    }
+    if (isEditing && editRecipeId) {
+      updateRecipe(editRecipeId, recipePayload)
+      toast.success('레시피가 수정되었습니다.')
+      router.push(`/recipe/${editRecipeId}`)
+      setIsSubmitting(false)
+      return
+    }
 
+    addRecipe(recipePayload)
     toast.success('레시피가 등록되었습니다.')
     router.push('/')
     setIsSubmitting(false)
@@ -125,9 +181,9 @@ export default function NewRecipePage() {
 
   return (
     <div className="flex min-h-screen flex-col pb-28 lg:pb-6">
-      <Header title="레시피 등록" />
+      <Header title={isEditing ? '레시피 수정' : '레시피 등록'} />
 
-      <main className="flex-1 px-4 py-4 pb-32 sm:px-6 lg:px-8 lg:py-6">
+      <main className="flex-1 px-4 py-4 pb-44 sm:px-6 lg:px-8 lg:py-6 lg:pb-16">
         <form onSubmit={handleSubmit} className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)] lg:items-start">
           <div className="space-y-6 lg:sticky lg:top-24">
           <Card>
@@ -366,7 +422,7 @@ export default function NewRecipePage() {
           </Card>
 
           <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? '등록 중...' : '레시피 등록하기'}
+            {isSubmitting ? (isEditing ? '수정 중...' : '등록 중...') : isEditing ? '레시피 수정하기' : '레시피 등록하기'}
           </Button>
           </div>
         </form>
@@ -374,5 +430,25 @@ export default function NewRecipePage() {
 
       <BottomNav />
     </div>
+  )
+}
+
+export default function NewRecipePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col pb-28 lg:pb-6">
+          <Header title="레시피 등록" />
+          <main className="flex-1 p-4">
+            <Card>
+              <CardContent className="h-48 animate-pulse bg-muted" />
+            </Card>
+          </main>
+          <BottomNav />
+        </div>
+      }
+    >
+      <NewRecipeContent />
+    </Suspense>
   )
 }

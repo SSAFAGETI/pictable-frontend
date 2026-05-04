@@ -124,3 +124,100 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .tag-filter-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary) 62%, transparent) transparent;
+    scroll-snap-type: x proximity;
+  }
+
+  .tag-filter-scroll > * {
+    scroll-snap-align: start;
+  }
+
+  .tag-filter-scroll::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .tag-filter-scroll::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .tag-filter-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in oklch, var(--primary) 72%, white), color-mix(in oklch, var(--accent) 58%, white));
+    border: 1px solid color-mix(in oklch, var(--background) 85%, transparent);
+  }
+
+  .tag-filter-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+  }
+
+  .page-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary) 62%, transparent) transparent;
+  }
+
+  .page-scrollbar::-webkit-scrollbar {
+    width: 7px;
+  }
+
+  .page-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .page-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: linear-gradient(180deg, color-mix(in oklch, var(--primary) 72%, white), color-mix(in oklch, var(--accent) 58%, white));
+    border: 2px solid color-mix(in oklch, var(--background) 88%, transparent);
+  }
+
+  .page-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--primary), var(--accent));
+  }
+
+  @media (min-width: 1024px) {
+    html:has(.page-scrollbar),
+    body:has(.page-scrollbar) {
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in oklch, var(--primary) 62%, transparent) transparent;
+    }
+
+    html:has(.page-scrollbar)::-webkit-scrollbar,
+    body:has(.page-scrollbar)::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    html:has(.page-scrollbar)::-webkit-scrollbar-track,
+    body:has(.page-scrollbar)::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    html:has(.page-scrollbar)::-webkit-scrollbar-thumb,
+    body:has(.page-scrollbar)::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: linear-gradient(180deg, color-mix(in oklch, var(--primary) 72%, white), color-mix(in oklch, var(--accent) 58%, white));
+      border: 2px solid color-mix(in oklch, var(--background) 88%, transparent);
+    }
+
+    html:has(.page-scrollbar)::-webkit-scrollbar-thumb:hover,
+    body:has(.page-scrollbar)::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, var(--primary), var(--accent));
+    }
+  }
+
+  @media (max-width: 1023px) {
+    html:has(.page-scrollbar),
+    body:has(.page-scrollbar) {
+      scrollbar-width: none;
+    }
+
+    html:has(.page-scrollbar)::-webkit-scrollbar,
+    body:has(.page-scrollbar)::-webkit-scrollbar {
+      display: none;
+      width: 0;
+    }
+  }
+}

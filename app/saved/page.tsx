@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Bookmark } from 'lucide-react'
+import { AuthRequiredState } from '@/components/auth-required-state'
 import { BottomNav } from '@/components/bottom-nav'
 import { Header } from '@/components/header'
 import { RecipeCard } from '@/components/recipe-card'
@@ -29,21 +30,7 @@ export default function SavedPage() {
     return (
       <div className="flex min-h-screen flex-col pb-24 lg:pb-0">
         <Header title="저장한 레시피" />
-        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-            <Bookmark className="h-10 w-10 text-muted-foreground" />
-          </div>
-          <h2 className="mb-2 text-xl font-bold">로그인이 필요합니다</h2>
-          <p className="mb-6 max-w-sm text-center text-muted-foreground">로그인하고 마음에 드는 레시피를 저장해보세요.</p>
-          <div className="flex gap-3">
-            <Button asChild>
-              <Link href="/login">로그인</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/signup">회원가입</Link>
-            </Button>
-          </div>
-        </main>
+        <AuthRequiredState icon="bookmark" description="로그인하고 마음에 드는 레시피를 저장해보세요." />
         <BottomNav />
       </div>
     )

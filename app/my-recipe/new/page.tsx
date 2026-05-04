@@ -1,10 +1,10 @@
 'use client'
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Camera, ChefHat, Clock, Plus, Trash2, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuthRequiredState } from '@/components/auth-required-state'
 import { BottomNav } from '@/components/bottom-nav'
 import { Header } from '@/components/header'
 import { Button } from '@/components/ui/button'
@@ -51,23 +51,9 @@ export default function NewRecipePage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <Header title="레시피 등록" showBack />
-        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 pb-28 lg:pb-16">
-          <div className="text-center">
-            <ChefHat className="mx-auto h-16 w-16 text-muted-foreground" />
-            <h2 className="mt-4 text-xl font-bold text-foreground">로그인이 필요합니다</h2>
-            <p className="mt-2 text-muted-foreground">나만의 레시피를 등록하려면 먼저 로그인해주세요.</p>
-            <div className="mt-6 flex flex-col gap-3">
-              <Button asChild className="w-full">
-                <Link href="/login">로그인</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/signup">회원가입</Link>
-              </Button>
-            </div>
-          </div>
-        </main>
+      <div className="flex min-h-screen flex-col pb-24 lg:pb-0">
+        <Header title="레시피 등록" />
+        <AuthRequiredState icon="utensils" description="나만의 레시피를 등록하려면 먼저 로그인해주세요." />
         <BottomNav />
       </div>
     )
@@ -139,7 +125,7 @@ export default function NewRecipePage() {
 
   return (
     <div className="flex min-h-screen flex-col pb-28 lg:pb-6">
-      <Header title="레시피 등록" showBack />
+      <Header title="레시피 등록" />
 
       <main className="flex-1 px-4 py-4 pb-32 sm:px-6 lg:px-8 lg:py-6">
         <form onSubmit={handleSubmit} className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)] lg:items-start">

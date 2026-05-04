@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Settings, Shield, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
+import { AuthRequiredState } from '@/components/auth-required-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BottomNav } from '@/components/bottom-nav'
 import { Button } from '@/components/ui/button'
@@ -50,23 +51,9 @@ export default function MyPage() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col pb-24 lg:pb-0">
         <Header title="마이페이지" />
-        <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
-            <ChefHat className="h-12 w-12 text-muted-foreground" />
-          </div>
-          <h2 className="mb-2 text-xl font-bold">로그인이 필요합니다</h2>
-          <p className="mb-6 text-center text-muted-foreground">로그인하고 저장한 레시피와 나만의 레시피를 관리해보세요.</p>
-          <div className="flex gap-3">
-            <Button asChild>
-              <Link href="/login">로그인</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/signup">회원가입</Link>
-            </Button>
-          </div>
-        </main>
+        <AuthRequiredState icon="chef" description={"로그인하고 저장한 레시피와\n 나만의 레시피를 관리해보세요."} />
         <BottomNav />
       </div>
     )

@@ -26,7 +26,7 @@ export function PopularRecipes({ recipes }: PopularRecipesProps) {
           </Button>
         </div>
 
-        <div className="grid auto-cols-[210px] grid-flow-col gap-4 overflow-x-auto pb-2 lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible">
+        <div className="tag-filter-scroll grid auto-cols-[210px] grid-flow-col gap-4 overflow-x-auto pb-2 lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible">
           {recipes.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} variant="compact" />
           ))}

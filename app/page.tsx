@@ -13,7 +13,7 @@ export default function HomePage() {
   const recentRecipes = mockRecipes.slice(2, 5)
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="page-scrollbar flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
         <HeroSection />

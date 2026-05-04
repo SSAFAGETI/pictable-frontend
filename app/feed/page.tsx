@@ -63,7 +63,7 @@ function FeedContent() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="page-scrollbar flex min-h-screen flex-col">
       <Header title={isMyRecipeFeed ? '최근 올라온 마이 레시피' : '피드'} />
 
       <main className="flex-1 lg:px-8 lg:py-6">
@@ -83,7 +83,7 @@ function FeedContent() {
             </Button>
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="tag-filter-scroll mt-3 flex gap-2 overflow-x-auto pb-2">
             <Badge
               variant={selectedTags.length === 0 ? 'default' : 'outline'}
               className="shrink-0 cursor-pointer"

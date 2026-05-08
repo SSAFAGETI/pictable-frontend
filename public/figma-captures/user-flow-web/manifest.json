@@ -1,0 +1,125 @@
+[
+  {
+    "key": "01-login",
+    "title": "Auth / Login",
+    "path": "/login",
+    "auth": false,
+    "fileName": "01-login.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "02-signup",
+    "title": "Auth / Signup",
+    "path": "/signup",
+    "auth": false,
+    "fileName": "02-signup.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "03-home",
+    "title": "Home Discovery",
+    "path": "/",
+    "auth": true,
+    "fileName": "03-home.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "04-feed",
+    "title": "Feed Search + Tags",
+    "path": "/feed",
+    "auth": true,
+    "fileName": "04-feed.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "05-detail",
+    "title": "Recipe Detail / Social",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": false,
+    "fileName": "05-detail.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "06-detail-comments",
+    "title": "Recipe Detail / Comments",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": false,
+    "afterLoad": "window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });",
+    "wait": 800,
+    "fileName": "06-detail-comments.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "07-register",
+    "title": "Register Recipe",
+    "path": "/my-recipe/new",
+    "auth": true,
+    "fileName": "07-register.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "08-edit",
+    "title": "Edit My Recipe",
+    "path": "/my-recipe/new?edit=user-1",
+    "auth": true,
+    "fileName": "08-edit.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "09-saved",
+    "title": "Saved Recipes",
+    "path": "/saved",
+    "auth": true,
+    "fileName": "09-saved.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "10-mypage",
+    "title": "My Page",
+    "path": "/mypage",
+    "auth": true,
+    "fileName": "10-mypage.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "11-recommendations",
+    "title": "Ingredient Recommendation",
+    "path": "/recommendations",
+    "auth": true,
+    "fileName": "11-recommendations.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "12-notifications",
+    "title": "Notifications",
+    "path": "/",
+    "auth": true,
+    "afterLoad": "document.querySelector('button[aria-label]')?.click();",
+    "wait": 800,
+    "fileName": "12-notifications.png",
+    "width": 1440,
+    "height": 920
+  },
+  {
+    "key": "13-api-spec",
+    "title": "Backend API Spec",
+    "path": "/backend-api",
+    "auth": true,
+    "fileName": "13-api-spec.png",
+    "width": 1440,
+    "height": 920
+  }
+]

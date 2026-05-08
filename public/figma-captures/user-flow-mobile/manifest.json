@@ -1,0 +1,144 @@
+[
+  {
+    "key": "01-login",
+    "title": "Auth / Login",
+    "path": "/login",
+    "auth": false,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\01-login.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "02-signup",
+    "title": "Auth / Signup",
+    "path": "/signup",
+    "auth": false,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\02-signup.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "03-home",
+    "title": "Home Discovery",
+    "path": "/",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\03-home.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "04-feed",
+    "title": "Feed Search + Tags",
+    "path": "/feed",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\04-feed.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "05-detail-onboarding",
+    "title": "Recipe Detail / Cooking Hint",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": true,
+    "wait": 1600,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\05-detail-onboarding.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "06-detail",
+    "title": "Recipe Detail / Social",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": false,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\06-detail.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "07-detail-comments",
+    "title": "Recipe Detail / Comments",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": false,
+    "afterLoad": "window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });",
+    "wait": 800,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\07-detail-comments.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "08-register",
+    "title": "Register Recipe",
+    "path": "/my-recipe/new",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\08-register.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "09-edit",
+    "title": "Edit My Recipe",
+    "path": "/my-recipe/new?edit=user-1",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\09-edit.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "10-saved",
+    "title": "Saved Recipes",
+    "path": "/saved",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\10-saved.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "11-mypage",
+    "title": "My Page",
+    "path": "/mypage",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\11-mypage.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "12-recommendations",
+    "title": "Ingredient Recommendation",
+    "path": "/recommendations",
+    "auth": true,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\12-recommendations.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "13-notifications",
+    "title": "Notifications",
+    "path": "/",
+    "auth": true,
+    "afterLoad": "document.querySelector('button[aria-label]')?.click();",
+    "wait": 800,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\13-notifications.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "key": "14-cooking-landscape",
+    "title": "Mobile Cooking Mode",
+    "path": "/recipe/user-1",
+    "auth": true,
+    "hint": false,
+    "viewport": {
+      "width": 844,
+      "height": 390,
+      "deviceScaleFactor": 2,
+      "mobile": true
+    },
+    "wait": 1000,
+    "filePath": "C:\\Users\\SSAFY\\Downloads\\b_FU5JmWt9WFY\\.figma-captures\\user-flow-mobile\\14-cooking-landscape.png",
+    "width": 844,
+    "height": 390
+  }
+]

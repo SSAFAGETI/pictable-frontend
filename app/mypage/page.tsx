@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Settings, Shield, UserCheck } from 'lucide-react'
+import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { AuthRequiredState } from '@/components/auth-required-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -17,6 +17,7 @@ import { userRecipeToRecipe } from '@/lib/recipe-adapters'
 import { mockRecipes } from '@/lib/mock-data'
 
 const menuItems = [
+  { icon: Server, label: '백엔드 API 명세', href: '/backend-api' },
   { icon: Bell, label: '알림 설정', href: '/settings/notifications' },
   { icon: HelpCircle, label: '고객센터', href: '/help' },
   { icon: FileText, label: '이용약관', href: '/terms' },

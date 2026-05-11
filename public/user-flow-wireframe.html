@@ -347,6 +347,272 @@
         font-weight: 1000;
       }
 
+      .journey-map {
+        margin: 0 0 34px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(244, 81, 0, 0.14), transparent 28%),
+          radial-gradient(circle at 88% 0%, rgba(255, 209, 153, 0.28), transparent 30%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 243, 0.96));
+        box-shadow: 0 20px 50px rgba(56, 33, 15, 0.1);
+      }
+
+      .journey-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .journey-head h2 {
+        margin: 0;
+        font-size: 30px;
+        line-height: 1.2;
+      }
+
+      .journey-head p {
+        margin: 8px 0 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .legend span {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .flowchart {
+        display: grid;
+        gap: 14px;
+      }
+
+      .flow-lane {
+        display: grid;
+        grid-template-columns: 154px minmax(0, 1fr);
+        gap: 16px;
+        border: 1px solid rgba(234, 220, 201, 0.88);
+        border-radius: 18px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .flow-lane.main-lane {
+        border-color: rgba(244, 81, 0, 0.3);
+        background:
+          linear-gradient(90deg, rgba(244, 81, 0, 0.08), transparent 34%),
+          rgba(255, 255, 255, 0.82);
+      }
+
+      .lane-label {
+        display: grid;
+        align-content: center;
+        gap: 8px;
+        border-radius: 15px;
+        padding: 14px;
+        background: #2a211b;
+        color: #fff;
+      }
+
+      .lane-label.sub {
+        background: #fff7ed;
+        color: var(--ink);
+        border: 1px solid rgba(244, 81, 0, 0.2);
+      }
+
+      .lane-label strong {
+        font-size: 17px;
+        line-height: 1.25;
+      }
+
+      .lane-label span {
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .lane-label.sub span {
+        color: var(--muted);
+      }
+
+      .lane-track {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(140px, 1fr) 28px minmax(140px, 1fr) 28px minmax(140px, 1fr) 28px minmax(140px, 1fr);
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .lane-track.three {
+        grid-template-columns: minmax(150px, 1fr) 28px minmax(150px, 1fr) 28px minmax(150px, 1fr);
+      }
+
+      .lane-track.two {
+        grid-template-columns: minmax(150px, 1fr) 28px minmax(150px, 1fr);
+      }
+
+      .flow-arrow {
+        display: grid;
+        place-items: center;
+        color: var(--primary);
+        font-size: 20px;
+        font-weight: 1000;
+      }
+
+      .flow-arrow span {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(244, 81, 0, 0.24);
+        border-radius: 999px;
+        background: #fff7ed;
+      }
+
+      .decision-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 2px 0;
+      }
+
+      .decision-chip {
+        border: 1px dashed rgba(244, 81, 0, 0.36);
+        border-radius: 15px;
+        padding: 12px 14px;
+        background: rgba(255, 247, 237, 0.9);
+        color: var(--primary);
+        font-size: 13px;
+        font-weight: 1000;
+        text-align: center;
+      }
+
+      .chart-node {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 132px;
+        border: 1px solid rgba(42, 33, 27, 0.2);
+        border-left: 5px solid var(--primary);
+        border-radius: 15px;
+        padding: 14px;
+        background: #fff;
+        box-shadow: 0 12px 26px rgba(56, 33, 15, 0.08);
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          border-color 160ms ease;
+      }
+
+      .chart-node:hover {
+        transform: translateY(-3px);
+        border-color: var(--primary);
+        box-shadow: 0 16px 32px rgba(244, 81, 0, 0.14);
+      }
+
+      .chart-node.primary {
+        border-left-color: var(--primary);
+        background: linear-gradient(135deg, #fff, #fff3e9);
+      }
+
+      .chart-node.support {
+        border-left-color: #73b95b;
+      }
+
+      .chart-node.decision {
+        border-left-color: #2a211b;
+        background: linear-gradient(135deg, #fff, #faf6ef);
+      }
+
+      .chart-node.complete {
+        background: linear-gradient(135deg, #211814, #382217);
+        border-color: #211814;
+        border-left-color: var(--primary);
+        color: #fff;
+      }
+
+      .chart-node.complete .node-desc,
+      .chart-node.complete .node-route {
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .node-kicker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 1000;
+      }
+
+      .node-kicker span:first-child {
+        display: inline-grid;
+        place-items: center;
+        min-width: 32px;
+        height: 28px;
+        border-radius: 999px;
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .chart-node.support .node-kicker span:first-child {
+        background: #73b95b;
+      }
+
+      .chart-node.decision .node-kicker span:first-child {
+        background: #2a211b;
+      }
+
+      .node-title {
+        font-size: 18px;
+        font-weight: 1000;
+        line-height: 1.25;
+      }
+
+      .node-desc {
+        flex: 1;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .node-route {
+        align-self: end;
+        color: var(--primary);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .lane-divider {
+        display: grid;
+        place-items: center;
+        min-height: 30px;
+        color: rgba(244, 81, 0, 0.78);
+        font-size: 22px;
+        font-weight: 1000;
+      }
+
       .section-title {
         margin: 48px 0 18px;
       }
@@ -437,6 +703,10 @@
         .detail-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .flow-lane {
+          grid-template-columns: 1fr;
+        }
       }
 
       @media (max-width: 720px) {
@@ -453,13 +723,29 @@
         .summary,
         .flow-grid,
         body[data-view='web'] .flow-grid,
-        .detail-grid {
+        .detail-grid,
+        .decision-strip,
+        .lane-track,
+        .lane-track.three,
+        .lane-track.two {
           grid-template-columns: 1fr;
           display: grid;
         }
 
         .mode-panel {
           min-width: 0;
+        }
+
+        .journey-map {
+          padding: 16px;
+        }
+
+        .journey-head {
+          display: grid;
+        }
+
+        .flow-arrow span {
+          transform: rotate(90deg);
         }
       }
     </style>
@@ -477,6 +763,7 @@
             </p>
             <div class="hero-actions">
               <a class="hero-link" href="#details">이동 경로 상세보기</a>
+              <a class="hero-link" href="#flow-chart">Flow Chart 보기</a>
               <a class="hero-link" href="/backend-api">API 명세 보기</a>
             </div>
           </div>
@@ -497,6 +784,154 @@
         <div class="summary-item">인증 → 홈</div>
         <div class="summary-item">피드 → 상세 → 소셜</div>
         <div class="summary-item">등록/저장/추천 → 요리모드</div>
+      </section>
+
+      <section class="journey-map" id="flow-chart">
+        <div class="journey-head">
+          <div>
+            <h2>User Journey Flow Chart</h2>
+            <p>
+              같은 사용자 여정을 기준으로 앱/웹 화면만 토글해 확인합니다. 노드를 누르면 해당 화면 카드로 이동합니다.
+            </p>
+          </div>
+          <div class="legend">
+            <span>실선: 주요 이동</span>
+            <span>분기: 권한/상태</span>
+            <span>앱 전용: 요리모드</span>
+          </div>
+        </div>
+        <div class="flowchart">
+          <div class="flow-lane main-lane">
+            <div class="lane-label">
+              <strong>메인 여정</strong>
+              <span>처음 진입부터 레시피 상세까지 이어지는 핵심 흐름</span>
+            </div>
+            <div class="lane-track">
+            <a class="chart-node primary" href="#card-01">
+              <div class="node-kicker"><span>01</span><span>AUTH</span></div>
+              <div class="node-title">Login / Signup</div>
+              <div class="node-desc">이메일 또는 구글로 가입하고 환영 알림을 생성합니다.</div>
+              <div class="node-route">/login · /signup</div>
+            </a>
+              <div class="flow-arrow"><span>→</span></div>
+            <a class="chart-node primary" href="#card-03">
+              <div class="node-kicker"><span>03</span><span>HOME</span></div>
+              <div class="node-title">Home Discovery</div>
+              <div class="node-desc">추천 요리, 인기 레시피, 최근 마이 레시피를 탐색합니다.</div>
+              <div class="node-route">/</div>
+            </a>
+              <div class="flow-arrow"><span>→</span></div>
+            <a class="chart-node primary" href="#card-04">
+              <div class="node-kicker"><span>04</span><span>FEED</span></div>
+              <div class="node-title">Search / Tag Filter</div>
+              <div class="node-desc">검색어와 태그 AND 필터로 원하는 레시피를 좁힙니다.</div>
+              <div class="node-route">/feed</div>
+            </a>
+              <div class="flow-arrow"><span>→</span></div>
+            <a class="chart-node primary" href="#card-06">
+              <div class="node-kicker"><span>06</span><span>DETAIL</span></div>
+              <div class="node-title">Recipe Detail</div>
+              <div class="node-desc">좋아요, 저장, 댓글, 작성자 수정 권한이 모이는 중심 화면입니다.</div>
+              <div class="node-route">/recipe/{id}</div>
+            </a>
+            </div>
+          </div>
+
+          <div class="decision-strip">
+            <div class="decision-chip">미로그인 액션 → 로그인 유도</div>
+            <div class="decision-chip">로그인 사용자 → 소셜 액션 가능</div>
+            <div class="decision-chip">작성자 → 수정/답글 가능</div>
+          </div>
+
+          <div class="lane-divider">↓</div>
+
+          <div class="flow-lane">
+            <div class="lane-label sub">
+              <strong>상세 액션</strong>
+              <span>레시피 상세에서 발생하는 저장, 댓글, 알림 흐름</span>
+            </div>
+            <div class="lane-track three">
+              <a class="chart-node decision" href="#card-07">
+                <div class="node-kicker"><span>07</span><span>COMMENT</span></div>
+                <div class="node-title">Comment Thread</div>
+                <div class="node-desc">댓글과 작성자 답글을 한 상세 페이지 안에서 이어 봅니다.</div>
+                <div class="node-route">detail comments</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node support" href="#card-13">
+                <div class="node-kicker"><span>13</span><span>NOTICE</span></div>
+                <div class="node-title">Notifications</div>
+                <div class="node-desc">환영, 좋아요, 댓글 알림을 카운트 배지와 드롭다운으로 확인합니다.</div>
+                <div class="node-route">Header Notification</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node support" href="#card-10">
+                <div class="node-kicker"><span>10</span><span>SAVED</span></div>
+                <div class="node-title">Saved Recipes</div>
+                <div class="node-desc">저장한 레시피를 다시 찾아 상세 페이지로 복귀합니다.</div>
+                <div class="node-route">/saved</div>
+              </a>
+            </div>
+          </div>
+
+          <div class="flow-lane">
+            <div class="lane-label sub">
+              <strong>개인화 흐름</strong>
+              <span>내 레시피 등록, 수정, 추천으로 확장되는 흐름</span>
+            </div>
+            <div class="lane-track three">
+              <a class="chart-node decision" href="#card-11">
+                <div class="node-kicker"><span>11</span><span>MY</span></div>
+                <div class="node-title">My Page</div>
+                <div class="node-desc">내 활동과 저장한 레시피, API 명세 진입점을 관리합니다.</div>
+                <div class="node-route">/mypage</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node support" href="#card-08">
+                <div class="node-kicker"><span>08</span><span>CREATE</span></div>
+                <div class="node-title">Register Recipe</div>
+                <div class="node-desc">새 레시피를 등록하고 최근 마이 레시피에 반영합니다.</div>
+                <div class="node-route">/my-recipe/new</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node support" href="#card-09">
+                <div class="node-kicker"><span>09</span><span>EDIT</span></div>
+                <div class="node-title">Edit My Recipe</div>
+                <div class="node-desc">내가 만든 레시피는 상세 페이지에서 수정 흐름으로 연결됩니다.</div>
+                <div class="node-route">/my-recipe/new?edit</div>
+              </a>
+            </div>
+          </div>
+
+          <div class="flow-lane">
+            <div class="lane-label sub">
+              <strong>추천과 요리모드</strong>
+              <span>재료 기반 추천과 모바일 가로모드 조리 UX</span>
+            </div>
+            <div class="lane-track three">
+              <a class="chart-node support" href="#card-12">
+                <div class="node-kicker"><span>12</span><span>RECOMMEND</span></div>
+                <div class="node-title">Ingredient Recommendation</div>
+                <div class="node-desc">냉장고 재료 입력 또는 인식 결과로 추천 레시피를 확인합니다.</div>
+                <div class="node-route">/recommendations</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node decision" href="#card-14">
+                <div class="node-kicker"><span>14</span><span>APP ONLY</span></div>
+                <div class="node-title">Cooking Mode</div>
+                <div class="node-desc">모바일 가로 화면에서 단계별 조리와 완료 팝업을 진행합니다.</div>
+                <div class="node-route">landscape mode</div>
+              </a>
+              <div class="flow-arrow"><span>→</span></div>
+              <a class="chart-node complete" href="#details">
+                <div class="node-kicker"><span>END</span><span>LOOP</span></div>
+                <div class="node-title">Like / Save / Return</div>
+                <div class="node-desc">요리 완료 후 좋아요, 저장, 상세 복귀로 다시 탐색 흐름에 합류합니다.</div>
+                <div class="node-route">back to detail</div>
+              </a>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="flow-grid" id="flow-grid"></section>
@@ -673,7 +1108,7 @@
             const deviceClass =
               currentMode === 'web' ? 'browser' : flow.mobileLandscape ? 'landscape' : 'phone'
             return `
-              <article class="flow-card">
+              <article class="flow-card" id="card-${flow.no}">
                 <div class="flow-head">
                   <div><div class="num">${flow.no}</div><h2>${flow.title}</h2></div>
                   ${index < flows.length - 1 ? '<div class="arrow">→</div>' : ''}

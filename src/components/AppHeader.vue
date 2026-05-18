@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm lg:bg-background/90">
+  <header class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm lg:hidden">
     <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-16 lg:px-8">
       <div class="flex min-w-0 items-center gap-2">
         <button
@@ -99,7 +99,7 @@ import { notifications } from '../data'
 const route = useRoute()
 const router = useRouter()
 const open = ref(false)
-const unreadCount = notifications.length
+const unreadCount = computed(() => notifications.length)
 
 const titleMap: Record<string, string> = {
   '/feed': route.query.source === 'my' ? '최근 올라온 마이 레시피' : '피드',

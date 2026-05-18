@@ -27,7 +27,7 @@
                 <p class="text-sm text-muted-foreground">레시피 작성자</p>
               </div>
             </div>
-            <RouterLink to="/my-recipe/new?edit=1" class="rounded-md border border-input bg-background px-4 py-2 text-sm font-bold hover:bg-muted">수정</RouterLink>
+            <RouterLink :to="`/my-recipe/new?edit=${recipe.id}`" class="rounded-md border border-input bg-background px-4 py-2 text-sm font-bold hover:bg-muted">수정</RouterLink>
           </div>
         </div>
       </section>
@@ -46,30 +46,35 @@
         <article class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
           <h2 class="text-lg font-bold">조리법</h2>
           <ol class="mt-5 grid gap-4">
-            <li v-for="(step, index) in recipe.steps" :key="step" class="flex gap-3 rounded-lg border border-border bg-background p-4">
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{{ index + 1 }}</span>
-              <p class="leading-7">{{ step }}</p>
+            <li v-for="(step, index) in recipe.steps" :key="step" class="grid gap-3 rounded-lg border border-border bg-background p-4 sm:grid-cols-[minmax(160px,240px)_minmax(0,1fr)]">
+              <div v-if="recipe.stepImages[index]" class="overflow-hidden rounded-md border border-border bg-muted">
+                <img :src="recipe.stepImages[index]" :alt="`${recipe.title} ${index + 1}단계`" class="aspect-[4/3] h-full w-full object-cover" loading="lazy" />
+              </div>
+              <div class="flex gap-3">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{{ index + 1 }}</span>
+                <p class="leading-7">{{ step }}</p>
+              </div>
             </li>
           </ol>
         </article>
 
         <article class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
           <h2 class="text-lg font-bold">댓글</h2>
-          <div class="mt-4 rounded-lg border border-border bg-background p-4">
-            <p class="font-semibold">든든한 하루</p>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">이 레시피 그대로 해봤는데 진짜 간단하고 맛있어요.</p>
-            <div class="ml-4 mt-3 rounded-md bg-primary/10 p-3 text-sm text-primary">글쓴이 답글: 감사합니다! 김가루를 조금 올리면 더 맛있어요.</div>
+          <div v-for="comment in commentsList" :key="comment.id" class="mt-4 rounded-lg border border-border bg-background p-4">
+            <p class="font-semibold">{{ comment.author }}</p>
+            <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ comment.content }}</p>
+            <div v-if="comment.reply" class="ml-4 mt-3 rounded-md bg-primary/10 p-3 text-sm text-primary">글쓴이 답글: {{ comment.reply }}</div>
           </div>
           <div class="mt-4 flex gap-2">
-            <input class="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="댓글을 입력하세요" />
-            <button class="rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground">등록</button>
+            <input v-model="commentText" class="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="댓글을 입력하세요" @keyup.enter="handleCommentSubmit" />
+            <button class="rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground" @click="handleCommentSubmit">등록</button>
           </div>
         </article>
       </section>
     </main>
 
     <div class="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[min(520px,calc(100%-2rem))] gap-3">
-      <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg" @click="likes++">
+      <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg" @click="handleLike">
         <Heart class="h-4 w-4" />
         좋아요 {{ likes.toLocaleString() }}
       </button>
@@ -85,13 +90,127 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChefHat, Clock, Heart, MessageCircle, Users } from 'lucide-vue-next'
+import { createCommentApi, fetchCommentsApi, fetchRecipeApi, toggleLikeApi } from '../api'
+import { useAuth } from '../auth'
 import { difficultyLabels, recipes } from '../data'
 
-const route = useRoute()
-const recipe = computed(() => recipes.find((item) => item.id === route.params.id) || recipes[0])
-const likes = ref(recipe.value.likes)
+interface ViewComment {
+  id: string
+  author: string
+  content: string
+  reply?: string
+}
 
-watch(recipe, (next) => {
-  likes.value = next.likes
-})
+const route = useRoute()
+const { user } = useAuth()
+const recipe = computed(() => recipes.value.find((item) => item.id === route.params.id) || recipes.value[0])
+const likes = ref(recipe.value.likes)
+const commentText = ref('')
+const commentsList = ref<ViewComment[]>([
+  {
+    id: 'fallback-comment',
+    author: '든든한 하루',
+    content: '이 레시피 그대로 해봤는데 진짜 간단하고 맛있어요.',
+    reply: '감사합니다! 김가루를 조금 올리면 더 맛있어요.',
+  },
+])
+
+const normalizeComment = (raw: unknown, index: number): ViewComment | null => {
+  if (!raw || typeof raw !== 'object') return null
+  const record = raw as Record<string, unknown>
+  const author = record.author
+  const reply = Array.isArray(record.replies) ? record.replies[0] : record.reply
+
+  return {
+    id: String(record.id || `comment-${index}`),
+    author:
+      typeof author === 'object' && author
+        ? String((author as Record<string, unknown>).nickname || (author as Record<string, unknown>).email || '사용자')
+        : String(author || record.nickname || '사용자'),
+    content: String(record.content || record.message || ''),
+    reply: typeof reply === 'object' && reply ? String((reply as Record<string, unknown>).content || '') : typeof reply === 'string' ? reply : undefined,
+  }
+}
+
+const loadRecipeDetail = async () => {
+  const recipeId = String(route.params.id || '')
+  if (!recipeId) return
+
+  try {
+    const apiRecipe = await fetchRecipeApi(recipeId)
+    const index = recipes.value.findIndex((item) => item.id === apiRecipe.id)
+    if (index >= 0) recipes.value[index] = apiRecipe
+    else recipes.value.unshift(apiRecipe)
+    likes.value = apiRecipe.likes
+  } catch {
+    likes.value = recipe.value.likes
+  }
+}
+
+const loadComments = async () => {
+  const recipeId = String(route.params.id || '')
+  if (!recipeId) return
+
+  try {
+    const apiComments = await fetchCommentsApi(recipeId)
+    const normalized = apiComments.map(normalizeComment).filter((item): item is ViewComment => Boolean(item?.content))
+    if (normalized.length > 0) commentsList.value = normalized
+  } catch {
+    // Leave the local sample comments in place if the comments API is unavailable.
+  }
+}
+
+const handleLike = async () => {
+  const currentRecipe = recipe.value
+
+  try {
+    const result = await toggleLikeApi(currentRecipe.id)
+    if (typeof result.like_count === 'number') {
+      likes.value = result.like_count
+    } else if (typeof result.liked === 'boolean') {
+      likes.value = Math.max(0, likes.value + (result.liked ? 1 : -1))
+    } else {
+      likes.value += 1
+    }
+    currentRecipe.likes = likes.value
+    currentRecipe.isLiked = typeof result.liked === 'boolean' ? result.liked : true
+  } catch {
+    currentRecipe.isLiked = !currentRecipe.isLiked
+    likes.value = Math.max(0, likes.value + (currentRecipe.isLiked ? 1 : -1))
+    currentRecipe.likes = likes.value
+  }
+}
+
+const handleCommentSubmit = async () => {
+  const content = commentText.value.trim()
+  if (!content) return
+
+  const currentRecipe = recipe.value
+  const localComment: ViewComment = {
+    id: `local-comment-${Date.now()}`,
+    author: user.value?.name || '사용자',
+    content,
+  }
+
+  try {
+    const created = await createCommentApi(currentRecipe.id, content)
+    const normalized = normalizeComment(created, commentsList.value.length) || localComment
+    commentsList.value = [normalized, ...commentsList.value]
+  } catch {
+    commentsList.value = [localComment, ...commentsList.value]
+  }
+
+  commentText.value = ''
+  currentRecipe.comments += 1
+}
+
+watch(
+  () => route.params.id,
+  () => {
+    likes.value = recipe.value.likes
+    void loadRecipeDetail()
+    void loadComments()
+  },
+  { immediate: true },
+)
 </script>

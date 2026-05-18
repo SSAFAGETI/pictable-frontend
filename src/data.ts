@@ -1,3 +1,7 @@
+import { ref } from 'vue'
+import { fetchFeedRecipesApi, fetchRecipesApi } from './api'
+import { recipeTagNames } from './tags'
+
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
 export interface Ingredient {
@@ -16,6 +20,7 @@ export interface Recipe {
   servings: number
   ingredients: Ingredient[]
   steps: string[]
+  stepImages: string[]
   likes: number
   saves: number
   comments: number
@@ -32,7 +37,9 @@ export const difficultyLabels: Record<Difficulty, string> = {
   hard: '어려움',
 }
 
-export const recipes: Recipe[] = [
+const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
+
+const fallbackRecipes: Recipe[] = [
   {
     id: '1',
     title: '김치볶음밥',
@@ -48,6 +55,7 @@ export const recipes: Recipe[] = [
       { id: 'oil', name: '참기름', amount: '1큰술' },
     ],
     steps: ['김치를 잘게 썰어주세요.', '팬에 기름을 두르고 김치를 볶아주세요.', '밥을 넣고 함께 볶아주세요.', '참기름을 넣고 계란 프라이를 올려 완성합니다.'],
+    stepImages: [],
     likes: 1234,
     saves: 567,
     comments: 8,
@@ -70,6 +78,7 @@ export const recipes: Recipe[] = [
       { id: 'soy', name: '간장', amount: '1큰술' },
     ],
     steps: ['대파를 송송 썰어주세요.', '팬에 기름을 두르고 계란을 스크램블해주세요.', '밥을 넣고 간장으로 간을 맞춰주세요.', '대파를 넣고 마무리합니다.'],
+    stepImages: [],
     likes: 892,
     saves: 345,
     comments: 4,
@@ -92,6 +101,7 @@ export const recipes: Recipe[] = [
       { id: 'garlic', name: '마늘', amount: '2쪽' },
     ],
     steps: ['두부와 양파를 썰어주세요.', '냄비에 물을 붓고 된장을 풀어주세요.', '양파와 마늘을 넣고 끓여주세요.', '두부를 넣고 5분 더 끓입니다.'],
+    stepImages: [],
     likes: 2156,
     saves: 987,
     comments: 12,
@@ -113,6 +123,7 @@ export const recipes: Recipe[] = [
       { id: 'green-onion', name: '대파', amount: '약간' },
     ],
     steps: ['물 550ml를 끓여주세요.', '스프와 면을 넣어주세요.', '계란과 대파를 넣고 마무리합니다.'],
+    stepImages: [],
     likes: 3421,
     saves: 1234,
     comments: 17,
@@ -135,6 +146,7 @@ export const recipes: Recipe[] = [
       { id: 'egg', name: '계란', amount: '1개' },
     ],
     steps: ['밥을 그릇에 담아주세요.', '참치와 마요네즈를 섞어 올립니다.', '계란을 올리고 김가루를 뿌립니다.'],
+    stepImages: [],
     likes: 256,
     saves: 141,
     comments: 4,
@@ -156,6 +168,7 @@ export const recipes: Recipe[] = [
       { id: 'onion', name: '양파', amount: '1/4개' },
     ],
     steps: ['감자를 곱게 갈아주세요.', '양파를 다져 섞어주세요.', '팬에 노릇하게 부쳐주세요.', '치즈를 올리고 녹여주세요.'],
+    stepImages: [],
     likes: 1567,
     saves: 678,
     comments: 6,
@@ -165,7 +178,143 @@ export const recipes: Recipe[] = [
   },
 ]
 
-export const popularTags = ['자취요리', '초간단', '한식', '야식', '다이어트', '술안주', '도시락', '국물요리', '볶음밥', '파스타']
+export const recipes = ref<Recipe[]>(fallbackRecipes)
+export const recipesLoading = ref(false)
+export const recipesError = ref('')
+
+const apiKey = import.meta.env.VITE_FOODSAFETY_API_KEY || '1db71fdb6a3e4d9593eb'
+const apiBaseUrl = 'https://openapi.foodsafetykorea.go.kr/api'
+
+const textOf = (row: Element, tagName: string) => row.getElementsByTagName(tagName)[0]?.textContent?.trim() ?? ''
+const normalizeUrl = (value: string) => value.replace('http://www.foodsafetykorea.go.kr', 'https://www.foodsafetykorea.go.kr')
+
+const cleanManualText = (value: string) => value.replace(/^\d+\.\s*/, '').replace(/[a-z]$/, '').trim()
+
+const getManualSteps = (row: Element) => {
+  return Array.from({ length: 20 }, (_, index) => textOf(row, `MANUAL${String(index + 1).padStart(2, '0')}`))
+    .map(cleanManualText)
+    .filter(Boolean)
+}
+
+const getManualImages = (row: Element) => {
+  return Array.from({ length: 20 }, (_, index) => normalizeUrl(textOf(row, `MANUAL_IMG${String(index + 1).padStart(2, '0')}`)))
+}
+
+const parseIngredients = (value: string, recipeTitle: string): Ingredient[] => {
+  const normalized = value
+    .replace(recipeTitle, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/[·ㆍ]/g, '\n')
+
+  return normalized
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 1 && !item.endsWith(':'))
+    .slice(0, 12)
+    .map((item, index) => {
+      const match = item.match(/^(.+?)\s+([\d./⅓⅔¼½¾]+.*)$/)
+      return {
+        id: `${recipeTitle}-${index}`,
+        name: match?.[1]?.trim() || item,
+        amount: match?.[2]?.trim() || '',
+      }
+    })
+}
+
+const getTags = (row: Element) => {
+  return [textOf(row, 'RCP_PAT2'), textOf(row, 'RCP_WAY2'), textOf(row, 'HASH_TAG')]
+    .filter(Boolean)
+    .flatMap((tag) => tag.split(/[,#\s]+/))
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+}
+
+const getDifficulty = (steps: string[]): Difficulty => {
+  if (steps.length <= 3) return 'easy'
+  if (steps.length <= 6) return 'medium'
+  return 'hard'
+}
+
+const mapApiRowToRecipe = (row: Element, index: number): Recipe => {
+  const title = textOf(row, 'RCP_NM') || '이름 없는 레시피'
+  const sequence = textOf(row, 'RCP_SEQ') || String(index + 1)
+  const steps = getManualSteps(row)
+  const stepImages = getManualImages(row)
+  const image = normalizeUrl(textOf(row, 'ATT_FILE_NO_MAIN') || textOf(row, 'ATT_FILE_NO_MK') || textOf(row, 'MANUAL_IMG01')) || fallbackImage
+  const calories = textOf(row, 'INFO_ENG')
+  const sodiumTip = textOf(row, 'RCP_NA_TIP')
+  const parts = textOf(row, 'RCP_PARTS_DTLS')
+  const servingsMatch = parts.match(/\[(\d+)인분\]/)
+
+  return {
+    id: sequence,
+    title,
+    description: sodiumTip || `${title}의 식품안전나라 공식 조리 레시피입니다.${calories ? ` 열량은 ${calories}kcal입니다.` : ''}`,
+    image,
+    cookTime: Math.max(10, steps.length * 8),
+    difficulty: getDifficulty(steps),
+    servings: Number(servingsMatch?.[1] ?? 1),
+    ingredients: parseIngredients(parts, title),
+    steps,
+    stepImages,
+    likes: 100 + Number(sequence) * 3,
+    saves: 40 + Number(sequence),
+    comments: index % 8,
+    tags: getTags(row),
+    author: '식품안전나라',
+    createdAt: `2026-05-${String(Math.max(1, 13 - index)).padStart(2, '0')}`,
+  }
+}
+
+export async function loadFoodSafetyRecipes(start = 1, end = 30) {
+  if (recipesLoading.value) return
+
+  recipesLoading.value = true
+  recipesError.value = ''
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/${apiKey}/COOKRCP01/xml/${start}/${end}`)
+    if (!response.ok) throw new Error(`API 응답 오류: ${response.status}`)
+
+    const xmlText = await response.text()
+    const xml = new DOMParser().parseFromString(xmlText, 'application/xml')
+    const resultCode = xml.getElementsByTagName('CODE')[0]?.textContent
+    const resultMessage = xml.getElementsByTagName('MSG')[0]?.textContent
+
+    if (resultCode && resultCode !== 'INFO-000') {
+      throw new Error(resultMessage || '레시피 API 호출에 실패했습니다.')
+    }
+
+    const apiRecipes = Array.from(xml.getElementsByTagName('row')).map(mapApiRowToRecipe).filter((recipe) => recipe.steps.length > 0)
+
+    if (apiRecipes.length > 0) recipes.value = apiRecipes
+  } catch (error) {
+    recipesError.value = error instanceof Error ? error.message : '레시피를 불러오지 못했습니다.'
+  } finally {
+    recipesLoading.value = false
+  }
+}
+
+export async function loadDjangoRecipes() {
+  if (recipesLoading.value) return
+
+  recipesLoading.value = true
+  recipesError.value = ''
+
+  try {
+    let apiRecipes = await fetchFeedRecipesApi({ sort: 'popular' })
+    if (apiRecipes.length === 0) apiRecipes = await fetchRecipesApi()
+    if (apiRecipes.length > 0) recipes.value = apiRecipes
+  } catch (error) {
+    recipesError.value = error instanceof Error ? error.message : 'Django API에서 레시피를 불러오지 못했습니다.'
+    throw error
+  } finally {
+    recipesLoading.value = false
+  }
+}
+
+export const popularTags = recipeTagNames
 
 export const notifications = [
   { id: 'n1', title: '찰칵밥상에 오신 걸 환영해요', message: '내 레시피를 등록하고 좋아요, 댓글, 알림을 받아보세요.' },

@@ -75,17 +75,17 @@
 
       <section class="px-4 py-2 sm:px-6 lg:px-8">
         <div class="mx-auto grid max-w-7xl grid-cols-5 gap-2 sm:flex sm:flex-wrap">
-          <RouterLink v-for="tag in popularTags" :key="tag" :to="`/feed?tag=${encodeURIComponent(tag)}`" class="min-w-0">
+          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="`/feed?tag=${encodeURIComponent(tag.name)}`" class="min-w-0">
             <span class="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-border bg-background px-2 py-2 text-xs font-bold transition-colors hover:bg-primary hover:text-primary-foreground sm:w-auto sm:px-4 sm:text-sm">
-              #{{ tag }}
+              #{{ tag.name }}
             </span>
           </RouterLink>
         </div>
       </section>
 
-      <section class="px-4 py-5 sm:px-6 lg:px-8">
+      <section class="px-4 py-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
-          <div class="mb-4 flex items-center justify-between">
+          <div class="mb-3 flex items-center justify-between">
             <h2 class="text-lg font-bold lg:text-xl">오늘의 추천 요리</h2>
             <RouterLink to="/feed" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-bold text-primary hover:bg-muted">
               더보기 <ArrowRight class="ml-1 h-4 w-4" />
@@ -96,17 +96,17 @@
             <div class="flex transition-transform duration-700 ease-out" :style="{ transform: `translateX(-${activeIndex * 100}%)` }">
               <div v-for="(recipe, index) in todayRecipes" :key="recipe.id" class="w-full shrink-0">
                 <RouterLink :to="`/recipe/${recipe.id}`">
-                  <div class="overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-lg lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-                    <div class="relative aspect-[16/9] lg:aspect-auto lg:min-h-[300px]">
+                  <div class="overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-lg lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+                    <div class="relative h-[170px] sm:h-[220px] lg:h-[220px] xl:h-[240px]">
                       <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" :loading="index === 0 ? 'eager' : 'lazy'" />
                     </div>
-                    <div class="flex flex-col justify-center p-4 sm:p-5 lg:p-8">
-                      <span class="mb-3 w-fit rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">
+                    <div class="flex flex-col justify-center p-3 sm:p-4 lg:p-5">
+                      <span class="mb-2 w-fit rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">
                         {{ difficultyLabels[recipe.difficulty] }}
                       </span>
-                      <h3 class="text-2xl font-bold lg:text-3xl">{{ recipe.title }}</h3>
-                      <p class="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground lg:text-base">{{ recipe.description }}</p>
-                      <div class="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <h3 class="line-clamp-1 text-lg font-bold sm:text-xl lg:text-2xl">{{ recipe.title }}</h3>
+                      <p class="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{{ recipe.description }}</p>
+                      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                         <span class="flex items-center gap-1"><Clock class="h-4 w-4" />{{ recipe.cookTime }}분</span>
                         <span class="flex items-center gap-1"><ChefHat class="h-4 w-4" />{{ recipe.servings }}인분</span>
                         <span v-for="tag in recipe.tags.slice(0, 2)" :key="tag" class="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">#{{ tag }}</span>
@@ -199,20 +199,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, Camera, ChefHat, Clock, Heart, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
 import RecipeCard from '../components/RecipeCard.vue'
-import { difficultyLabels, popularTags, recipes } from '../data'
+import { difficultyLabels, recipes } from '../data'
+import { RECIPE_TAGS } from '../tags'
 
 const router = useRouter()
 const inputValue = ref('')
 const ingredients = ref<string[]>([])
 const showUploadMenu = ref(false)
 const activeIndex = ref(0)
-const todayRecipes = recipes.slice(0, 4)
-const popularRecipes = recipes.slice(0, 4)
-const recentRecipes = recipes.slice(2, 5)
+const todayRecipes = computed(() => recipes.value.slice(0, 4))
+const popularRecipes = computed(() => recipes.value.slice(0, 4))
+const recentRecipes = computed(() => recipes.value.slice(2, 5))
 let timer: number | undefined
 
 const addIngredient = (ingredient: string) => {
@@ -235,7 +236,7 @@ const goRecommendations = () => {
 
 onMounted(() => {
   timer = window.setInterval(() => {
-    activeIndex.value = (activeIndex.value + 1) % todayRecipes.length
+    if (todayRecipes.value.length > 0) activeIndex.value = (activeIndex.value + 1) % todayRecipes.value.length
   }, 6000)
 })
 

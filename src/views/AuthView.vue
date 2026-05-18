@@ -41,20 +41,20 @@
             </p>
           </div>
           <div class="p-6 pt-0 lg:px-8 lg:pb-8">
-            <form class="space-y-4" @submit.prevent="router.push('/')">
+            <form class="space-y-4" @submit.prevent="handleSubmit">
               <div class="grid gap-4">
                 <label v-if="isSignup" class="grid gap-2 text-sm font-medium">
                   이름
                   <div class="relative">
                     <User class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="홍길동" required />
+                    <input v-model="name" class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="홍길동" required />
                   </div>
                 </label>
                 <label class="grid gap-2 text-sm font-medium">
                   이메일
                   <div class="relative">
                     <Mail class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="example@email.com" type="email" required />
+                    <input v-model="email" class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="example@email.com" type="email" required />
                   </div>
                 </label>
                 <div :class="isSignup ? 'grid gap-4 lg:grid-cols-2' : 'grid gap-4'">
@@ -62,7 +62,7 @@
                     비밀번호
                     <div class="relative">
                       <Lock class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" :type="showPassword ? 'text' : 'password'" :placeholder="isSignup ? '8자 이상' : '비밀번호를 입력하세요'" required />
+                      <input v-model="password" class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" :type="showPassword ? 'text' : 'password'" :placeholder="isSignup ? '8자 이상' : '비밀번호를 입력하세요'" required />
                       <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="비밀번호 보기 전환" @click="showPassword = !showPassword">
                         <EyeOff v-if="showPassword" class="h-4 w-4" />
                         <Eye v-else class="h-4 w-4" />
@@ -73,7 +73,7 @@
                     비밀번호 확인
                     <div class="relative">
                       <Lock class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" :type="showConfirmPassword ? 'text' : 'password'" placeholder="다시 입력" required />
+                      <input v-model="passwordConfirm" class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 pr-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" :type="showConfirmPassword ? 'text' : 'password'" placeholder="다시 입력" required />
                       <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="비밀번호 확인 보기 전환" @click="showConfirmPassword = !showConfirmPassword">
                         <EyeOff v-if="showConfirmPassword" class="h-4 w-4" />
                         <Eye v-else class="h-4 w-4" />
@@ -88,12 +88,16 @@
               </div>
 
               <label v-if="isSignup" class="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
-                <input type="checkbox" class="mt-1 h-4 w-4 rounded border-border" />
+                <input v-model="agreed" type="checkbox" class="mt-1 h-4 w-4 rounded border-border" />
                 <span><a href="#" class="text-primary hover:underline">이용약관</a> 및 <a href="#" class="text-primary hover:underline">개인정보 처리방침</a>에 동의합니다.</span>
               </label>
 
-              <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
-                {{ isSignup ? '회원가입' : '로그인' }}
+              <p v-if="errorMessage" class="rounded-md bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+                {{ errorMessage }}
+              </p>
+
+              <button type="submit" :disabled="isSubmitting" class="inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
+                {{ isSubmitting ? '처리 중...' : isSignup ? '회원가입' : '로그인' }}
               </button>
             </form>
 
@@ -103,7 +107,7 @@
               <div class="h-px flex-1 bg-border" />
             </div>
 
-            <button type="button" class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-bold shadow-sm hover:bg-muted">
+            <button type="button" :disabled="isSubmitting" class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-bold shadow-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" @click="handleGoogle">
               <svg class="h-5 w-5" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -127,13 +131,63 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ChefHat, Eye, EyeOff, Lock, Mail, User } from 'lucide-vue-next'
+import { useAuth } from '../auth'
 
 const props = defineProps<{ mode: 'login' | 'signup' }>()
+const route = useRoute()
 const router = useRouter()
+const { login, signup, loginWithGoogle } = useAuth()
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isSignup = computed(() => props.mode === 'signup')
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const passwordConfirm = ref('')
+const agreed = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+
+const handleSubmit = async () => {
+  errorMessage.value = ''
+  if (isSignup.value && password.value !== passwordConfirm.value) {
+    errorMessage.value = '비밀번호 확인이 일치하지 않습니다.'
+    return
+  }
+  if (isSignup.value && !agreed.value) {
+    errorMessage.value = '이용약관 및 개인정보 처리방침에 동의해주세요.'
+    return
+  }
+
+  try {
+    isSubmitting.value = true
+    if (isSignup.value) await signup(name.value.trim(), email.value.trim(), password.value)
+    else await login(email.value.trim(), password.value)
+    router.push('/')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '인증 처리 중 문제가 발생했습니다.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleGoogle = async () => {
+  errorMessage.value = ''
+  try {
+    isSubmitting.value = true
+    await loginWithGoogle(typeof route.query.code === 'string' ? route.query.code : undefined)
+    router.push('/')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '구글 로그인 처리 중 문제가 발생했습니다.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onMounted(() => {
+  if (typeof route.query.code === 'string') void handleGoogle()
+})
 </script>

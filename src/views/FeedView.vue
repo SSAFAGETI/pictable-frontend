@@ -16,28 +16,7 @@
           </button>
         </div>
 
-        <div class="tag-filter-scroll mt-3 flex gap-2 overflow-x-auto pb-2">
-          <button
-            :class="[
-              'shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-bold',
-              selectedTags.length === 0 ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:bg-muted',
-            ]"
-            @click="resetFilters"
-          >
-            전체
-          </button>
-          <button
-            v-for="tag in tags"
-            :key="tag"
-            :class="[
-              'shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-bold',
-              selectedTags.includes(tag) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:bg-muted',
-            ]"
-            @click="toggleTag(tag)"
-          >
-            #{{ tag }}
-          </button>
-        </div>
+        <RecipeTagSelector v-model="selectedTagIds" class="mt-3" show-all />
       </div>
 
       <div class="flex items-center gap-1 border-b border-border px-4 py-2 lg:mx-auto lg:mt-4 lg:max-w-7xl lg:rounded-lg lg:border lg:bg-card">
@@ -90,18 +69,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChefHat, Clock, Heart, MessageCircle, Search, SlidersHorizontal, TrendingUp } from 'lucide-vue-next'
-import { difficultyLabels, popularTags, recipes, type Difficulty } from '../data'
+import { fetchFeedRecipesApi } from '../api'
+import RecipeTagSelector from '../components/RecipeTagSelector.vue'
+import { difficultyLabels, recipes, type Difficulty } from '../data'
+import { getRecipeTagByName, getRecipeTagNamesByIds } from '../tags'
 
 type SortOption = 'popular' | 'recent' | 'likes'
 
 const route = useRoute()
 const searchQuery = ref('')
-const selectedTags = ref<string[]>(route.query.tag ? [String(route.query.tag)] : [])
+const initialTag = route.query.tag ? getRecipeTagByName(String(route.query.tag)) : undefined
+const selectedTagIds = ref<number[]>(initialTag ? [initialTag.id] : [])
 const sortBy = ref<SortOption>((route.query.sort as SortOption) || 'popular')
-const tags = popularTags
+const feedRequestId = ref(0)
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',
@@ -109,13 +92,9 @@ const difficultyColors: Record<Difficulty, string> = {
   hard: 'bg-destructive/20 text-destructive',
 }
 
-const toggleTag = (tag: string) => {
-  selectedTags.value = selectedTags.value.includes(tag) ? selectedTags.value.filter((item) => item !== tag) : [...selectedTags.value, tag]
-}
-
 const resetFilters = () => {
   searchQuery.value = ''
-  selectedTags.value = []
+  selectedTagIds.value = []
 }
 
 const sortButtonClass = (sort: SortOption) => [
@@ -123,15 +102,53 @@ const sortButtonClass = (sort: SortOption) => [
   sortBy.value === sort ? 'text-primary' : 'text-foreground',
 ]
 
+const loadFeedFromApi = async () => {
+  const requestId = feedRequestId.value + 1
+  feedRequestId.value = requestId
+  const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
+
+  try {
+    const apiRecipes = await fetchFeedRecipesApi({
+      sort: sortBy.value === 'recent' ? 'latest' : 'popular',
+      search: searchQuery.value.trim() || undefined,
+      tag: selectedTags[0],
+    })
+
+    if (requestId === feedRequestId.value && apiRecipes.length > 0) {
+      recipes.value = apiRecipes
+    }
+  } catch {
+    // Keep local/public fallback recipes visible when the Django API is not reachable.
+  }
+}
+
+onMounted(() => {
+  void loadFeedFromApi()
+})
+
+watch([searchQuery, selectedTagIds, sortBy], () => {
+  void loadFeedFromApi()
+})
+
+watch(
+  () => route.query.tag,
+  (tag) => {
+    const nextTag = typeof tag === 'string' ? getRecipeTagByName(tag) : undefined
+    selectedTagIds.value = nextTag ? [nextTag.id] : []
+  },
+)
+
 const filteredRecipes = computed(() => {
-  return recipes
+  const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
+
+  return recipes.value
     .filter((recipe) => {
       const queryMatch =
         !searchQuery.value ||
         recipe.title.includes(searchQuery.value) ||
         recipe.description.includes(searchQuery.value) ||
         recipe.tags.some((tag) => tag.includes(searchQuery.value))
-      const tagMatch = selectedTags.value.length === 0 || selectedTags.value.every((tag) => recipe.tags.includes(tag))
+      const tagMatch = selectedTags.length === 0 || selectedTags.every((tag) => recipe.tags.includes(tag))
       return queryMatch && tagMatch
     })
     .sort((a, b) => {

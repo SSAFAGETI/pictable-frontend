@@ -35,8 +35,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import { recipes, substitutes } from '../data'
 
-const canMake = recipes.slice(0, 3)
+const canMake = computed(() => recipes.value.slice(0, 3))
 </script>

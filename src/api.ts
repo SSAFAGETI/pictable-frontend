@@ -1,8 +1,10 @@
 import type { Difficulty, Ingredient, Recipe } from './data'
+import { clearServerError, getServerErrorId, reportServerError } from './serverStatus'
 
 const DEFAULT_API_BASE_URL = '/api'
 
 export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
+const BACKEND_ORIGIN = 'http://15.164.170.144:8000'
 const TOKEN_STORAGE_KEY = 'chalkkak_tokens'
 const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
 
@@ -40,6 +42,29 @@ export interface RecipeCreatePayload {
   tag_ids?: number[]
   ingredients: Array<{ name: string; amount?: string }>
   steps: Array<{ order: number; description: string; image?: string }>
+}
+
+export type RecipeUpdatePayload = Partial<RecipeCreatePayload>
+
+export interface HomeSummaryResponse {
+  recommended: Recipe | null
+  popular: Recipe[]
+  recent: Recipe[]
+}
+
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  avatar?: string
+}
+
+export interface NotificationItem {
+  id: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
 }
 
 type ApiRequestOptions = RequestInit & {
@@ -131,6 +156,9 @@ const getErrorMessage = (body: unknown, fallback: string) => {
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}, retryOnUnauthorized = true): Promise<T> {
   const tokens = getStoredTokens()
   const headers = new Headers(options.headers)
+  const method = String(options.method || 'GET').toUpperCase()
+  const endpoint = apiUrl(path)
+  const errorId = getServerErrorId({ method, endpoint, title: path })
 
   if (!(options.body instanceof FormData) && options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
@@ -140,7 +168,22 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     headers.set('Authorization', `Bearer ${tokens.access}`)
   }
 
-  const response = await fetch(apiUrl(path), { ...options, headers })
+  let response: Response
+
+  try {
+    response = await fetch(endpoint, { ...options, headers })
+  } catch (error) {
+    reportServerError({
+      id: errorId,
+      title: '서버 API 연결 실패',
+      message: '서버가 응답하지 않아 임시 데이터로 화면을 표시하고 있습니다.',
+      detail: error instanceof Error ? error.message : String(error),
+      endpoint,
+      method,
+    })
+    throw error
+  }
+
   const body = await parseResponseBody(response)
 
   if (response.status === 401 && options.auth && retryOnUnauthorized && tokens?.refresh) {
@@ -154,9 +197,21 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   if (!response.ok) {
+    if (response.status >= 500) {
+      reportServerError({
+        id: errorId,
+        title: '서버 응답 오류',
+        message: '서버에서 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        detail: getErrorMessage(body, `API 요청에 실패했습니다. (${response.status})`),
+        endpoint,
+        method,
+        status: response.status,
+      })
+    }
     throw new ApiError(response.status, getErrorMessage(body, `API 요청에 실패했습니다. (${response.status})`), body)
   }
 
+  clearServerError(errorId)
   return body as T
 }
 
@@ -169,11 +224,30 @@ const unwrapList = (body: unknown): unknown[] => {
   return []
 }
 
-const getMediaUrl = (value: unknown) => {
-  if (typeof value === 'string') return value
-  if (!isRecord(value)) return ''
-  return asString(value.url || value.image || value.file || value.thumbnail || value.src)
+const unwrapDetail = (body: unknown) => (isRecord(body) && body.data ? body.data : body)
+
+export const normalizeMediaUrl = (value: unknown) => {
+  const rawUrl = typeof value === 'string' ? value : isRecord(value) ? asString(value.url || value.image || value.file || value.thumbnail || value.src) : ''
+  const url = rawUrl.trim()
+  if (!url) return ''
+  if (/^(data|blob):/.test(url)) return url
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.origin === BACKEND_ORIGIN && parsed.pathname.startsWith('/media/')) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+    return url
+  } catch {
+    // Relative Django media paths must stay root-relative so Vite/Vercel can proxy them.
+  }
+
+  if (url.startsWith('/media/')) return url
+  if (url.startsWith('media/')) return `/${url}`
+  return url
 }
+
+const getMediaUrl = normalizeMediaUrl
 
 const getAuthorName = (value: unknown) => {
   if (typeof value === 'string') return value
@@ -256,6 +330,34 @@ export const mapDjangoRecipe = (raw: unknown): Recipe => {
   }
 }
 
+const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
+  const record = isRecord(raw) ? raw : {}
+  const email = asString(record.email || record.username, '')
+  const name = asString(record.nickname || record.name || email.split('@')[0], '사용자')
+
+  return {
+    id: asString(record.id || record.pk || record.uuid, `user-${index}`),
+    name,
+    email,
+    avatar: getMediaUrl(record.avatar || record.profile_image_url || record.profile_image || record.image) || undefined,
+  }
+}
+
+const mapNotification = (raw: unknown, index = 0): NotificationItem => {
+  const record = isRecord(raw) ? raw : {}
+  const type = asString(record.type || record.kind, '알림')
+  const actor = asString(record.actor || record.sender || record.author || '')
+  const content = asString(record.message || record.content || record.body, '')
+
+  return {
+    id: asString(record.id || record.pk || `notification-${index}`),
+    title: asString(record.title, actor ? `${actor}님의 ${type}` : type),
+    message: content || '새로운 알림이 도착했어요.',
+    isRead: Boolean(record.is_read || record.read),
+    createdAt: asString(record.created_at || record.createdAt, new Date().toISOString()),
+  }
+}
+
 export const signupApi = (body: { email: string; password: string; nickname?: string }) =>
   apiRequest<SignupResponse>('/auth/signup/', {
     method: 'POST',
@@ -297,11 +399,29 @@ export const fetchMeApi = () =>
     auth: true,
   })
 
-export const fetchFeedRecipesApi = async (params: { sort?: string; search?: string; tag?: string } = {}) => {
+export const updateMeApi = (body: Record<string, unknown>) =>
+  apiRequest<Record<string, unknown>>('/users/me/', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    auth: true,
+  })
+
+export const fetchHomeSummaryApi = async (): Promise<HomeSummaryResponse> => {
+  const body = await apiRequest<Record<string, unknown>>('/home/summary/')
+
+  return {
+    recommended: body.recommended ? mapDjangoRecipe(body.recommended) : null,
+    popular: unwrapList(body.popular).map(mapDjangoRecipe),
+    recent: unwrapList(body.recent).map(mapDjangoRecipe),
+  }
+}
+
+export const fetchFeedRecipesApi = async (params: { sort?: 'latest' | 'popular' | string; search?: string; tag?: string; tags?: string[] } = {}) => {
   const query = new URLSearchParams()
   if (params.sort) query.set('sort', params.sort)
   if (params.search) query.set('search', params.search)
-  if (params.tag) query.set('tag', params.tag)
+  const firstTag = params.tag || params.tags?.find(Boolean)
+  if (firstTag) query.set('tag', firstTag)
   const body = await apiRequest<unknown>(`/feeds/${query.toString() ? `?${query}` : ''}`)
   return unwrapList(body).map(mapDjangoRecipe)
 }
@@ -313,7 +433,7 @@ export const fetchRecipesApi = async () => {
 
 export const fetchRecipeApi = async (id: string) => {
   const body = await apiRequest<unknown>(`/recipes/${id}/`, { auth: Boolean(getStoredTokens()) })
-  return mapDjangoRecipe(isRecord(body) && body.data ? body.data : body)
+  return mapDjangoRecipe(unwrapDetail(body))
 }
 
 export const createRecipeApi = async (payload: RecipeCreatePayload) => {
@@ -322,16 +442,16 @@ export const createRecipeApi = async (payload: RecipeCreatePayload) => {
     body: JSON.stringify(payload),
     auth: true,
   })
-  return mapDjangoRecipe(isRecord(body) && body.data ? body.data : body)
+  return mapDjangoRecipe(unwrapDetail(body))
 }
 
-export const updateRecipeApi = async (id: string, payload: Partial<RecipeCreatePayload>) => {
+export const updateRecipeApi = async (id: string, payload: RecipeUpdatePayload) => {
   const body = await apiRequest<unknown>(`/recipes/${id}/`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
     auth: true,
   })
-  return mapDjangoRecipe(isRecord(body) && body.data ? body.data : body)
+  return mapDjangoRecipe(unwrapDetail(body))
 }
 
 export const deleteRecipeApi = (id: string) =>
@@ -352,7 +472,7 @@ export const toggleSaveApi = (id: string) =>
     auth: true,
   })
 
-export const fetchCommentsApi = (recipeId: string) => apiRequest<unknown[]>(`/recipes/${recipeId}/comments/`)
+export const fetchCommentsApi = async (recipeId: string) => unwrapList(await apiRequest<unknown>(`/recipes/${recipeId}/comments/`))
 
 export const createCommentApi = (recipeId: string, content: string) =>
   apiRequest<Record<string, unknown>>(`/recipes/${recipeId}/comments/`, {
@@ -368,9 +488,85 @@ export const createReplyApi = (recipeId: string, commentId: string, content: str
     auth: true,
   })
 
+export const updateCommentApi = (recipeId: string, commentId: string, content: string) =>
+  apiRequest<Record<string, unknown>>(`/recipes/${recipeId}/comments/${commentId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ content }),
+    auth: true,
+  })
+
+export const deleteCommentApi = (recipeId: string, commentId: string) =>
+  apiRequest<null>(`/recipes/${recipeId}/comments/${commentId}/`, {
+    method: 'DELETE',
+    auth: true,
+  })
+
+export const fetchSavedRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/saved-recipes/', { auth: true })).map(mapDjangoRecipe)
+
+export const fetchLikedRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/liked-recipes/', { auth: true })).map(mapDjangoRecipe)
+
+export const fetchMyRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/recipes/', { auth: true })).map(mapDjangoRecipe)
+
+export const toggleSubscribeApi = (id: string) =>
+  apiRequest<Record<string, unknown>>(`/users/${id}/subscribe/`, {
+    method: 'POST',
+    auth: true,
+  })
+
+export const subscribeUserApi = toggleSubscribeApi
+
+export const unsubscribeUserApi = toggleSubscribeApi
+
+export const fetchSubscriptionsApi = async () => unwrapList(await apiRequest<unknown>('/users/me/subscriptions/', { auth: true })).map(mapUserProfile)
+
+export const fetchSubscribersApi = async () => unwrapList(await apiRequest<unknown>('/users/me/subscribers/', { auth: true })).map(mapUserProfile)
+
+export const fetchNotificationsApi = async () => unwrapList(await apiRequest<unknown>('/notifications/', { auth: true })).map(mapNotification)
+
+export const markNotificationReadApi = (id: string) =>
+  apiRequest<Record<string, unknown>>(`/notifications/${id}/read/`, {
+    method: 'PATCH',
+    auth: true,
+  })
+
+export const markAllNotificationsReadApi = () =>
+  apiRequest<{ message?: string }>('/notifications/read-all/', {
+    method: 'PATCH',
+    auth: true,
+  })
+
+export const searchIngredientsApi = async (search = '') => {
+  const query = new URLSearchParams()
+  if (search) query.set('search', search)
+  const body = await apiRequest<unknown>(`/recipes/ingredients/${query.toString() ? `?${query}` : ''}`)
+
+  return unwrapList(body)
+    .map((item) => (isRecord(item) ? asString(item.name || item.title) : asString(item)))
+    .filter(Boolean)
+}
+
+export const uploadMediaApi = (file: File, purpose: 'thumbnail' | 'steps' | 'ingredient' | string = 'thumbnail') => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('purpose', purpose)
+
+  return apiRequest<Record<string, unknown>>('/media/upload/', {
+    method: 'POST',
+    body: formData,
+    auth: true,
+  })
+}
+
 export const fetchTagsApi = async () => {
   const body = await apiRequest<unknown>('/feeds/tags/')
   return unwrapList(body)
     .map((tag) => (isRecord(tag) ? asString(tag.name) : asString(tag)))
     .filter(Boolean)
 }
+
+export const createTagApi = (name: string) =>
+  apiRequest<{ id: number; name: string }>('/feeds/tags/', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+    auth: true,
+  })

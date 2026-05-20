@@ -10,6 +10,10 @@
       "destination": "http://15.164.170.144:8000/api/:path*"
     },
     {
+      "source": "/media/:path*",
+      "destination": "http://15.164.170.144:8000/media/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

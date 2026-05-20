@@ -14,12 +14,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
+import { fetchSavedRecipesApi } from '../api'
 import { useAuth } from '../auth'
-import { recipes } from '../data'
+import type { Recipe } from '../data'
 
 const { isAuthenticated } = useAuth()
-const savedRecipes = computed(() => recipes.value.slice(0, 4))
+const savedRecipes = ref<Recipe[]>([])
+
+const loadSavedRecipes = async () => {
+  if (!isAuthenticated.value) {
+    savedRecipes.value = []
+    return
+  }
+
+  try {
+    savedRecipes.value = await fetchSavedRecipesApi()
+  } catch {
+    savedRecipes.value = []
+  }
+}
+
+watch(isAuthenticated, () => void loadSavedRecipes(), { immediate: true })
 </script>

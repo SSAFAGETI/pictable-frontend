@@ -12,6 +12,17 @@
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{{ value.length }}/20</span>
           </div>
         </label>
+        <div v-if="suggestions.length > 0" class="mt-3 flex flex-wrap gap-2">
+          <button
+            v-for="ingredient in suggestions"
+            :key="ingredient"
+            type="button"
+            class="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold hover:bg-muted"
+            @click="value = ingredient"
+          >
+            {{ ingredient }}
+          </button>
+        </div>
         <RouterLink to="/recommendations" class="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
           추천 레시피 찾기
         </RouterLink>
@@ -21,7 +32,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { searchIngredientsApi } from '../api'
 
 const value = ref('')
+const suggestions = ref<string[]>([])
+let timer: number | undefined
+
+watch(value, (nextValue) => {
+  if (timer) window.clearTimeout(timer)
+  const search = nextValue.trim()
+  if (!search) {
+    suggestions.value = []
+    return
+  }
+
+  timer = window.setTimeout(async () => {
+    try {
+      suggestions.value = (await searchIngredientsApi(search)).slice(0, 8)
+    } catch {
+      suggestions.value = []
+    }
+  }, 250)
+})
 </script>

@@ -72,7 +72,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChefHat, Clock, Heart, MessageCircle, Search, SlidersHorizontal, TrendingUp } from 'lucide-vue-next'
-import { fetchFeedRecipesApi } from '../api'
+import { fetchFeedRecipesApi, fetchMyRecipesApi } from '../api'
+import { useAuth } from '../auth'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
 import { difficultyLabels, recipes, type Difficulty } from '../data'
 import { getRecipeTagByName, getRecipeTagNamesByIds } from '../tags'
@@ -80,11 +81,19 @@ import { getRecipeTagByName, getRecipeTagNamesByIds } from '../tags'
 type SortOption = 'popular' | 'recent' | 'likes'
 
 const route = useRoute()
+const { isAuthenticated } = useAuth()
 const searchQuery = ref('')
 const initialTag = route.query.tag ? getRecipeTagByName(String(route.query.tag)) : undefined
 const selectedTagIds = ref<number[]>(initialTag ? [initialTag.id] : [])
-const sortBy = ref<SortOption>((route.query.sort as SortOption) || 'popular')
 const feedRequestId = ref(0)
+
+const normalizeSort = (value: unknown): SortOption => {
+  if (value === 'latest' || value === 'recent') return 'recent'
+  if (value === 'likes') return 'likes'
+  return 'popular'
+}
+
+const sortBy = ref<SortOption>(normalizeSort(route.query.sort))
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',
@@ -108,11 +117,14 @@ const loadFeedFromApi = async () => {
   const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
 
   try {
-    const apiRecipes = await fetchFeedRecipesApi({
-      sort: sortBy.value === 'recent' ? 'latest' : 'popular',
-      search: searchQuery.value.trim() || undefined,
-      tag: selectedTags[0],
-    })
+    const apiRecipes =
+      route.query.source === 'my' && isAuthenticated.value
+        ? await fetchMyRecipesApi()
+        : await fetchFeedRecipesApi({
+            sort: sortBy.value === 'recent' ? 'latest' : 'popular',
+            search: searchQuery.value.trim() || undefined,
+            tags: selectedTags,
+          })
 
     if (requestId === feedRequestId.value && apiRecipes.length > 0) {
       recipes.value = apiRecipes
@@ -135,6 +147,20 @@ watch(
   (tag) => {
     const nextTag = typeof tag === 'string' ? getRecipeTagByName(tag) : undefined
     selectedTagIds.value = nextTag ? [nextTag.id] : []
+  },
+)
+
+watch(
+  () => route.query.sort,
+  (sort) => {
+    sortBy.value = normalizeSort(sort)
+  },
+)
+
+watch(
+  () => route.query.source,
+  () => {
+    void loadFeedFromApi()
   },
 )
 

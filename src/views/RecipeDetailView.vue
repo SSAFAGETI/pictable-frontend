@@ -90,9 +90,10 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChefHat, Clock, Heart, MessageCircle, Users } from 'lucide-vue-next'
-import { createCommentApi, fetchCommentsApi, fetchRecipeApi, toggleLikeApi } from '../api'
+import { ApiError, createCommentApi, fetchCommentsApi, fetchRecipeApi, toggleLikeApi } from '../api'
 import { useAuth } from '../auth'
 import { difficultyLabels, recipes } from '../data'
+import { showToast } from '../toast'
 
 interface ViewComment {
   id: string
@@ -102,7 +103,7 @@ interface ViewComment {
 }
 
 const route = useRoute()
-const { user } = useAuth()
+const { user, isAuthenticated } = useAuth()
 const recipe = computed(() => recipes.value.find((item) => item.id === route.params.id) || recipes.value[0])
 const likes = ref(recipe.value.likes)
 const commentText = ref('')
@@ -162,6 +163,14 @@ const loadComments = async () => {
 
 const handleLike = async () => {
   const currentRecipe = recipe.value
+  if (!isAuthenticated.value) {
+    showToast({
+      type: 'info',
+      title: '로그인이 필요해요',
+      message: '좋아요는 로그인 후 사용할 수 있어요.',
+    })
+    return
+  }
 
   try {
     const result = await toggleLikeApi(currentRecipe.id)
@@ -174,16 +183,26 @@ const handleLike = async () => {
     }
     currentRecipe.likes = likes.value
     currentRecipe.isLiked = typeof result.liked === 'boolean' ? result.liked : true
-  } catch {
-    currentRecipe.isLiked = !currentRecipe.isLiked
-    likes.value = Math.max(0, likes.value + (currentRecipe.isLiked ? 1 : -1))
-    currentRecipe.likes = likes.value
+  } catch (error) {
+    showToast({
+      type: 'error',
+      title: '좋아요 처리 실패',
+      message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 좋아요를 반영할 수 없어요. 잠시 후 다시 시도해주세요.',
+    })
   }
 }
 
 const handleCommentSubmit = async () => {
   const content = commentText.value.trim()
   if (!content) return
+  if (!isAuthenticated.value) {
+    showToast({
+      type: 'info',
+      title: '로그인이 필요해요',
+      message: '댓글은 로그인 후 작성할 수 있어요.',
+    })
+    return
+  }
 
   const currentRecipe = recipe.value
   const localComment: ViewComment = {
@@ -196,12 +215,15 @@ const handleCommentSubmit = async () => {
     const created = await createCommentApi(currentRecipe.id, content)
     const normalized = normalizeComment(created, commentsList.value.length) || localComment
     commentsList.value = [normalized, ...commentsList.value]
-  } catch {
-    commentsList.value = [localComment, ...commentsList.value]
+    commentText.value = ''
+    currentRecipe.comments += 1
+  } catch (error) {
+    showToast({
+      type: 'error',
+      title: '댓글 등록 실패',
+      message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 댓글을 등록할 수 없어요. 잠시 후 다시 시도해주세요.',
+    })
   }
-
-  commentText.value = ''
-  currentRecipe.comments += 1
 }
 
 watch(

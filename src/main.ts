@@ -11,6 +11,7 @@ import AuthView from './views/AuthView.vue'
 import RecommendationsView from './views/RecommendationsView.vue'
 import IngredientsView from './views/IngredientsView.vue'
 import BackendApiView from './views/BackendApiView.vue'
+import ServerErrorView from './views/ServerErrorView.vue'
 import './styles.css'
 
 const router = createRouter({
@@ -27,6 +28,7 @@ const router = createRouter({
     { path: '/recommendations', component: RecommendationsView },
     { path: '/ingredients', component: IngredientsView },
     { path: '/backend-api', component: BackendApiView },
+    { path: '/server-error', component: ServerErrorView },
   ],
   scrollBehavior() {
     return { top: 0 }

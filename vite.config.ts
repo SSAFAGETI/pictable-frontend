@@ -11,6 +11,10 @@ export default defineConfig({
         target: 'http://15.164.170.144:8000',
         changeOrigin: true,
       },
+      '/media': {
+        target: 'http://15.164.170.144:8000',
+        changeOrigin: true,
+      },
     },
   },
 })

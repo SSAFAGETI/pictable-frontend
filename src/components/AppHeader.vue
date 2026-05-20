@@ -70,10 +70,13 @@
               <p class="text-base font-semibold">알림</p>
               <p class="mt-0.5 text-sm text-muted-foreground">읽지 않은 알림 {{ unreadCount }}개</p>
             </div>
-            <button type="button" class="rounded-md px-3 py-2 text-sm font-bold text-muted-foreground hover:bg-muted" @click="open = false">닫기</button>
+            <div class="flex items-center gap-1">
+              <button v-if="unreadCount > 0" type="button" class="rounded-md px-3 py-2 text-sm font-bold text-primary hover:bg-muted" @click="markAllAsRead">모두 읽음</button>
+              <button type="button" class="rounded-md px-3 py-2 text-sm font-bold text-muted-foreground hover:bg-muted" @click="open = false">닫기</button>
+            </div>
           </div>
           <div class="max-h-[70vh] overflow-y-auto">
-            <RouterLink v-for="notification in notifications" :key="notification.id" to="/mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60">
+            <RouterLink v-for="notification in notifications" :key="notification.id" to="/mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60" @click="markAsRead(notification.id)">
               <div class="flex items-start gap-3">
                 <span class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40" />
                 <div class="min-w-0 flex-1">
@@ -91,15 +94,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Bell, ChefHat, ChevronLeft } from 'lucide-vue-next'
-import { notifications } from '../data'
+import { useAuth } from '../auth'
+import { useNotifications } from '../notifications'
 
 const route = useRoute()
 const router = useRouter()
 const open = ref(false)
-const unreadCount = computed(() => notifications.length)
+const { isAuthenticated } = useAuth()
+const { notifications, unreadCount, loadNotifications, markAsRead, markAllAsRead } = useNotifications()
+
+watch(isAuthenticated, (authenticated) => void loadNotifications(authenticated), { immediate: true })
 
 const titleMap: Record<string, string> = {
   '/feed': route.query.source === 'my' ? '최근 올라온 마이 레시피' : '피드',

@@ -23,13 +23,13 @@
 
               <div class="mt-4 overflow-hidden rounded-md bg-muted lg:grid lg:grid-cols-5 lg:divide-x lg:divide-border">
                 <div class="grid grid-cols-3 divide-x divide-border p-3 lg:contents lg:divide-x-0 lg:p-0">
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">3</p><p class="text-xs text-muted-foreground">저장</p></div>
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">3</p><p class="text-xs text-muted-foreground">좋아요</p></div>
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">3</p><p class="text-xs text-muted-foreground">내 레시피</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ savedRecipes.length }}</p><p class="text-xs text-muted-foreground">저장</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ likedRecipes.length }}</p><p class="text-xs text-muted-foreground">좋아요</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ myRecipes.length }}</p><p class="text-xs text-muted-foreground">내 레시피</p></div>
                 </div>
                 <div class="grid grid-cols-2 divide-x divide-border border-t border-border p-3 lg:contents lg:divide-x-0 lg:border-t-0 lg:p-0">
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">2</p><p class="text-xs text-muted-foreground">구독</p></div>
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">2</p><p class="text-xs text-muted-foreground">구독자</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followingProfiles.length }}</p><p class="text-xs text-muted-foreground">구독</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followerProfiles.length }}</p><p class="text-xs text-muted-foreground">구독자</p></div>
                 </div>
               </div>
             </div>
@@ -96,17 +96,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, ref } from 'vue'
+import { computed, defineComponent, h, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, UserCheck } from 'lucide-vue-next'
+import { fetchLikedRecipesApi, fetchMyRecipesApi, fetchSavedRecipesApi, fetchSubscribersApi, fetchSubscriptionsApi, type UserProfile } from '../api'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import { useAuth } from '../auth'
-import { recipes } from '../data'
+import type { Recipe } from '../data'
 
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
 const activeTab = ref<'saved' | 'liked' | 'my'>('saved')
+const savedRecipes = ref<Recipe[]>([])
+const likedRecipes = ref<Recipe[]>([])
+const myRecipes = ref<Recipe[]>([])
+const followingProfiles = ref<UserProfile[]>([])
+const followerProfiles = ref<UserProfile[]>([])
 const tabs = [
   { value: 'saved', label: '저장', icon: Bookmark },
   { value: 'liked', label: '좋아요', icon: Heart },
@@ -123,9 +129,9 @@ const menuItems = [
 ]
 
 const visibleRecipes = computed(() => {
-  if (activeTab.value === 'liked') return recipes.value.slice(2, 5)
-  if (activeTab.value === 'my') return recipes.value.slice(3, 6)
-  return recipes.value.slice(0, 3)
+  if (activeTab.value === 'liked') return likedRecipes.value
+  if (activeTab.value === 'my') return myRecipes.value
+  return savedRecipes.value
 })
 
 const displayUser = computed(() => ({
@@ -139,45 +145,44 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
-const followingProfiles = [
-  {
-    id: 'following-reader-1',
-    name: '든든한 하루',
-    email: 'reader@example.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-  },
-  {
-    id: 'following-cook-2',
-    name: '초간단 식탁',
-    email: 'easycook@example.com',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-  },
-]
+const loadMyPageData = async () => {
+  if (!isAuthenticated.value) {
+    savedRecipes.value = []
+    likedRecipes.value = []
+    myRecipes.value = []
+    followingProfiles.value = []
+    followerProfiles.value = []
+    return
+  }
 
-const followerProfiles = [
-  {
-    id: 'follower-reader-1',
-    name: '든든한 하루',
-    email: 'reader@example.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-  },
-  {
-    id: 'follower-kitchen-2',
-    name: '냉장고 탐험가',
-    email: 'fridge@example.com',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop',
-  },
-]
+  const [savedResult, likedResult, myResult, followingResult, followerResult] = await Promise.allSettled([
+    fetchSavedRecipesApi(),
+    fetchLikedRecipesApi(),
+    fetchMyRecipesApi(),
+    fetchSubscriptionsApi(),
+    fetchSubscribersApi(),
+  ])
+
+  savedRecipes.value = savedResult.status === 'fulfilled' ? savedResult.value : []
+  likedRecipes.value = likedResult.status === 'fulfilled' ? likedResult.value : []
+  myRecipes.value = myResult.status === 'fulfilled' ? myResult.value : []
+  followingProfiles.value = followingResult.status === 'fulfilled' ? followingResult.value : []
+  followerProfiles.value = followerResult.status === 'fulfilled' ? followerResult.value : []
+}
+
+watch(isAuthenticated, () => void loadMyPageData(), { immediate: true })
 
 const ProfileSection = defineComponent({
   props: {
     title: { type: String, required: true },
     profiles: {
-      type: Array as () => Array<{ id: string; name: string; email: string; avatar: string }>,
+      type: Array as () => Array<{ id: string; name: string; email: string; avatar?: string }>,
       required: true,
     },
   },
   setup(props) {
+    const fallbackAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
+
     return () =>
       h('div', { class: 'rounded-lg border border-border bg-card text-card-foreground shadow-sm' }, [
         h('div', { class: 'p-4' }, [
@@ -190,7 +195,7 @@ const ProfileSection = defineComponent({
             { class: 'space-y-3' },
             props.profiles.map((profile) =>
               h('div', { key: profile.id, class: 'flex items-center gap-3 rounded-md border border-border p-3' }, [
-                h('img', { class: 'h-10 w-10 rounded-full object-cover', src: profile.avatar, alt: '' }),
+                h('img', { class: 'h-10 w-10 rounded-full object-cover', src: profile.avatar || fallbackAvatar, alt: '' }),
                 h('div', { class: 'min-w-0 flex-1' }, [
                   h('p', { class: 'truncate font-semibold' }, profile.name),
                   h('p', { class: 'truncate text-sm text-muted-foreground' }, profile.email),

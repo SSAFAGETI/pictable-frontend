@@ -6,6 +6,7 @@ import {
   googleAuthApi,
   loginApi,
   logoutApi,
+  normalizeMediaUrl,
   setStoredTokens,
   signupApi,
 } from './api'
@@ -44,7 +45,7 @@ const userFromApi = (raw: Record<string, unknown>, provider: User['provider'], f
     id: String(raw.id || raw.pk || `${provider}-${email || Date.now()}`),
     name,
     email,
-    avatar: typeof raw.avatar === 'string' ? raw.avatar : typeof raw.profile_image === 'string' ? raw.profile_image : undefined,
+    avatar: normalizeMediaUrl(raw.avatar || raw.profile_image_url || raw.profile_image) || undefined,
     provider,
     createdAt: String(raw.created_at || new Date().toISOString()),
   }
@@ -58,16 +59,6 @@ const addWelcomeNotification = (name: string, provider: 'email' | 'google') => {
       provider === 'google'
         ? `${name}님, 구글 계정으로 시작하셨어요. 오늘 만들 레시피를 찾아보세요.`
         : `${name}님, 회원가입이 완료되었습니다. 나만의 레시피를 등록해보세요.`,
-  })
-}
-
-const fallbackLogin = (email: string) => {
-  saveUser({
-    id: `local-${Date.now()}`,
-    name: email.split('@')[0] || '찰칵밥상 유저',
-    email,
-    provider: 'email',
-    createdAt: new Date().toISOString(),
   })
 }
 
@@ -103,84 +94,47 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     if (!email || !password) throw new Error('이메일과 비밀번호를 입력해주세요.')
 
-    try {
-      const response = await loginApi({ email, password })
-      setStoredTokens({ access: response.access, refresh: response.refresh })
-      saveUser(
-        userFromApi(
-          {
-            email: response.email || email,
-            nickname: response.nickname || response.name,
-          },
-          'email',
-          email,
-        ),
+    const response = await loginApi({ email, password })
+    setStoredTokens({ access: response.access, refresh: response.refresh })
+    saveUser(
+      userFromApi(
+        {
+          email: response.email || email,
+          nickname: response.nickname || response.name,
+        },
+        'email',
+        email,
       )
-    } catch (error) {
-      if (error instanceof TypeError) {
-        fallbackLogin(email)
-        return
-      }
-      throw error
-    }
+    )
   }
 
   const signup = async (name: string, email: string, password: string) => {
     if (!name || !email || !password) throw new Error('모든 필드를 입력해주세요.')
     if (password.length < 8) throw new Error('비밀번호는 8자 이상이어야 합니다.')
 
-    try {
-      const response = await signupApi({ email, password, nickname: name })
-      const nextUser = userFromApi({ email: response.email || email, nickname: response.nickname || name }, 'email', email)
-      addWelcomeNotification(nextUser.name, 'email')
-      await login(email, password)
-    } catch (error) {
-      if (error instanceof TypeError) {
-        const nextUser: User = {
-          id: `local-${Date.now()}`,
-          name,
-          email,
-          provider: 'email',
-          createdAt: new Date().toISOString(),
-        }
-        saveUser(nextUser)
-        addWelcomeNotification(nextUser.name, 'email')
-        return
-      }
-      throw error
-    }
+    const response = await signupApi({ email, password, nickname: name })
+    const nextUser = userFromApi({ email: response.email || email, nickname: response.nickname || name }, 'email', email)
+    addWelcomeNotification(nextUser.name, 'email')
+    await login(email, password)
   }
 
   const loginWithGoogle = async (code?: string) => {
-    if (code) {
-      try {
-        const response = await googleAuthApi(code)
-        setStoredTokens({ access: response.access, refresh: response.refresh })
-        const nextUser = userFromApi(
-          {
-            email: response.email,
-            nickname: response.nickname || response.name,
-          },
-          'google',
-        )
-        saveUser(nextUser)
-        if (response.created) addWelcomeNotification(nextUser.name, 'google')
-        return
-      } catch (error) {
-        if (!(error instanceof TypeError)) throw error
-      }
+    if (!code) {
+      throw new Error('구글 로그인 연결이 아직 완료되지 않았어요.')
     }
 
-    const nextUser: User = {
-      id: `google-${Date.now()}`,
-      name: '구글 사용자',
-      email: 'user@gmail.com',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
-      provider: 'google',
-      createdAt: new Date().toISOString(),
-    }
+    const response = await googleAuthApi(code)
+    setStoredTokens({ access: response.access, refresh: response.refresh })
+    const me = await fetchMeApi().catch(() => ({
+      email: response.email,
+      nickname: response.nickname || response.name,
+    }))
+    const nextUser = userFromApi(
+      me,
+      'google',
+    )
     saveUser(nextUser)
-    addWelcomeNotification(nextUser.name, 'google')
+    if (response.created) addWelcomeNotification(nextUser.name, 'google')
   }
 
   const logout = async () => {

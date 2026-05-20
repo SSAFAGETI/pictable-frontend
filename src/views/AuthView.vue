@@ -134,7 +134,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChefHat, Eye, EyeOff, Lock, Mail, User } from 'lucide-vue-next'
+import { ApiError } from '../api'
 import { useAuth } from '../auth'
+import { showToast } from '../toast'
 
 const props = defineProps<{ mode: 'login' | 'signup' }>()
 const route = useRoute()
@@ -150,6 +152,13 @@ const passwordConfirm = ref('')
 const agreed = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+
+const getSubmitErrorMessage = (error: unknown) => {
+  if (error instanceof ApiError && error.status < 500) return error.message
+  return isSignup.value
+    ? '지금은 회원가입을 완료할 수 없어요. 잠시 후 다시 시도해주세요.'
+    : '지금은 로그인을 완료할 수 없어요. 잠시 후 다시 시도해주세요.'
+}
 
 const handleSubmit = async () => {
   errorMessage.value = ''
@@ -168,7 +177,13 @@ const handleSubmit = async () => {
     else await login(email.value.trim(), password.value)
     router.push('/')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '인증 처리 중 문제가 발생했습니다.'
+    const message = getSubmitErrorMessage(error)
+    errorMessage.value = message
+    showToast({
+      type: 'error',
+      title: isSignup.value ? '회원가입 연결 실패' : '로그인 연결 실패',
+      message,
+    })
   } finally {
     isSubmitting.value = false
   }
@@ -181,7 +196,13 @@ const handleGoogle = async () => {
     await loginWithGoogle(typeof route.query.code === 'string' ? route.query.code : undefined)
     router.push('/')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '구글 로그인 처리 중 문제가 발생했습니다.'
+    const message = '지금은 구글 로그인을 완료할 수 없어요. 잠시 후 다시 시도하거나 이메일 로그인을 이용해주세요.'
+    errorMessage.value = message
+    showToast({
+      type: 'error',
+      title: '구글 로그인 연결 실패',
+      message,
+    })
   } finally {
     isSubmitting.value = false
   }

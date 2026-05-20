@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { fetchFeedRecipesApi, fetchRecipesApi } from './api'
+import { fetchFeedRecipesApi, fetchHomeSummaryApi, fetchRecipesApi } from './api'
 import { recipeTagNames } from './tags'
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
@@ -303,7 +303,17 @@ export async function loadDjangoRecipes() {
   recipesError.value = ''
 
   try {
-    let apiRecipes = await fetchFeedRecipesApi({ sort: 'popular' })
+    const summary = await fetchHomeSummaryApi()
+    const seenIds = new Set<string>()
+    let apiRecipes = [summary.recommended, ...summary.popular, ...summary.recent]
+      .filter((recipe): recipe is Recipe => Boolean(recipe))
+      .filter((recipe) => {
+        if (seenIds.has(recipe.id)) return false
+        seenIds.add(recipe.id)
+        return true
+      })
+
+    if (apiRecipes.length === 0) apiRecipes = await fetchFeedRecipesApi({ sort: 'popular' })
     if (apiRecipes.length === 0) apiRecipes = await fetchRecipesApi()
     if (apiRecipes.length > 0) recipes.value = apiRecipes
   } catch (error) {

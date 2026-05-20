@@ -117,10 +117,11 @@ import { useRouter } from 'vue-router'
 import { Camera, Clock, Image as ImageIcon, Plus, Trash2, Users, X } from 'lucide-vue-next'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
-import { createRecipeApi, type RecipeCreatePayload } from '../api'
+import { ApiError, createRecipeApi, type RecipeCreatePayload } from '../api'
 import { useAuth } from '../auth'
 import { recipes, type Ingredient, type Recipe } from '../data'
 import { getRecipeTagNamesByIds } from '../tags'
+import { showToast } from '../toast'
 
 interface EditableIngredient {
   id: string
@@ -236,8 +237,18 @@ const submitRecipe = async () => {
       stepImages: createdRecipe.stepImages.length ? createdRecipe.stepImages : localRecipe.stepImages,
       author: createdRecipe.author || localRecipe.author,
     })
-  } catch {
-    recipes.value.unshift(localRecipe)
+    showToast({
+      type: 'success',
+      title: '레시피가 등록되었어요',
+      message: '피드와 마이페이지에서 방금 등록한 레시피를 확인할 수 있어요.',
+    })
+  } catch (error) {
+    showToast({
+      type: 'error',
+      title: '레시피 등록 실패',
+      message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 레시피를 등록할 수 없어요. 잠시 후 다시 시도해주세요.',
+    })
+    return
   }
 
   router.push('/feed?source=my&sort=recent')

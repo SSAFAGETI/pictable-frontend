@@ -68,6 +68,15 @@ export const initializeAuth = async () => {
     return
   }
 
+  const tokens = getStoredTokens()
+
+  if (!tokens?.access) {
+    clearStoredTokens()
+    removeUser()
+    isLoading.value = false
+    return
+  }
+
   const storedUser = window.localStorage.getItem(STORAGE_KEY)
   if (storedUser) {
     try {
@@ -77,14 +86,13 @@ export const initializeAuth = async () => {
     }
   }
 
-  if (getStoredTokens()) {
-    try {
-      const me = await fetchMeApi()
-      const nextUser = userFromApi(me, user.value?.provider || 'email', user.value?.email)
-      saveUser(nextUser)
-    } catch {
-      clearStoredTokens()
-    }
+  try {
+    const me = await fetchMeApi()
+    const nextUser = userFromApi(me, user.value?.provider || 'email', user.value?.email)
+    saveUser(nextUser)
+  } catch {
+    clearStoredTokens()
+    removeUser()
   }
 
   isLoading.value = false
@@ -118,12 +126,12 @@ export const useAuth = () => {
     await login(email, password)
   }
 
-  const loginWithGoogle = async (code?: string) => {
+  const loginWithGoogle = async (code?: string, redirectUri?: string) => {
     if (!code) {
       throw new Error('구글 로그인 연결이 아직 완료되지 않았어요.')
     }
 
-    const response = await googleAuthApi(code)
+    const response = await googleAuthApi(code, redirectUri)
     setStoredTokens({ access: response.access, refresh: response.refresh })
     const me = await fetchMeApi().catch(() => ({
       email: response.email,
@@ -153,10 +161,11 @@ export const useAuth = () => {
   return {
     user,
     isLoading,
-    isAuthenticated: computed(() => Boolean(user.value)),
+    isAuthenticated: computed(() => Boolean(user.value && getStoredTokens()?.access)),
     login,
     signup,
     logout,
     loginWithGoogle,
   }
 }
+

@@ -152,6 +152,59 @@ const passwordConfirm = ref('')
 const agreed = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+const GOOGLE_OAUTH_STATE_KEY = 'chalkkak_google_oauth_state'
+const GOOGLE_CLIENT_ID = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '')
+const GOOGLE_REDIRECT_URI = String(import.meta.env.VITE_GOOGLE_REDIRECT_URI || '')
+
+const getGoogleRedirectUri = () => {
+  if (GOOGLE_REDIRECT_URI) return GOOGLE_REDIRECT_URI
+  if (typeof window === 'undefined') return ''
+  return `${window.location.origin}/oauth/callback`
+}
+
+const createGoogleOAuthState = () => {
+  const state = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.setItem(
+      GOOGLE_OAUTH_STATE_KEY,
+      JSON.stringify({ state, mode: props.mode, createdAt: Date.now() }),
+    )
+  }
+  return state
+}
+
+const validateGoogleOAuthState = () => {
+  if (typeof window === 'undefined') return
+  const returnedState = typeof route.query.state === 'string' ? route.query.state : ''
+  if (!returnedState) return
+
+  const storedRaw = window.sessionStorage.getItem(GOOGLE_OAUTH_STATE_KEY)
+  window.sessionStorage.removeItem(GOOGLE_OAUTH_STATE_KEY)
+  if (!storedRaw) throw new Error('Google 로그인 요청 정보를 찾을 수 없습니다.')
+
+  const stored = JSON.parse(storedRaw) as { state?: string }
+  if (stored.state !== returnedState) throw new Error('Google 로그인 요청이 일치하지 않습니다.')
+}
+
+const startGoogleOAuth = () => {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error('Google 로그인 설정이 아직 연결되지 않았습니다. 관리자에게 문의해주세요.')
+  }
+
+  const redirectUri = getGoogleRedirectUri()
+  if (!redirectUri) throw new Error('Google 로그인 redirect URI를 확인할 수 없습니다.')
+
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state: createGoogleOAuthState(),
+    prompt: 'select_account',
+  })
+
+  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
+}
 
 const getSubmitErrorMessage = (error: unknown) => {
   if (error instanceof ApiError && error.status < 500) return error.message
@@ -191,16 +244,27 @@ const handleSubmit = async () => {
 
 const handleGoogle = async () => {
   errorMessage.value = ''
+  const code = typeof route.query.code === 'string' ? route.query.code : ''
+
   try {
     isSubmitting.value = true
-    await loginWithGoogle(typeof route.query.code === 'string' ? route.query.code : undefined)
+
+    if (!code) {
+      startGoogleOAuth()
+      return
+    }
+
+    validateGoogleOAuthState()
+    await loginWithGoogle(code, getGoogleRedirectUri())
     router.push('/')
   } catch (error) {
-    const message = '지금은 구글 로그인을 완료할 수 없어요. 잠시 후 다시 시도하거나 이메일 로그인을 이용해주세요.'
+    const message = error instanceof Error && error.message
+      ? error.message
+      : '지금은 Google 로그인을 완료할 수 없습니다. 잠시 후 다시 시도하거나 이메일 로그인을 이용해주세요.'
     errorMessage.value = message
     showToast({
       type: 'error',
-      title: '구글 로그인 연결 실패',
+      title: 'Google 로그인 연결 실패',
       message,
     })
   } finally {

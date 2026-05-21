@@ -6,7 +6,7 @@ const DEFAULT_API_BASE_URL = '/api'
 export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 const BACKEND_ORIGIN = 'http://15.164.170.144:8000'
 const TOKEN_STORAGE_KEY = 'chalkkak_tokens'
-const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
+export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
 
 export interface AuthTokens {
   access: string
@@ -135,6 +135,49 @@ const apiUrl = (path: string) => {
   return `${API_BASE_URL}/${path.replace(/^\/+/, '')}`
 }
 
+const mediaUrlCache = new Map<string, string>()
+const mediaUrlRequests = new Map<string, Promise<string>>()
+
+const getMediaId = (value: unknown): string => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return String(value)
+  if (typeof value === 'string' && /^\d+$/.test(value.trim())) return value.trim()
+  if (isRecord(value)) return getMediaId(value.id || value.pk || value.media_id)
+  return ''
+}
+
+const cachedMediaUrlFromId = (value: unknown) => {
+  const id = getMediaId(value)
+  return id ? mediaUrlCache.get(id) || '' : ''
+}
+
+const resolveMediaUrl = async (value: unknown): Promise<string> => {
+  const directUrl = normalizeMediaUrl(value)
+  if (directUrl) return directUrl
+
+  const id = getMediaId(value)
+  if (!id) return ''
+
+  const cached = mediaUrlCache.get(id)
+  if (cached) return cached
+
+  const pending = mediaUrlRequests.get(id)
+  if (pending) return pending
+
+  const request = apiRequest<Record<string, unknown>>(`/media/${id}/`)
+    .then((media) => {
+      const url = normalizeMediaUrl(media.url || media.file || media.image || media.src)
+      if (url) mediaUrlCache.set(id, url)
+      return url
+    })
+    .catch(() => '')
+    .finally(() => {
+      mediaUrlRequests.delete(id)
+    })
+
+  mediaUrlRequests.set(id, request)
+  return request
+}
+
 const getErrorMessage = (body: unknown, fallback: string) => {
   if (typeof body === 'string') return body
   if (!isRecord(body)) return fallback
@@ -159,6 +202,20 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const method = String(options.method || 'GET').toUpperCase()
   const endpoint = apiUrl(path)
   const errorId = getServerErrorId({ method, endpoint, title: path })
+
+  if (options.auth && !tokens?.access) {
+    if (tokens?.refresh && retryOnUnauthorized) {
+      try {
+        const refreshed = await refreshApi(tokens.refresh)
+        setStoredTokens(refreshed)
+        return apiRequest<T>(path, options, false)
+      } catch {
+        clearStoredTokens()
+      }
+    }
+
+    throw new ApiError(401, '로그인이 필요합니다.', null)
+  }
 
   if (!(options.body instanceof FormData) && options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
@@ -227,9 +284,12 @@ const unwrapList = (body: unknown): unknown[] => {
 const unwrapDetail = (body: unknown) => (isRecord(body) && body.data ? body.data : body)
 
 export const normalizeMediaUrl = (value: unknown) => {
-  const rawUrl = typeof value === 'string' ? value : isRecord(value) ? asString(value.url || value.image || value.file || value.thumbnail || value.src) : ''
+  const cachedMediaUrl = cachedMediaUrlFromId(value)
+  if (cachedMediaUrl) return cachedMediaUrl
+
+  const rawUrl = typeof value === 'string' ? value : isRecord(value) ? asString(value.url || value.file || value.thumbnail || value.src || value.image_url) : ''
   const url = rawUrl.trim()
-  if (!url) return ''
+  if (!url || getMediaId(url)) return ''
   if (/^(data|blob):/.test(url)) return url
 
   try {
@@ -248,6 +308,20 @@ export const normalizeMediaUrl = (value: unknown) => {
 }
 
 const getMediaUrl = normalizeMediaUrl
+
+const getRecipeImageSource = (record: Record<string, unknown>) =>
+  record.thumbnail_media || record.thumbnail || record.image || record.main_image
+
+const getStepImageSource = (step: unknown) => (isRecord(step) ? step.image || step.image_url || step.media : '')
+
+const getSortedStepRecords = (value: unknown) =>
+  asArray(value)
+    .slice()
+    .sort((a, b) => {
+      const orderA = isRecord(a) ? asNumber(a.order, 0) : 0
+      const orderB = isRecord(b) ? asNumber(b.order, 0) : 0
+      return orderA - orderB
+    })
 
 const getAuthorName = (value: unknown) => {
   if (typeof value === 'string') return value
@@ -277,19 +351,13 @@ const getIngredients = (value: unknown, title: string): Ingredient[] => {
 }
 
 const getSteps = (value: unknown) => {
-  const steps = asArray(value)
-    .slice()
-    .sort((a, b) => {
-      const orderA = isRecord(a) ? asNumber(a.order, 0) : 0
-      const orderB = isRecord(b) ? asNumber(b.order, 0) : 0
-      return orderA - orderB
-    })
+  const steps = getSortedStepRecords(value)
 
   const descriptions = steps
     .map((step) => (isRecord(step) ? asString(step.description || step.text || step.content) : asString(step)))
     .filter(Boolean)
 
-  const images = steps.map((step) => (isRecord(step) ? getMediaUrl(step.image || step.image_url || step.media) : '')).filter(Boolean)
+  const images = steps.map((step) => getMediaUrl(getStepImageSource(step))).filter(Boolean)
 
   return {
     descriptions: descriptions.length ? descriptions : ['맛있게 조리해주세요.'],
@@ -306,7 +374,7 @@ export const mapDjangoRecipe = (raw: unknown): Recipe => {
   const record = isRecord(raw) ? raw : {}
   const title = asString(record.title || record.name, '이름 없는 레시피')
   const steps = getSteps(record.steps)
-  const image = getMediaUrl(record.thumbnail_media || record.thumbnail || record.image || record.main_image) || steps.images[0] || fallbackImage
+  const image = getMediaUrl(getRecipeImageSource(record)) || steps.images[0] || fallbackImage
 
   return {
     id: asString(record.id || record.pk || record.uuid, `recipe-${Date.now()}`),
@@ -330,6 +398,24 @@ export const mapDjangoRecipe = (raw: unknown): Recipe => {
   }
 }
 
+const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> => {
+  const record = isRecord(raw) ? raw : {}
+  const recipe = mapDjangoRecipe(raw)
+  const stepRecords = getSortedStepRecords(record.steps)
+  const [mainImage, stepImages] = await Promise.all([
+    resolveMediaUrl(getRecipeImageSource(record)),
+    Promise.all(stepRecords.map((step) => resolveMediaUrl(getStepImageSource(step)))),
+  ])
+  const resolvedStepImages = stepImages.filter(Boolean)
+
+  return {
+    ...recipe,
+    image: mainImage || resolvedStepImages[0] || recipe.image,
+    stepImages: resolvedStepImages.length ? resolvedStepImages : recipe.stepImages,
+  }
+}
+
+const mapDjangoRecipeListWithMedia = (items: unknown[]) => Promise.all(items.map(mapDjangoRecipeWithMedia))
 const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
   const record = isRecord(raw) ? raw : {}
   const email = asString(record.email || record.username, '')
@@ -387,10 +473,10 @@ export const refreshApi = (refresh: string) =>
     false,
   )
 
-export const googleAuthApi = (code: string) =>
+export const googleAuthApi = (code: string, redirectUri?: string) =>
   apiRequest<GoogleAuthResponse>('/auth/google/', {
     method: 'POST',
-    body: JSON.stringify({ code }),
+    body: JSON.stringify(redirectUri ? { code, redirect_uri: redirectUri } : { code }),
   })
 
 export const fetchMeApi = () =>
@@ -408,12 +494,13 @@ export const updateMeApi = (body: Record<string, unknown>) =>
 
 export const fetchHomeSummaryApi = async (): Promise<HomeSummaryResponse> => {
   const body = await apiRequest<Record<string, unknown>>('/home/summary/')
+  const [recommended, popular, recent] = await Promise.all([
+    body.recommended ? mapDjangoRecipeWithMedia(body.recommended) : Promise.resolve(null),
+    mapDjangoRecipeListWithMedia(unwrapList(body.popular)),
+    mapDjangoRecipeListWithMedia(unwrapList(body.recent)),
+  ])
 
-  return {
-    recommended: body.recommended ? mapDjangoRecipe(body.recommended) : null,
-    popular: unwrapList(body.popular).map(mapDjangoRecipe),
-    recent: unwrapList(body.recent).map(mapDjangoRecipe),
-  }
+  return { recommended, popular, recent }
 }
 
 export const fetchFeedRecipesApi = async (params: { sort?: 'latest' | 'popular' | string; search?: string; tag?: string; tags?: string[] } = {}) => {
@@ -423,17 +510,17 @@ export const fetchFeedRecipesApi = async (params: { sort?: 'latest' | 'popular' 
   const firstTag = params.tag || params.tags?.find(Boolean)
   if (firstTag) query.set('tag', firstTag)
   const body = await apiRequest<unknown>(`/feeds/${query.toString() ? `?${query}` : ''}`)
-  return unwrapList(body).map(mapDjangoRecipe)
+  return mapDjangoRecipeListWithMedia(unwrapList(body))
 }
 
 export const fetchRecipesApi = async () => {
   const body = await apiRequest<unknown>('/recipes/')
-  return unwrapList(body).map(mapDjangoRecipe)
+  return mapDjangoRecipeListWithMedia(unwrapList(body))
 }
 
 export const fetchRecipeApi = async (id: string) => {
   const body = await apiRequest<unknown>(`/recipes/${id}/`, { auth: Boolean(getStoredTokens()) })
-  return mapDjangoRecipe(unwrapDetail(body))
+  return mapDjangoRecipeWithMedia(unwrapDetail(body))
 }
 
 export const createRecipeApi = async (payload: RecipeCreatePayload) => {
@@ -442,7 +529,7 @@ export const createRecipeApi = async (payload: RecipeCreatePayload) => {
     body: JSON.stringify(payload),
     auth: true,
   })
-  return mapDjangoRecipe(unwrapDetail(body))
+  return mapDjangoRecipeWithMedia(unwrapDetail(body))
 }
 
 export const updateRecipeApi = async (id: string, payload: RecipeUpdatePayload) => {
@@ -451,7 +538,7 @@ export const updateRecipeApi = async (id: string, payload: RecipeUpdatePayload) 
     body: JSON.stringify(payload),
     auth: true,
   })
-  return mapDjangoRecipe(unwrapDetail(body))
+  return mapDjangoRecipeWithMedia(unwrapDetail(body))
 }
 
 export const deleteRecipeApi = (id: string) =>
@@ -501,11 +588,11 @@ export const deleteCommentApi = (recipeId: string, commentId: string) =>
     auth: true,
   })
 
-export const fetchSavedRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/saved-recipes/', { auth: true })).map(mapDjangoRecipe)
+export const fetchSavedRecipesApi = async () => mapDjangoRecipeListWithMedia(unwrapList(await apiRequest<unknown>('/users/me/saved-recipes/', { auth: true })))
 
-export const fetchLikedRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/liked-recipes/', { auth: true })).map(mapDjangoRecipe)
+export const fetchLikedRecipesApi = async () => mapDjangoRecipeListWithMedia(unwrapList(await apiRequest<unknown>('/users/me/liked-recipes/', { auth: true })))
 
-export const fetchMyRecipesApi = async () => unwrapList(await apiRequest<unknown>('/users/me/recipes/', { auth: true })).map(mapDjangoRecipe)
+export const fetchMyRecipesApi = async () => mapDjangoRecipeListWithMedia(unwrapList(await apiRequest<unknown>('/users/me/recipes/', { auth: true })))
 
 export const toggleSubscribeApi = (id: string) =>
   apiRequest<Record<string, unknown>>(`/users/${id}/subscribe/`, {

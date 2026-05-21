@@ -156,10 +156,29 @@ const GOOGLE_OAUTH_STATE_KEY = 'chalkkak_google_oauth_state'
 const GOOGLE_CLIENT_ID = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '')
 const GOOGLE_REDIRECT_URI = String(import.meta.env.VITE_GOOGLE_REDIRECT_URI || '')
 
-const getGoogleRedirectUri = () => {
-  if (GOOGLE_REDIRECT_URI) return GOOGLE_REDIRECT_URI
+const GOOGLE_CALLBACK_PATH = '/oauth/callback'
+
+const getCurrentOriginCallbackUri = () => {
   if (typeof window === 'undefined') return ''
-  return `${window.location.origin}/oauth/callback`
+  return `${window.location.origin}${GOOGLE_CALLBACK_PATH}`
+}
+
+const trimTrailingSlash = (uri: string) => uri.replace(/\/$/, '')
+
+const getGoogleRedirectUri = () => {
+  const fallbackUri = getCurrentOriginCallbackUri()
+  const configuredUri = GOOGLE_REDIRECT_URI.trim()
+
+  if (!configuredUri) return fallbackUri
+
+  try {
+    const configuredUrl = new URL(configuredUri)
+    if (configuredUrl.pathname === '/login') return fallbackUri || `${configuredUrl.origin}${GOOGLE_CALLBACK_PATH}`
+    if (configuredUrl.pathname !== GOOGLE_CALLBACK_PATH && fallbackUri) return fallbackUri
+    return trimTrailingSlash(configuredUrl.toString())
+  } catch {
+    return fallbackUri
+  }
 }
 
 const createGoogleOAuthState = () => {

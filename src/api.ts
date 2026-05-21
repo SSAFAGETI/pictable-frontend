@@ -2,9 +2,22 @@ import type { Difficulty, Ingredient, Recipe } from './data'
 import { clearServerError, getServerErrorId, reportServerError } from './serverStatus'
 
 const DEFAULT_API_BASE_URL = '/api'
-
-export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 const BACKEND_ORIGIN = 'http://15.164.170.144:8000'
+
+const isHttpsBrowser = () => typeof window !== 'undefined' && window.location.protocol === 'https:'
+
+const normalizeApiBaseUrl = () => {
+  const configured = String(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).trim()
+  if (!configured) return DEFAULT_API_BASE_URL
+
+  // Never let the HTTPS Vercel app call the HTTP EC2 API directly. Keep it on
+  // same-origin /api so Vercel can proxy the request server-to-server.
+  if (isHttpsBrowser() && configured.startsWith('http://')) return DEFAULT_API_BASE_URL
+
+  return configured.replace(/\/+$/, '')
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl()
 const TOKEN_STORAGE_KEY = 'chalkkak_tokens'
 export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
 

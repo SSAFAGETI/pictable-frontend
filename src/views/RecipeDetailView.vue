@@ -58,7 +58,7 @@
           </ol>
         </article>
 
-        <article class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
+        <article ref="commentsSection" class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
           <h2 class="text-lg font-bold">댓글</h2>
           <div v-for="comment in commentsList" :key="comment.id" class="mt-4 rounded-lg border border-border bg-background p-4">
             <p class="font-semibold">{{ comment.author }}</p>
@@ -66,7 +66,7 @@
             <div v-if="comment.reply" class="ml-4 mt-3 rounded-md bg-primary/10 p-3 text-sm text-primary">글쓴이 답글: {{ comment.reply }}</div>
           </div>
           <div class="mt-4 flex gap-2">
-            <input v-model="commentText" class="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="댓글을 입력하세요" @keyup.enter="handleCommentSubmit" />
+            <input ref="commentInput" v-model="commentText" class="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="댓글을 입력하세요" @keyup.enter="handleCommentSubmit" />
             <button class="rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground" @click="handleCommentSubmit">등록</button>
           </div>
         </article>
@@ -74,11 +74,18 @@
     </main>
 
     <div class="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-[min(520px,calc(100%-2rem))] gap-3">
-      <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg" @click="handleLike">
-        <Heart class="h-4 w-4" />
+      <button
+        :class="[
+          'group relative inline-flex h-11 flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg transition-all duration-200 active:scale-[0.98]',
+          likeBurst && 'shadow-primary/40 ring-4 ring-primary/20',
+        ]"
+        @click="handleLike"
+      >
+        <span v-if="likeBurst" class="pointer-events-none absolute inset-0 animate-like-ripple rounded-lg bg-white/25" />
+        <Heart :class="['h-4 w-4 transition-transform duration-300', isLiked && 'fill-current', likeBurst && 'animate-heart-pop']" />
         좋아요 {{ likes.toLocaleString() }}
       </button>
-      <button class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 text-sm font-bold shadow-lg">
+      <button class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 text-sm font-bold shadow-lg transition-all duration-200 hover:border-primary/50 hover:text-primary active:scale-[0.98]" @click="focusComments">
         <MessageCircle class="h-4 w-4" />
         댓글
       </button>
@@ -106,7 +113,11 @@ const route = useRoute()
 const { user, isAuthenticated } = useAuth()
 const recipe = computed(() => recipes.value.find((item) => item.id === route.params.id) || recipes.value[0])
 const likes = ref(recipe.value.likes)
+const isLiked = ref(Boolean(recipe.value.isLiked))
+const likeBurst = ref(false)
 const commentText = ref('')
+const commentsSection = ref<HTMLElement | null>(null)
+const commentInput = ref<HTMLInputElement | null>(null)
 const commentsList = ref<ViewComment[]>([
   {
     id: 'fallback-comment',
@@ -133,6 +144,21 @@ const normalizeComment = (raw: unknown, index: number): ViewComment | null => {
   }
 }
 
+const triggerLikeAnimation = () => {
+  likeBurst.value = false
+  window.setTimeout(() => {
+    likeBurst.value = true
+    window.setTimeout(() => {
+      likeBurst.value = false
+    }, 520)
+  }, 0)
+}
+
+const focusComments = () => {
+  commentsSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  window.setTimeout(() => commentInput.value?.focus(), 360)
+}
+
 const loadRecipeDetail = async () => {
   const recipeId = String(route.params.id || '')
   if (!recipeId) return
@@ -143,8 +169,10 @@ const loadRecipeDetail = async () => {
     if (index >= 0) recipes.value[index] = apiRecipe
     else recipes.value.unshift(apiRecipe)
     likes.value = apiRecipe.likes
+    isLiked.value = Boolean(apiRecipe.isLiked)
   } catch {
     likes.value = recipe.value.likes
+    isLiked.value = Boolean(recipe.value.isLiked)
   }
 }
 
@@ -172,6 +200,8 @@ const handleLike = async () => {
     return
   }
 
+  triggerLikeAnimation()
+
   try {
     const result = await toggleLikeApi(currentRecipe.id)
     if (typeof result.like_count === 'number') {
@@ -182,7 +212,8 @@ const handleLike = async () => {
       likes.value += 1
     }
     currentRecipe.likes = likes.value
-    currentRecipe.isLiked = typeof result.liked === 'boolean' ? result.liked : true
+    currentRecipe.isLiked = typeof result.liked === 'boolean' ? result.liked : !isLiked.value
+    isLiked.value = Boolean(currentRecipe.isLiked)
   } catch (error) {
     showToast({
       type: 'error',
@@ -217,6 +248,7 @@ const handleCommentSubmit = async () => {
     commentsList.value = [normalized, ...commentsList.value]
     commentText.value = ''
     currentRecipe.comments += 1
+    window.setTimeout(() => commentsSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   } catch (error) {
     showToast({
       type: 'error',
@@ -230,9 +262,33 @@ watch(
   () => route.params.id,
   () => {
     likes.value = recipe.value.likes
+    isLiked.value = Boolean(recipe.value.isLiked)
     void loadRecipeDetail()
     void loadComments()
   },
   { immediate: true },
 )
 </script>
+
+<style scoped>
+@keyframes heart-pop {
+  0% { transform: scale(0.82); }
+  45% { transform: scale(1.45) rotate(-8deg); }
+  72% { transform: scale(0.94) rotate(4deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes like-ripple {
+  0% { transform: scaleX(0); opacity: 0.85; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+.animate-heart-pop {
+  animation: heart-pop 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.animate-like-ripple {
+  transform-origin: center;
+  animation: like-ripple 520ms ease-out;
+}
+</style>

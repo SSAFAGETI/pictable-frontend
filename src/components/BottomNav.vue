@@ -20,16 +20,18 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { Bookmark, Home, PlusSquare, Search, User } from 'lucide-vue-next'
+import { PRIMARY_NAV_LINKS, isActiveRoute } from '../shared/constants/routes'
 
 const route = useRoute()
 
-const navItems = [
-  { href: '/', icon: Home, label: '홈' },
-  { href: '/feed', icon: Search, label: '피드' },
-  { href: '/my-recipe/new', icon: PlusSquare, label: '등록' },
-  { href: '/saved', icon: Bookmark, label: '저장' },
-  { href: '/mypage', icon: User, label: '마이' },
-]
+const navIconMap = {
+  home: Home,
+  feed: Search,
+  register: PlusSquare,
+  saved: Bookmark,
+  mypage: User,
+} as const
 
-const isActive = (href: string) => route.path === href || (href !== '/' && route.path.startsWith(href))
+const navItems = PRIMARY_NAV_LINKS.map((item) => ({ ...item, icon: navIconMap[item.key] }))
+const isActive = (href: string) => isActiveRoute(route.path, href)
 </script>

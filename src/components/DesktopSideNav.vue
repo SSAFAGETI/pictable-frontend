@@ -1,7 +1,7 @@
 <template>
   <aside class="group fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border bg-card/95 px-3 py-5 shadow-sm backdrop-blur-xl transition-[width] duration-300 ease-out hover:w-60 lg:flex">
     <RouterLink
-      to="/"
+      :to="APP_ROUTES.home"
       class="flex h-12 w-full items-center justify-center gap-0 overflow-hidden rounded-2xl text-foreground transition-all duration-200 hover:bg-muted/70 group-hover:justify-start group-hover:gap-3 group-hover:px-2"
     >
       <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
@@ -69,7 +69,7 @@
           <button class="rounded-lg px-3 py-2 text-sm font-bold text-muted-foreground hover:bg-muted" @click="noticeOpen = false">닫기</button>
         </div>
       </div>
-      <RouterLink v-for="notification in notifications" :key="notification.id" to="/mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60" @click="markAsRead(notification.id)">
+      <RouterLink v-for="notification in notifications" :key="notification.id" :to="APP_ROUTES.mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60" @click="markAsRead(notification.id)">
         <div class="flex items-start gap-3">
           <span class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40" />
           <div class="min-w-0 flex-1">
@@ -84,11 +84,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Bell, Bookmark, ChefHat, Home, PlusSquare, Search, User } from 'lucide-vue-next'
 import { useAuth } from '../auth'
 import { useNotifications } from '../notifications'
+import { APP_ROUTES, PRIMARY_NAV_LINKS, isActiveRoute } from '../shared/constants/routes'
 
 const route = useRoute()
 const noticeOpen = ref(false)
@@ -97,13 +98,14 @@ const { notifications, unreadCount, loadNotifications, markAsRead, markAllAsRead
 
 watch(isAuthenticated, (authenticated) => void loadNotifications(authenticated), { immediate: true })
 
-const navItems = [
-  { href: '/', icon: Home, label: '홈' },
-  { href: '/feed', icon: Search, label: '피드' },
-  { href: '/my-recipe/new', icon: PlusSquare, label: '등록' },
-  { href: '/saved', icon: Bookmark, label: '저장' },
-  { href: '/mypage', icon: User, label: '마이' },
-]
+const navIconMap = {
+  home: Home,
+  feed: Search,
+  register: PlusSquare,
+  saved: Bookmark,
+  mypage: User,
+} as const
 
-const isActive = (href: string) => route.path === href || (href !== '/' && route.path.startsWith(href))
+const navItems = PRIMARY_NAV_LINKS.map((item) => ({ ...item, icon: navIconMap[item.key] }))
+const isActive = (href: string) => isActiveRoute(route.path, href)
 </script>

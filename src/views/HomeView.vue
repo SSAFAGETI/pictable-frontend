@@ -205,6 +205,7 @@ import { ArrowRight, Camera, ChefHat, Clock, Heart, MessageCircle, Plus, Sparkle
 import RecipeCard from '../components/RecipeCard.vue'
 import { difficultyLabels, recipes } from '../data'
 import { RECIPE_TAGS } from '../tags'
+import { recommendationsPath } from '../shared/constants/routes'
 
 const router = useRouter()
 const inputValue = ref('')
@@ -231,7 +232,7 @@ const simulateImageUpload = () => {
 
 const goRecommendations = () => {
   if (ingredients.value.length === 0) return
-  router.push(`/recommendations?ingredients=${encodeURIComponent(ingredients.value.join(','))}`)
+  router.push(recommendationsPath(ingredients.value))
 }
 
 onMounted(() => {

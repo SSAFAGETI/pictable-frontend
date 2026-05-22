@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { APP_ROUTES } from '../shared/constants/routes'
 import HomeView from '../views/HomeView.vue'
 import FeedView from '../views/FeedView.vue'
 import RecipeDetailView from '../views/RecipeDetailView.vue'
@@ -14,19 +15,19 @@ import ServerErrorView from '../views/ServerErrorView.vue'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', component: HomeView },
-    { path: '/feed', component: FeedView },
-    { path: '/recipe/:id', component: RecipeDetailView },
-    { path: '/my-recipe/new', component: RecipeEditorView },
-    { path: '/saved', component: SavedView },
-    { path: '/mypage', component: MyPageView },
-    { path: '/login', component: AuthView, props: { mode: 'login' } },
-    { path: '/oauth/callback', component: AuthView, props: { mode: 'login' } },
-    { path: '/signup', component: AuthView, props: { mode: 'signup' } },
-    { path: '/recommendations', component: RecommendationsView },
-    { path: '/ingredients', component: IngredientsView },
-    { path: '/backend-api', component: BackendApiView },
-    { path: '/server-error', component: ServerErrorView },
+    { path: APP_ROUTES.home, component: HomeView },
+    { path: APP_ROUTES.feed, component: FeedView },
+    { path: APP_ROUTES.recipeDetail, component: RecipeDetailView },
+    { path: APP_ROUTES.myRecipeNew, component: RecipeEditorView },
+    { path: APP_ROUTES.saved, component: SavedView },
+    { path: APP_ROUTES.mypage, component: MyPageView },
+    { path: APP_ROUTES.login, component: AuthView, props: { mode: 'login' } },
+    { path: APP_ROUTES.oauthCallback, component: AuthView, props: { mode: 'login' } },
+    { path: APP_ROUTES.signup, component: AuthView, props: { mode: 'signup' } },
+    { path: APP_ROUTES.recommendations, component: RecommendationsView },
+    { path: APP_ROUTES.ingredients, component: IngredientsView },
+    { path: APP_ROUTES.backendApi, component: BackendApiView },
+    { path: APP_ROUTES.serverError, component: ServerErrorView },
   ],
   scrollBehavior() {
     return { top: 0 }

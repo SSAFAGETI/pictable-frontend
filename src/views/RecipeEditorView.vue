@@ -122,6 +122,7 @@ import { useAuth } from '../auth'
 import { recipes, type Ingredient, type Recipe } from '../data'
 import { getRecipeTagNamesByIds } from '../tags'
 import { showToast } from '../toast'
+import { myRecipeFeedPath } from '../shared/constants/routes'
 
 interface EditableIngredient {
   id: string
@@ -251,6 +252,6 @@ const submitRecipe = async () => {
     return
   }
 
-  router.push('/feed?source=my&sort=recent')
+  router.push(myRecipeFeedPath())
 }
 </script>

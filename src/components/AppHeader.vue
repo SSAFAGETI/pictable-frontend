@@ -12,13 +12,13 @@
           <ChevronLeft class="h-5 w-5" />
         </button>
         <h1 v-if="pageTitle" class="truncate text-lg font-semibold lg:text-xl">{{ pageTitle }}</h1>
-        <RouterLink v-else to="/" class="flex items-center gap-2 lg:hidden">
+        <RouterLink v-else :to="APP_ROUTES.home" class="flex items-center gap-2 lg:hidden">
           <div class="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ChefHat class="h-4 w-4" />
           </div>
           <span class="text-xl font-bold text-foreground">찰칵밥상</span>
         </RouterLink>
-        <RouterLink to="/" class="hidden items-center gap-3 lg:flex">
+        <RouterLink :to="APP_ROUTES.home" class="hidden items-center gap-3 lg:flex">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <ChefHat class="h-5 w-5" />
           </div>
@@ -76,7 +76,7 @@
             </div>
           </div>
           <div class="max-h-[70vh] overflow-y-auto">
-            <RouterLink v-for="notification in notifications" :key="notification.id" to="/mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60" @click="markAsRead(notification.id)">
+            <RouterLink v-for="notification in notifications" :key="notification.id" :to="APP_ROUTES.mypage" class="block border-b border-border px-5 py-4 last:border-b-0 hover:bg-muted/60" @click="markAsRead(notification.id)">
               <div class="flex items-start gap-3">
                 <span class="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40" />
                 <div class="min-w-0 flex-1">
@@ -99,6 +99,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Bell, ChefHat, ChevronLeft } from 'lucide-vue-next'
 import { useAuth } from '../auth'
 import { useNotifications } from '../notifications'
+import { APP_ROUTES, MY_RECIPE_FEED_TITLE, PAGE_TITLES, PRIMARY_NAV_LINKS, isActiveRoute, isRecipeDetailRoute } from '../shared/constants/routes'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,30 +109,13 @@ const { notifications, unreadCount, loadNotifications, markAsRead, markAllAsRead
 
 watch(isAuthenticated, (authenticated) => void loadNotifications(authenticated), { immediate: true })
 
-const titleMap: Record<string, string> = {
-  '/feed': route.query.source === 'my' ? '최근 올라온 마이 레시피' : '피드',
-  '/my-recipe/new': '레시피 등록',
-  '/saved': '저장',
-  '/mypage': '마이',
-  '/recommendations': '추천',
-  '/ingredients': '재료',
-  '/backend-api': '백엔드 API 명세',
-}
-
 const pageTitle = computed(() => {
-  if (route.path.startsWith('/recipe/')) return ''
-  return titleMap[route.path] ?? ''
+  if (isRecipeDetailRoute(route.path)) return ''
+  if (route.path === APP_ROUTES.feed && route.query.source === 'my') return MY_RECIPE_FEED_TITLE
+  return PAGE_TITLES[route.path] ?? ''
 })
 
-const showBack = computed(() => route.path.startsWith('/recipe/'))
-
-const navItems = [
-  { href: '/', label: '홈' },
-  { href: '/feed', label: '피드' },
-  { href: '/my-recipe/new', label: '등록' },
-  { href: '/saved', label: '저장' },
-  { href: '/mypage', label: '마이' },
-]
-
-const isActive = (href: string) => route.path === href || (href !== '/' && route.path.startsWith(href))
+const showBack = computed(() => isRecipeDetailRoute(route.path))
+const navItems = PRIMARY_NAV_LINKS
+const isActive = (href: string) => isActiveRoute(route.path, href)
 </script>

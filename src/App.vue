@@ -21,17 +21,13 @@ import ServerErrorBanner from './components/ServerErrorBanner.vue'
 import ToastViewport from './components/ToastViewport.vue'
 import { initializeAuth } from './auth'
 import { loadDjangoRecipes, loadFoodSafetyRecipes } from './data'
+import { isAppChromeHiddenRoute, isAuthRoute } from './shared/constants/routes'
 
 const route = useRoute()
-const isAuthPage = computed(() => route.path.startsWith('/login') || route.path.startsWith('/signup'))
+const isAuthPage = computed(() => isAuthRoute(route.path))
 const recipesLoaded = ref(false)
 
-const shouldLoadRecipes = computed(() => {
-  if (isAuthPage.value) return false
-  if (route.path.startsWith('/server-error')) return false
-  if (route.path.startsWith('/backend-api')) return false
-  return true
-})
+const shouldLoadRecipes = computed(() => !isAppChromeHiddenRoute(route.path))
 
 const loadRecipesOnce = async () => {
   if (!shouldLoadRecipes.value || recipesLoaded.value) return

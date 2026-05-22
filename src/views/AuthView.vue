@@ -8,7 +8,7 @@
       />
       <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
       <div class="absolute inset-x-0 bottom-0 p-8 text-white xl:p-10">
-        <RouterLink to="/" class="mb-8 flex items-center gap-3">
+        <RouterLink :to="APP_ROUTES.home" class="mb-8 flex items-center gap-3">
           <div class="flex h-11 w-11 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ChefHat class="h-6 w-6" />
           </div>
@@ -26,7 +26,7 @@
 
     <section class="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:h-screen lg:min-h-0 lg:overflow-y-auto lg:px-10 lg:py-6">
       <div class="w-full max-w-md lg:max-w-xl">
-        <RouterLink to="/" class="mb-8 flex items-center justify-center gap-2 lg:hidden">
+        <RouterLink :to="APP_ROUTES.home" class="mb-8 flex items-center justify-center gap-2 lg:hidden">
           <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ChefHat class="h-5 w-5" />
           </div>
@@ -119,7 +119,7 @@
 
             <p class="mt-6 text-center text-sm text-muted-foreground">
               {{ isSignup ? '이미 계정이 있으신가요?' : '아직 계정이 없으신가요?' }}
-              <RouterLink :to="isSignup ? '/login' : '/signup'" class="font-medium text-primary hover:underline">
+              <RouterLink :to="isSignup ? APP_ROUTES.login : APP_ROUTES.signup" class="font-medium text-primary hover:underline">
                 {{ isSignup ? '로그인' : '회원가입' }}
               </RouterLink>
             </p>
@@ -135,6 +135,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChefHat, Eye, EyeOff, Lock, Mail, User } from 'lucide-vue-next'
 import { ApiError } from '../api'
+import { APP_ROUTES } from '../shared/constants/routes'
 import { useAuth } from '../auth'
 import { showToast } from '../toast'
 
@@ -156,7 +157,7 @@ const GOOGLE_OAUTH_STATE_KEY = 'chalkkak_google_oauth_state'
 const GOOGLE_CLIENT_ID = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '')
 const GOOGLE_REDIRECT_URI = String(import.meta.env.VITE_GOOGLE_REDIRECT_URI || '')
 
-const GOOGLE_CALLBACK_PATH = '/oauth/callback'
+const GOOGLE_CALLBACK_PATH = APP_ROUTES.oauthCallback
 
 const getCurrentOriginCallbackUri = () => {
   if (typeof window === 'undefined') return ''
@@ -247,7 +248,7 @@ const handleSubmit = async () => {
     isSubmitting.value = true
     if (isSignup.value) await signup(name.value.trim(), email.value.trim(), password.value)
     else await login(email.value.trim(), password.value)
-    router.push('/')
+    router.push(APP_ROUTES.home)
   } catch (error) {
     const message = getSubmitErrorMessage(error)
     errorMessage.value = message
@@ -275,7 +276,7 @@ const handleGoogle = async () => {
 
     validateGoogleOAuthState()
     await loginWithGoogle(code, getGoogleRedirectUri())
-    router.push('/')
+    router.push(APP_ROUTES.home)
   } catch (error) {
     const message = error instanceof Error && error.message
       ? error.message

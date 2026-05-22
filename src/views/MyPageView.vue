@@ -104,6 +104,7 @@ import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import { useAuth } from '../auth'
 import type { Recipe } from '../data'
+import { APP_ROUTES } from '../shared/constants/routes'
 
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
@@ -120,7 +121,7 @@ const tabs = [
 ] as const
 
 const menuItems = [
-  { icon: Server, label: '백엔드 API 명세', href: '/backend-api' },
+  { icon: Server, label: '백엔드 API 명세', href: APP_ROUTES.backendApi },
   { icon: FileText, label: '웹/앱 플로우 프레임워크', href: '/user-flow-wireframe.html', external: true },
   { icon: Bell, label: '알림 설정', href: '/settings/notifications' },
   { icon: HelpCircle, label: '고객센터', href: '/help' },
@@ -142,7 +143,7 @@ const displayUser = computed(() => ({
 
 const handleLogout = async () => {
   await logout()
-  router.push('/login')
+  router.push(APP_ROUTES.login)
 }
 
 const loadMyPageData = async () => {

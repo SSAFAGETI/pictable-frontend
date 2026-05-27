@@ -69,31 +69,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { ChefHat, Clock, Heart, MessageCircle, Search, SlidersHorizontal, TrendingUp } from 'lucide-vue-next'
-import { fetchFeedRecipesApi, fetchMyRecipesApi } from '../api'
-import { useAuth } from '../auth'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
-import { difficultyLabels, recipes, type Difficulty } from '../data'
-import { getRecipeTagByName, getRecipeTagNamesByIds } from '../tags'
+import { useFeedRecipes, type FeedSortOption } from '../features/feed/composables/useFeedRecipes'
+import { difficultyLabels, type Difficulty } from '../data'
 
-type SortOption = 'popular' | 'recent' | 'likes'
-
-const route = useRoute()
-const { isAuthenticated } = useAuth()
-const searchQuery = ref('')
-const initialTag = route.query.tag ? getRecipeTagByName(String(route.query.tag)) : undefined
-const selectedTagIds = ref<number[]>(initialTag ? [initialTag.id] : [])
-const feedRequestId = ref(0)
-
-const normalizeSort = (value: unknown): SortOption => {
-  if (value === 'latest' || value === 'recent') return 'recent'
-  if (value === 'likes') return 'likes'
-  return 'popular'
-}
-
-const sortBy = ref<SortOption>(normalizeSort(route.query.sort))
+const { filteredRecipes, resetFilters, searchQuery, selectedTagIds, sortBy } = useFeedRecipes()
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',
@@ -101,86 +82,8 @@ const difficultyColors: Record<Difficulty, string> = {
   hard: 'bg-destructive/20 text-destructive',
 }
 
-const resetFilters = () => {
-  searchQuery.value = ''
-  selectedTagIds.value = []
-}
-
-const sortButtonClass = (sort: SortOption) => [
+const sortButtonClass = (sort: FeedSortOption) => [
   'inline-flex h-9 items-center justify-center gap-1 rounded-md px-3 text-sm font-bold transition-colors hover:bg-muted',
   sortBy.value === sort ? 'text-primary' : 'text-foreground',
 ]
-
-const loadFeedFromApi = async () => {
-  const requestId = feedRequestId.value + 1
-  feedRequestId.value = requestId
-  const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
-
-  try {
-    const apiRecipes =
-      route.query.source === 'my' && isAuthenticated.value
-        ? await fetchMyRecipesApi()
-        : await fetchFeedRecipesApi({
-            sort: sortBy.value === 'recent' ? 'latest' : 'popular',
-            search: searchQuery.value.trim() || undefined,
-            tags: selectedTags,
-          })
-
-    if (requestId === feedRequestId.value && apiRecipes.length > 0) {
-      recipes.value = apiRecipes
-    }
-  } catch {
-    // Keep local/public fallback recipes visible when the Django API is not reachable.
-  }
-}
-
-onMounted(() => {
-  void loadFeedFromApi()
-})
-
-watch([searchQuery, selectedTagIds, sortBy], () => {
-  void loadFeedFromApi()
-})
-
-watch(
-  () => route.query.tag,
-  (tag) => {
-    const nextTag = typeof tag === 'string' ? getRecipeTagByName(tag) : undefined
-    selectedTagIds.value = nextTag ? [nextTag.id] : []
-  },
-)
-
-watch(
-  () => route.query.sort,
-  (sort) => {
-    sortBy.value = normalizeSort(sort)
-  },
-)
-
-watch(
-  () => route.query.source,
-  () => {
-    void loadFeedFromApi()
-  },
-)
-
-const filteredRecipes = computed(() => {
-  const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
-
-  return recipes.value
-    .filter((recipe) => {
-      const queryMatch =
-        !searchQuery.value ||
-        recipe.title.includes(searchQuery.value) ||
-        recipe.description.includes(searchQuery.value) ||
-        recipe.tags.some((tag) => tag.includes(searchQuery.value))
-      const tagMatch = selectedTags.length === 0 || selectedTags.every((tag) => recipe.tags.includes(tag))
-      return queryMatch && tagMatch
-    })
-    .sort((a, b) => {
-      if (sortBy.value === 'recent') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      if (sortBy.value === 'likes') return b.likes - a.likes
-      return b.likes + b.saves - (a.likes + a.saves)
-    })
-})
 </script>

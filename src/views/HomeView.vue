@@ -55,7 +55,7 @@
             <div v-if="ingredients.length > 0" class="mt-4 flex flex-wrap gap-2">
               <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
                 {{ ingredient }}
-                <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 삭제`" @click="ingredients = ingredients.filter((item) => item !== ingredient)">
+                <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 삭제`" @click="removeIngredient(ingredient)">
                   <X class="h-3 w-3" />
                 </button>
               </span>
@@ -199,49 +199,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowRight, Camera, ChefHat, Clock, Heart, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
 import RecipeCard from '../components/RecipeCard.vue'
-import { difficultyLabels, recipes } from '../data'
+import { useHomeRecipes } from '../features/home/composables/useHomeRecipes'
+import { difficultyLabels } from '../data'
 import { RECIPE_TAGS } from '../tags'
-import { recommendationsPath } from '../shared/constants/routes'
 
-const router = useRouter()
-const inputValue = ref('')
-const ingredients = ref<string[]>([])
-const showUploadMenu = ref(false)
-const activeIndex = ref(0)
-const todayRecipes = computed(() => recipes.value.slice(0, 4))
-const popularRecipes = computed(() => recipes.value.slice(0, 4))
-const recentRecipes = computed(() => recipes.value.slice(2, 5))
-let timer: number | undefined
-
-const addIngredient = (ingredient: string) => {
-  if (!ingredient || ingredients.value.includes(ingredient) || ingredients.value.length >= 10) return
-  ingredients.value.push(ingredient)
-  inputValue.value = ''
-}
-
-const simulateImageUpload = () => {
-  ;['양파', '달걀', '감자'].forEach((ingredient) => {
-    if (!ingredients.value.includes(ingredient)) ingredients.value.push(ingredient)
-  })
-  showUploadMenu.value = false
-}
-
-const goRecommendations = () => {
-  if (ingredients.value.length === 0) return
-  router.push(recommendationsPath(ingredients.value))
-}
-
-onMounted(() => {
-  timer = window.setInterval(() => {
-    if (todayRecipes.value.length > 0) activeIndex.value = (activeIndex.value + 1) % todayRecipes.value.length
-  }, 6000)
-})
-
-onUnmounted(() => {
-  if (timer) window.clearInterval(timer)
-})
+const {
+  activeIndex,
+  addIngredient,
+  goRecommendations,
+  ingredients,
+  inputValue,
+  popularRecipes,
+  recentRecipes,
+  removeIngredient,
+  showUploadMenu,
+  simulateImageUpload,
+  todayRecipes,
+} = useHomeRecipes()
 </script>

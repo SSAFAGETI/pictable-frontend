@@ -1,30 +1,14 @@
 import type { Difficulty, Ingredient, Recipe } from './data'
-import { clearServerError, getServerErrorId, reportServerError } from './serverStatus'
+import { API_BASE_URL, apiRequest, configureApiClient } from './shared/api/client'
+import { ApiError } from './shared/api/error'
+import { clearStoredTokens, getStoredTokens, setStoredTokens, type AuthTokens } from './shared/api/token'
 
-const DEFAULT_API_BASE_URL = '/api'
+export { API_BASE_URL, ApiError, apiRequest, clearStoredTokens, getStoredTokens, setStoredTokens }
+export type { AuthTokens } from './shared/api/token'
+
 const BACKEND_ORIGIN = 'http://15.164.170.144:8000'
 
-const isHttpsBrowser = () => typeof window !== 'undefined' && window.location.protocol === 'https:'
-
-const normalizeApiBaseUrl = () => {
-  const configured = String(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).trim()
-  if (!configured) return DEFAULT_API_BASE_URL
-
-  // Never let the HTTPS Vercel app call the HTTP EC2 API directly. Keep it on
-  // same-origin /api so Vercel can proxy the request server-to-server.
-  if (isHttpsBrowser() && configured.startsWith('http://')) return DEFAULT_API_BASE_URL
-
-  return configured.replace(/\/+$/, '')
-}
-
-export const API_BASE_URL = normalizeApiBaseUrl()
-const TOKEN_STORAGE_KEY = 'chalkkak_tokens'
 export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
-
-export interface AuthTokens {
-  access: string
-  refresh: string
-}
 
 export interface LoginResponse extends AuthTokens {
   message?: string
@@ -80,48 +64,6 @@ export interface NotificationItem {
   createdAt: string
 }
 
-type ApiRequestOptions = RequestInit & {
-  auth?: boolean
-}
-
-const canUseStorage = () => typeof window !== 'undefined' && Boolean(window.localStorage)
-
-export const getStoredTokens = (): AuthTokens | null => {
-  if (!canUseStorage()) return null
-
-  try {
-    const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY)
-    if (!stored) return null
-    const parsed = JSON.parse(stored) as Partial<AuthTokens>
-    if (!parsed.access || !parsed.refresh) return null
-    return { access: parsed.access, refresh: parsed.refresh }
-  } catch {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY)
-    return null
-  }
-}
-
-export const setStoredTokens = (tokens: AuthTokens) => {
-  if (!canUseStorage()) return
-  window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens))
-}
-
-export const clearStoredTokens = () => {
-  if (!canUseStorage()) return
-  window.localStorage.removeItem(TOKEN_STORAGE_KEY)
-}
-
-export class ApiError extends Error {
-  status: number
-  body: unknown
-
-  constructor(status: number, message: string, body: unknown) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.body = body
-  }
-}
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
@@ -129,23 +71,6 @@ const asString = (value: unknown, fallback = '') => (typeof value === 'string' ?
 const asNumber = (value: unknown, fallback = 0) => {
   const numberValue = Number(value)
   return Number.isFinite(numberValue) ? numberValue : fallback
-}
-
-const parseResponseBody = async (response: Response) => {
-  if (response.status === 204) return null
-  const text = await response.text()
-  if (!text) return null
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    return text
-  }
-}
-
-const apiUrl = (path: string) => {
-  if (/^https?:\/\//.test(path)) return path
-  return `${API_BASE_URL}/${path.replace(/^\/+/, '')}`
 }
 
 const mediaUrlCache = new Map<string, string>()
@@ -189,100 +114,6 @@ const resolveMediaUrl = async (value: unknown): Promise<string> => {
 
   mediaUrlRequests.set(id, request)
   return request
-}
-
-const getErrorMessage = (body: unknown, fallback: string) => {
-  if (typeof body === 'string') return body
-  if (!isRecord(body)) return fallback
-
-  const detail = body.detail || body.message || body.error || body.non_field_errors
-  if (Array.isArray(detail)) return detail.join('\n')
-  if (typeof detail === 'string') return detail
-
-  const firstEntry = Object.entries(body)[0]
-  if (firstEntry) {
-    const [field, value] = firstEntry
-    if (Array.isArray(value)) return `${field}: ${value.join('\n')}`
-    if (typeof value === 'string') return `${field}: ${value}`
-  }
-
-  return fallback
-}
-
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}, retryOnUnauthorized = true): Promise<T> {
-  const tokens = getStoredTokens()
-  const headers = new Headers(options.headers)
-  const method = String(options.method || 'GET').toUpperCase()
-  const endpoint = apiUrl(path)
-  const errorId = getServerErrorId({ method, endpoint, title: path })
-
-  if (options.auth && !tokens?.access) {
-    if (tokens?.refresh && retryOnUnauthorized) {
-      try {
-        const refreshed = await refreshApi(tokens.refresh)
-        setStoredTokens(refreshed)
-        return apiRequest<T>(path, options, false)
-      } catch {
-        clearStoredTokens()
-      }
-    }
-
-    throw new ApiError(401, '로그인이 필요합니다.', null)
-  }
-
-  if (!(options.body instanceof FormData) && options.body && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
-  }
-
-  if (options.auth && tokens?.access && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${tokens.access}`)
-  }
-
-  let response: Response
-
-  try {
-    response = await fetch(endpoint, { ...options, headers })
-  } catch (error) {
-    reportServerError({
-      id: errorId,
-      title: '서버 API 연결 실패',
-      message: '서버가 응답하지 않아 임시 데이터로 화면을 표시하고 있습니다.',
-      detail: error instanceof Error ? error.message : String(error),
-      endpoint,
-      method,
-    })
-    throw error
-  }
-
-  const body = await parseResponseBody(response)
-
-  if (response.status === 401 && options.auth && retryOnUnauthorized && tokens?.refresh) {
-    try {
-      const refreshed = await refreshApi(tokens.refresh)
-      setStoredTokens(refreshed)
-      return apiRequest<T>(path, options, false)
-    } catch {
-      clearStoredTokens()
-    }
-  }
-
-  if (!response.ok) {
-    if (response.status >= 500) {
-      reportServerError({
-        id: errorId,
-        title: '서버 응답 오류',
-        message: '서버에서 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.',
-        detail: getErrorMessage(body, `API 요청에 실패했습니다. (${response.status})`),
-        endpoint,
-        method,
-        status: response.status,
-      })
-    }
-    throw new ApiError(response.status, getErrorMessage(body, `API 요청에 실패했습니다. (${response.status})`), body)
-  }
-
-  clearServerError(errorId)
-  return body as T
 }
 
 const unwrapList = (body: unknown): unknown[] => {
@@ -485,6 +316,8 @@ export const refreshApi = (refresh: string) =>
     },
     false,
   )
+
+configureApiClient({ refreshTokens: refreshApi })
 
 export const googleAuthApi = (code: string, redirectUri?: string) =>
   apiRequest<GoogleAuthResponse>('/auth/google/', {

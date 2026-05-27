@@ -1,0 +1,54 @@
+import { ref } from 'vue'
+import { fetchFeedRecipesApi } from '../feed/api'
+import { fetchHomeSummaryApi, fetchRecipesApi } from './api'
+import type { Recipe } from './types'
+import { fallbackRecipes } from './mock'
+import { fetchFoodSafetyRecipes } from './foodSafety'
+
+export const recipes = ref<Recipe[]>(fallbackRecipes)
+export const recipesLoading = ref(false)
+export const recipesError = ref('')
+
+export async function loadFoodSafetyRecipes(start = 1, end = 30) {
+  if (recipesLoading.value) return
+
+  recipesLoading.value = true
+  recipesError.value = ''
+
+  try {
+    const apiRecipes = await fetchFoodSafetyRecipes(start, end)
+    if (apiRecipes.length > 0) recipes.value = apiRecipes
+  } catch (error) {
+    recipesError.value = error instanceof Error ? error.message : '레시피를 불러오지 못했습니다.'
+  } finally {
+    recipesLoading.value = false
+  }
+}
+
+export async function loadDjangoRecipes() {
+  if (recipesLoading.value) return
+
+  recipesLoading.value = true
+  recipesError.value = ''
+
+  try {
+    const summary = await fetchHomeSummaryApi()
+    const seenIds = new Set<string>()
+    let apiRecipes = [summary.recommended, ...summary.popular, ...summary.recent]
+      .filter((recipe): recipe is Recipe => Boolean(recipe))
+      .filter((recipe) => {
+        if (seenIds.has(recipe.id)) return false
+        seenIds.add(recipe.id)
+        return true
+      })
+
+    if (apiRecipes.length === 0) apiRecipes = await fetchFeedRecipesApi({ sort: 'popular' })
+    if (apiRecipes.length === 0) apiRecipes = await fetchRecipesApi()
+    if (apiRecipes.length > 0) recipes.value = apiRecipes
+  } catch (error) {
+    recipesError.value = error instanceof Error ? error.message : 'Django API에서 레시피를 불러오지 못했습니다.'
+    throw error
+  } finally {
+    recipesLoading.value = false
+  }
+}

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { nextTick, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ApiError, createRecipeApi, type RecipeCreatePayload } from '../../../api'
 import { useAuth } from '../../../auth'
@@ -22,7 +22,7 @@ interface EditableStep {
 export const useRecipeEditor = () => {
   const router = useRouter()
 const { user, isAuthenticated } = useAuth()
-const mainImageInput = ref<HTMLInputElement | null>(null)
+const mainImageFileInput = ref<HTMLInputElement | null>(null)
 const mainImagePreview = ref('')
 const title = ref('')
 const description = ref('')
@@ -31,6 +31,10 @@ const cookTime = ref(0)
 const servings = ref(0)
 const ingredients = ref<EditableIngredient[]>([{ id: crypto.randomUUID(), name: '', amount: '' }])
 const steps = ref<EditableStep[]>([{ id: crypto.randomUUID(), text: '', image: '' }])
+const cameraVideoRef = ref<HTMLVideoElement | null>(null)
+const isCameraOpen = ref(false)
+const cameraTarget = ref<{ type: 'main' | 'step'; index?: number } | null>(null)
+let cameraStream: MediaStream | null = null
 
 const timeOptions = [5, 10, 15, 20, 30, 45, 60]
 const servingOptions = [1, 2, 3, 4]
@@ -73,6 +77,69 @@ const handleMainImage = (event: Event) => {
 const handleStepImage = (index: number, event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file) readImage(file, (value) => (steps.value[index].image = value))
+}
+const stopCameraStream = () => {
+  cameraStream?.getTracks().forEach((track) => track.stop())
+  cameraStream = null
+}
+
+const closeCamera = () => {
+  stopCameraStream()
+  isCameraOpen.value = false
+  cameraTarget.value = null
+}
+
+const openCamera = async (type: 'main' | 'step', index?: number) => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showToast({
+      type: 'error',
+      title: '카메라를 열 수 없어요',
+      message: '현재 브라우저에서는 카메라 촬영을 지원하지 않습니다. 파일 선택을 이용해주세요.',
+    })
+    return
+  }
+
+  try {
+    stopCameraStream()
+    cameraTarget.value = { type, index }
+    isCameraOpen.value = true
+    await nextTick()
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    if (cameraVideoRef.value) {
+      cameraVideoRef.value.srcObject = cameraStream
+      await cameraVideoRef.value.play()
+    }
+  } catch {
+    closeCamera()
+    showToast({
+      type: 'error',
+      title: '카메라 권한이 필요해요',
+      message: '브라우저 카메라 권한을 허용한 뒤 다시 시도해주세요.',
+    })
+  }
+}
+
+const captureCameraPhoto = () => {
+  const video = cameraVideoRef.value
+  const target = cameraTarget.value
+  if (!video || !target) return
+
+  const canvas = document.createElement('canvas')
+  canvas.width = video.videoWidth || 1280
+  canvas.height = video.videoHeight || 720
+  const context = canvas.getContext('2d')
+  if (!context) return
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height)
+  const image = canvas.toDataURL('image/jpeg', 0.9)
+
+  if (target.type === 'main') {
+    mainImagePreview.value = image
+  } else if (typeof target.index === 'number' && steps.value[target.index]) {
+    steps.value[target.index].image = image
+  }
+
+  closeCamera()
 }
 
 const submitRecipe = async () => {
@@ -139,17 +206,26 @@ const submitRecipe = async () => {
   router.push(myRecipeFeedPath())
 }
 
+onUnmounted(() => {
+  stopCameraStream()
+})
+
 return {
   addIngredient,
   addStep,
   cookTime,
   description,
+  cameraVideoRef,
+  captureCameraPhoto,
+  closeCamera,
   handleMainImage,
   handleStepImage,
   ingredients,
   isAuthenticated,
-  mainImageInput,
+  isCameraOpen,
+  mainImageFileInput,
   mainImagePreview,
+  openCamera,
   removeIngredient,
   removeStep,
   selectedTagIds,

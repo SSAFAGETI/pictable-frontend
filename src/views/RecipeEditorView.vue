@@ -9,19 +9,25 @@
       <form class="mx-auto max-w-3xl space-y-5 pb-16" @submit.prevent="submitRecipe">
         <section class="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
           <p class="mb-4 text-base font-bold">메인 이미지</p>
-          <input ref="mainImageInput" class="hidden" type="file" accept="image/*" @change="handleMainImage" />
-          <button
-            type="button"
-            class="relative flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 sm:h-80"
-            @click="mainImageInput?.click()"
-          >
+          <input ref="mainImageFileInput" class="hidden" type="file" accept="image/*" @change="handleMainImage" />
+          <div class="relative flex h-72 w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 sm:h-80">
             <img v-if="mainImagePreview" :src="mainImagePreview" alt="" class="absolute inset-0 h-full w-full object-cover" />
             <span v-if="mainImagePreview" class="absolute inset-0 bg-black/25" />
             <span class="relative grid h-14 w-14 place-items-center rounded-2xl bg-card/90 text-muted-foreground shadow-sm">
               <Camera class="h-8 w-8" />
             </span>
-            <span class="relative mt-3 text-sm font-semibold">{{ mainImagePreview ? '이미지 변경하기' : '클릭해서 이미지를 업로드' }}</span>
-          </button>
+            <span class="relative mt-3 text-sm font-semibold">{{ mainImagePreview ? '이미지 변경하기' : '메인 이미지를 추가해주세요' }}</span>
+            <div class="relative mt-4 grid w-full max-w-sm grid-cols-2 gap-2 px-4">
+              <button type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card/95 px-3 text-sm font-bold text-foreground shadow-sm hover:border-primary/60 hover:text-primary" @click="mainImageFileInput?.click()">
+                <ImageIcon class="h-4 w-4" />
+                파일 선택
+              </button>
+              <button type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90" @click="openCamera('main')">
+                <Camera class="h-4 w-4" />
+                카메라 촬영
+              </button>
+            </div>
+          </div>
         </section>
 
         <section class="space-y-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
@@ -93,11 +99,18 @@
                 </button>
               </div>
               <textarea v-model="step.text" class="min-h-20 w-full rounded-xl border border-input bg-card p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="조리 방법을 작성해주세요." />
-              <label class="mt-3 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary">
-                <ImageIcon class="h-4 w-4" />
-                사진 추가
-                <input class="hidden" type="file" accept="image/*" @change="handleStepImage(index, $event)" />
-              </label>
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <label class="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary">
+                  <ImageIcon class="h-4 w-4" />
+                  파일 선택
+                  <input class="hidden" type="file" accept="image/*" @change="handleStepImage(index, $event)" />
+                </label>
+                <button type="button" class="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground" @click="openCamera('step', index)">
+                  <Camera class="h-4 w-4" />
+                  카메라 촬영
+
+                </button>
+              </div>
               <img v-if="step.image" :src="step.image" alt="" class="mt-3 h-32 w-full rounded-xl object-cover" />
             </div>
           </div>
@@ -108,6 +121,29 @@
         </button>
       </form>
     </main>
+    <div v-if="isCameraOpen" class="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center" @click.self="closeCamera">
+      <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <div class="flex items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <p class="text-base font-bold">카메라 촬영</p>
+            <p class="text-xs text-muted-foreground">사진을 촬영하면 현재 이미지 영역에 바로 적용됩니다.</p>
+          </div>
+          <button type="button" class="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="카메라 닫기" @click="closeCamera">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="bg-black">
+          <video ref="cameraVideoRef" class="aspect-[4/3] max-h-[68vh] w-full object-contain" autoplay muted playsinline />
+        </div>
+        <div class="grid grid-cols-2 gap-2 p-4">
+          <button type="button" class="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background text-sm font-bold hover:bg-muted" @click="closeCamera">취소</button>
+          <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90" @click="captureCameraPhoto">
+            <Camera class="h-4 w-4" />
+            사진 사용하기
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -122,12 +158,17 @@ const {
   addStep,
   cookTime,
   description,
+  cameraVideoRef,
+  captureCameraPhoto,
+  closeCamera,
   handleMainImage,
   handleStepImage,
   ingredients,
   isAuthenticated,
-  mainImageInput,
+  isCameraOpen,
+  mainImageFileInput,
   mainImagePreview,
+  openCamera,
   removeIngredient,
   removeStep,
   selectedTagIds,

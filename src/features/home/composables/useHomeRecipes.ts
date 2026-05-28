@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { recipes } from '../../../data'
 import { analyzeIngredientImageApi } from '../../ingredient/api'
+import { ApiError } from '../../../shared/api/error'
 import { recommendationsPath } from '../../../shared/constants/routes'
 
 const MAX_INGREDIENTS = 10
@@ -79,7 +80,10 @@ export const useHomeRecipes = () => {
 
       addIngredients(detectedIngredients)
     } catch (error) {
-      imageAnalyzeError.value = error instanceof Error ? error.message : '이미지 재료 인식에 실패했어요. 잠시 후 다시 시도해주세요.'
+      imageAnalyzeError.value =
+        error instanceof ApiError && error.status === 401
+          ? '이미지 재료 인식은 로그인 후 사용할 수 있어요.'
+          : '이미지 재료 인식에 실패했어요. 잠시 후 다시 시도해주세요.'
     } finally {
       isAnalyzingImage.value = false
     }

@@ -1,12 +1,9 @@
 import { apiRequest } from '../../shared/api/client'
+import { getStoredTokens } from '../../shared/api/token'
 import { asString, isRecord, unwrapList } from '../recipe/mapper'
 
-const DEFAULT_IMAGE_INGREDIENT_ENDPOINT = '/ai/ingredients/'
-const imageIngredientEndpoint = String(
-  import.meta.env.VITE_INGREDIENT_IMAGE_ENDPOINT ||
-    import.meta.env.VITE_VLM_INGREDIENT_ENDPOINT ||
-    DEFAULT_IMAGE_INGREDIENT_ENDPOINT,
-).trim() || DEFAULT_IMAGE_INGREDIENT_ENDPOINT
+const DETECTION_POLL_COUNT = 6
+const DETECTION_POLL_DELAY_MS = 800
 
 const INGREDIENT_RESPONSE_KEYS = [
   'ingredients',
@@ -23,13 +20,15 @@ const INGREDIENT_RESPONSE_KEYS = [
   'json',
 ] as const
 
+const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
+
 const cleanIngredientName = (value: unknown) => {
   const text = asString(value)
     .replace(/[\[\]{}"']/g, '')
     .replace(/^[\s,.:;|-]+|[\s,.:;|-]+$/g, '')
     .trim()
 
-  if (!text || /^https?:\/\//i.test(text) || text.length > 30) return ''
+  if (!text || /^https?:\/\//i.test(text) || /<\/?[a-z][\s\S]*>/i.test(text) || text.length > 30) return ''
   return text
 }
 
@@ -69,6 +68,52 @@ const collectIngredientNames = (value: unknown, results: string[] = []): string[
 const uniqueIngredients = (items: string[]) =>
   Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).slice(0, 10)
 
+const getDetectionJobId = (body: unknown): string => {
+  if (!isRecord(body)) return ''
+  const data = isRecord(body.data) ? body.data : {}
+  return asString(
+    body.job_id ||
+      body.jobId ||
+      body.detection_job_id ||
+      body.detectionJobId ||
+      body.task_id ||
+      body.taskId ||
+      body.media_id ||
+      body.mediaId ||
+      body.id ||
+      data.job_id ||
+      data.jobId ||
+      data.detection_job_id ||
+      data.id,
+  )
+}
+
+const isDetectionPending = (body: unknown) => {
+  if (!isRecord(body)) return false
+  const status = asString(body.status || body.state || body.phase).toLowerCase()
+  return ['pending', 'queued', 'running', 'processing', 'started'].includes(status)
+}
+
+const requestWithOptionalAuth = <T>(path: string, options = {}) =>
+  apiRequest<T>(path, {
+    ...options,
+    auth: Boolean(getStoredTokens()?.access),
+  })
+
+const uploadIngredientImage = (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('purpose', 'ingredient')
+
+  return requestWithOptionalAuth<unknown>('/media/upload/', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+const fetchDetectionResult = (jobId: string) =>
+  requestWithOptionalAuth<unknown>(`/media/detection/${encodeURIComponent(jobId)}/`)
+
 export const searchIngredientsApi = async (search = '') => {
   const query = new URLSearchParams()
   if (search) query.set('search', search)
@@ -80,15 +125,19 @@ export const searchIngredientsApi = async (search = '') => {
 }
 
 export const analyzeIngredientImageApi = async (file: File) => {
-  const formData = new FormData()
-  formData.append('image', file)
-  formData.append('purpose', 'ingredient')
+  const uploadBody = await uploadIngredientImage(file)
+  const uploadIngredients = uniqueIngredients(collectIngredientNames(uploadBody))
+  const jobId = getDetectionJobId(uploadBody)
 
-  const body = await apiRequest<unknown>(imageIngredientEndpoint, {
-    method: 'POST',
-    body: formData,
-  })
+  if (uploadIngredients.length > 0 || !jobId) return uploadIngredients
 
-  const candidates = collectIngredientNames(body)
-  return uniqueIngredients(candidates)
+  let lastBody: unknown = null
+  for (let attempt = 0; attempt < DETECTION_POLL_COUNT; attempt += 1) {
+    if (attempt > 0) await delay(DETECTION_POLL_DELAY_MS)
+    lastBody = await fetchDetectionResult(jobId)
+    const ingredients = uniqueIngredients(collectIngredientNames(lastBody))
+    if (ingredients.length > 0 || !isDetectionPending(lastBody)) return ingredients
+  }
+
+  return uniqueIngredients(collectIngredientNames(lastBody))
 }

@@ -1,7 +1,7 @@
 import { apiRequest } from '../../shared/api/client'
 import { asString, isRecord, unwrapList } from '../recipe/mapper'
 
-export const uploadMediaApi = (file: File, purpose: 'thumbnail' | 'steps' | 'ingredient' | string = 'thumbnail') => {
+export const uploadMediaApi = (file: File, purpose: 'thumbnail' | 'steps' | 'ingredient' | 'ingredient_detection' | string = 'thumbnail') => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('purpose', purpose)

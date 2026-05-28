@@ -43,5 +43,5 @@ export {
   updateMeApi,
 } from './features/user/api'
 export { fetchNotificationsApi, markAllNotificationsReadApi, markNotificationReadApi } from './features/notification/api'
-export { searchIngredientsApi } from './features/ingredient/api'
+export { analyzeIngredientImageApi, searchIngredientsApi } from './features/ingredient/api'
 export { createTagApi, fetchTagsApi, uploadMediaApi } from './features/media/api'

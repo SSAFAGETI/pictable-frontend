@@ -1,6 +1,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { recipes } from '../../../data'
+import { analyzeIngredientImageApi } from '../../ingredient/api'
 import { recommendationsPath } from '../../../shared/constants/routes'
 
 const MAX_INGREDIENTS = 10
@@ -12,6 +13,8 @@ const readImageFile = (file: File, callback: (value: string) => void) => {
   reader.readAsDataURL(file)
 }
 
+const normalizeIngredient = (ingredient: string) => ingredient.trim().replace(/\s+/g, ' ')
+
 export const useHomeRecipes = () => {
   const router = useRouter()
   const inputValue = ref('')
@@ -21,6 +24,8 @@ export const useHomeRecipes = () => {
   const cameraImageInput = ref<HTMLInputElement | null>(null)
   const selectedImageName = ref('')
   const selectedImagePreview = ref('')
+  const isAnalyzingImage = ref(false)
+  const imageAnalyzeError = ref('')
   const activeIndex = ref(0)
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
@@ -28,9 +33,14 @@ export const useHomeRecipes = () => {
   let timer: number | undefined
 
   const addIngredient = (ingredient: string) => {
-    if (!ingredient || ingredients.value.includes(ingredient) || ingredients.value.length >= MAX_INGREDIENTS) return
-    ingredients.value.push(ingredient)
+    const normalized = normalizeIngredient(ingredient)
+    if (!normalized || ingredients.value.includes(normalized) || ingredients.value.length >= MAX_INGREDIENTS) return
+    ingredients.value.push(normalized)
     inputValue.value = ''
+  }
+
+  const addIngredients = (items: string[]) => {
+    items.forEach(addIngredient)
   }
 
   const removeIngredient = (ingredient: string) => {
@@ -47,21 +57,38 @@ export const useHomeRecipes = () => {
     showUploadMenu.value = false
   }
 
-  const handleImageUpload = (event: Event) => {
+  const handleImageUpload = async (event: Event) => {
     const input = event.target as HTMLInputElement
     const file = input.files?.[0]
     input.value = ''
     if (!file) return
 
     selectedImageName.value = file.name || 'camera-photo.jpg'
+    imageAnalyzeError.value = ''
     readImageFile(file, (value) => {
       selectedImagePreview.value = value
     })
+
+    isAnalyzingImage.value = true
+    try {
+      const detectedIngredients = await analyzeIngredientImageApi(file)
+      if (detectedIngredients.length === 0) {
+        imageAnalyzeError.value = '이미지에서 재료를 찾지 못했어요. 직접 입력으로 추가해주세요.'
+        return
+      }
+
+      addIngredients(detectedIngredients)
+    } catch (error) {
+      imageAnalyzeError.value = error instanceof Error ? error.message : '이미지 재료 인식에 실패했어요. 잠시 후 다시 시도해주세요.'
+    } finally {
+      isAnalyzingImage.value = false
+    }
   }
 
   const removeSelectedImage = () => {
     selectedImageName.value = ''
     selectedImagePreview.value = ''
+    imageAnalyzeError.value = ''
   }
 
   const goRecommendations = () => {
@@ -86,8 +113,10 @@ export const useHomeRecipes = () => {
     galleryImageInput,
     goRecommendations,
     handleImageUpload,
+    imageAnalyzeError,
     ingredients,
     inputValue,
+    isAnalyzingImage,
     openCameraPicker,
     openGalleryPicker,
     popularRecipes,

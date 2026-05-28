@@ -6,11 +6,16 @@
         <div class="mt-2 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <h1 class="text-2xl font-bold lg:text-3xl">가지고 있는 재료로 가능한 요리</h1>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">YOLOv8n 재료 인식 결과를 정규화하고, 부족 재료 수를 계산해 추천합니다.</p>
+            <p class="mt-2 text-sm leading-6 text-muted-foreground">입력하거나 인식한 재료가 많이 포함된 레시피부터 추천합니다.</p>
           </div>
           <RouterLink to="/ingredients" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
             재료 사진 업로드
           </RouterLink>
+        </div>
+        <div v-if="selectedIngredients.length > 0" class="mt-4 flex flex-wrap gap-2">
+          <span v-for="ingredient in selectedIngredients" :key="ingredient" class="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
+            #{{ ingredient }}
+          </span>
         </div>
       </section>
 
@@ -36,8 +41,52 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import RecipeCard from '../components/RecipeCard.vue'
-import { recipes, substitutes } from '../data'
+import { recipes, substitutes, type Recipe } from '../data'
 
-const canMake = computed(() => recipes.value.slice(0, 3))
+const route = useRoute()
+
+const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, '')
+
+const selectedIngredients = computed(() => {
+  const raw = Array.isArray(route.query.ingredients) ? route.query.ingredients.join(',') : String(route.query.ingredients || '')
+  return Array.from(
+    new Set(
+      raw
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  )
+})
+
+const getRecipeIngredientText = (recipe: Recipe) =>
+  [
+    recipe.title,
+    recipe.description,
+    ...recipe.ingredients.map((ingredient) => `${ingredient.name} ${ingredient.amount || ''}`),
+    ...recipe.tags,
+  ]
+    .map(normalize)
+    .join(' ')
+
+const matchScore = (recipe: Recipe) => {
+  const recipeText = getRecipeIngredientText(recipe)
+  return selectedIngredients.value.reduce((score, ingredient) => {
+    const normalizedIngredient = normalize(ingredient)
+    return normalizedIngredient && recipeText.includes(normalizedIngredient) ? score + 1 : score
+  }, 0)
+}
+
+const canMake = computed(() =>
+  recipes.value
+    .slice()
+    .sort((a, b) => {
+      const scoreDiff = matchScore(b) - matchScore(a)
+      if (scoreDiff !== 0) return scoreDiff
+      return b.likes - a.likes
+    })
+    .slice(0, 6),
+)
 </script>

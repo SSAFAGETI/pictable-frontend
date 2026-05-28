@@ -66,6 +66,11 @@
                 </button>
               </div>
             </div>
+            <div v-if="isAnalyzingImage || imageAnalyzeError || (selectedImagePreview && ingredients.length > 0)" class="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <p v-if="isAnalyzingImage" class="font-semibold text-primary">이미지에서 재료를 찾고 있어요...</p>
+              <p v-else-if="imageAnalyzeError" class="font-semibold text-destructive">{{ imageAnalyzeError }}</p>
+              <p v-else class="text-muted-foreground">인식된 재료를 확인하고 필요 없는 항목은 X로 제거해주세요.</p>
+            </div>
             <div v-if="ingredients.length > 0" class="mt-4 flex flex-wrap gap-2">
               <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
                 {{ ingredient }}
@@ -81,7 +86,7 @@
               @click="goRecommendations"
             >
               <Sparkles class="h-5 w-5" />
-              {{ ingredients.length > 0 ? `${ingredients.length}개 재료로 추천받기` : '재료를 추가해주세요' }}
+              {{ ingredients.length > 0 ? '레시피를 찾아볼게요' : '재료를 추가해주세요' }}
             </button>
           </div>
         </div>
@@ -226,8 +231,10 @@ const {
   galleryImageInput,
   goRecommendations,
   handleImageUpload,
+  imageAnalyzeError,
   ingredients,
   inputValue,
+  isAnalyzingImage,
   openCameraPicker,
   openGalleryPicker,
   popularRecipes,

@@ -78,13 +78,12 @@ const getDetectionJobId = (body: unknown): string => {
       body.detectionJobId ||
       body.task_id ||
       body.taskId ||
-      body.media_id ||
-      body.mediaId ||
-      body.id ||
       data.job_id ||
       data.jobId ||
       data.detection_job_id ||
-      data.id,
+      data.detectionJobId ||
+      data.task_id ||
+      data.taskId,
   )
 }
 
@@ -129,7 +128,8 @@ export const analyzeIngredientImageApi = async (file: File) => {
   const uploadIngredients = uniqueIngredients(collectIngredientNames(uploadBody))
   const jobId = getDetectionJobId(uploadBody)
 
-  if (uploadIngredients.length > 0 || !jobId) return uploadIngredients
+  if (uploadIngredients.length > 0) return uploadIngredients
+  if (!jobId) throw new Error('이미지 업로드는 완료됐지만 재료 인식 작업 ID를 받지 못했어요.')
 
   let lastBody: unknown = null
   for (let attempt = 0; attempt < DETECTION_POLL_COUNT; attempt += 1) {

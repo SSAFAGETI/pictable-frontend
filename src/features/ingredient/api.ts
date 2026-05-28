@@ -102,7 +102,7 @@ const requestWithOptionalAuth = <T>(path: string, options = {}) =>
 const uploadIngredientImage = (file: File) => {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('purpose', 'ingredient')
+  formData.append('purpose', 'ingredient_detection')
 
   return requestWithOptionalAuth<unknown>('/media/upload/', {
     method: 'POST',

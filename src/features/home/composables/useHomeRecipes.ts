@@ -5,13 +5,22 @@ import { recommendationsPath } from '../../../shared/constants/routes'
 
 const MAX_INGREDIENTS = 10
 const CAROUSEL_INTERVAL_MS = 6000
-const SAMPLE_UPLOAD_INGREDIENTS = ['양파', '달걀', '감자']
+
+const readImageFile = (file: File, callback: (value: string) => void) => {
+  const reader = new FileReader()
+  reader.onload = () => callback(String(reader.result || ''))
+  reader.readAsDataURL(file)
+}
 
 export const useHomeRecipes = () => {
   const router = useRouter()
   const inputValue = ref('')
   const ingredients = ref<string[]>([])
   const showUploadMenu = ref(false)
+  const galleryImageInput = ref<HTMLInputElement | null>(null)
+  const cameraImageInput = ref<HTMLInputElement | null>(null)
+  const selectedImageName = ref('')
+  const selectedImagePreview = ref('')
   const activeIndex = ref(0)
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
@@ -28,11 +37,31 @@ export const useHomeRecipes = () => {
     ingredients.value = ingredients.value.filter((item) => item !== ingredient)
   }
 
-  const simulateImageUpload = () => {
-    SAMPLE_UPLOAD_INGREDIENTS.forEach((ingredient) => {
-      if (!ingredients.value.includes(ingredient)) ingredients.value.push(ingredient)
-    })
+  const openGalleryPicker = () => {
+    galleryImageInput.value?.click()
     showUploadMenu.value = false
+  }
+
+  const openCameraPicker = () => {
+    cameraImageInput.value?.click()
+    showUploadMenu.value = false
+  }
+
+  const handleImageUpload = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+
+    selectedImageName.value = file.name || 'camera-photo.jpg'
+    readImageFile(file, (value) => {
+      selectedImagePreview.value = value
+    })
+  }
+
+  const removeSelectedImage = () => {
+    selectedImageName.value = ''
+    selectedImagePreview.value = ''
   }
 
   const goRecommendations = () => {
@@ -53,14 +82,21 @@ export const useHomeRecipes = () => {
   return {
     activeIndex,
     addIngredient,
+    cameraImageInput,
+    galleryImageInput,
     goRecommendations,
+    handleImageUpload,
     ingredients,
     inputValue,
+    openCameraPicker,
+    openGalleryPicker,
     popularRecipes,
     recentRecipes,
     removeIngredient,
+    removeSelectedImage,
+    selectedImageName,
+    selectedImagePreview,
     showUploadMenu,
-    simulateImageUpload,
     todayRecipes,
   }
 }

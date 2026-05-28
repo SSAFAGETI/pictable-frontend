@@ -36,15 +36,17 @@
                 @keydown.enter.prevent="addIngredient(inputValue.trim())"
               />
               <div class="relative">
+                <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
+                <input ref="cameraImageInput" class="hidden" type="file" accept="image/*" capture="environment" @change="handleImageUpload" />
                 <button type="button" class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-input bg-background hover:bg-muted" @click="showUploadMenu = !showUploadMenu">
                   <Plus class="h-5 w-5" />
                 </button>
-                <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-border bg-card p-2 shadow-lg">
-                  <button class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="simulateImageUpload">
-                    <Camera class="h-4 w-4 text-muted-foreground" />
+                <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-md border border-border bg-card p-2 shadow-lg">
+                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="openGalleryPicker">
+                    <ImageIcon class="h-4 w-4 text-muted-foreground" />
                     갤러리에서 선택
                   </button>
-                  <button class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="simulateImageUpload">
+                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="openCameraPicker">
                     <Camera class="h-4 w-4 text-muted-foreground" />
                     카메라로 촬영
                   </button>
@@ -52,6 +54,18 @@
               </div>
             </div>
 
+            <div v-if="selectedImagePreview" class="mt-4 overflow-hidden rounded-lg border border-border bg-muted/30">
+              <div class="flex items-center gap-3 p-3">
+                <img :src="selectedImagePreview" :alt="selectedImageName" class="h-16 w-16 rounded-md object-cover" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-bold">{{ selectedImageName || '선택한 이미지' }}</p>
+                  <p class="text-xs text-muted-foreground">이미지 1장이 선택되었습니다.</p>
+                </div>
+                <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-destructive" aria-label="선택 이미지 삭제" @click="removeSelectedImage">
+                  <X class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
             <div v-if="ingredients.length > 0" class="mt-4 flex flex-wrap gap-2">
               <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
                 {{ ingredient }}
@@ -199,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Camera, ChefHat, Clock, Heart, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
+import { ArrowRight, Camera, ChefHat, Clock, Heart, Image as ImageIcon, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
 import RecipeCard from '../components/RecipeCard.vue'
 import { useHomeRecipes } from '../features/home/composables/useHomeRecipes'
 import { difficultyLabels } from '../data'
@@ -208,14 +222,21 @@ import { RECIPE_TAGS } from '../tags'
 const {
   activeIndex,
   addIngredient,
+  cameraImageInput,
+  galleryImageInput,
   goRecommendations,
+  handleImageUpload,
   ingredients,
   inputValue,
+  openCameraPicker,
+  openGalleryPicker,
   popularRecipes,
   recentRecipes,
   removeIngredient,
+  removeSelectedImage,
+  selectedImageName,
+  selectedImagePreview,
   showUploadMenu,
-  simulateImageUpload,
   todayRecipes,
 } = useHomeRecipes()
 </script>

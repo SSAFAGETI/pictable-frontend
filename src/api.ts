@@ -29,12 +29,15 @@ export {
   updateCommentApi,
   updateRecipeApi,
 } from './features/recipe/api'
-export { fetchFeedRecipesApi } from './features/feed/api'
+export { fetchFeedRecipesApi, fetchFeedRecipesPageApi, RECIPE_PAGE_SIZE } from './features/feed/api'
 export {
   fetchLikedRecipesApi,
+  fetchLikedRecipesPageApi,
   fetchMeApi,
   fetchMyRecipesApi,
+  fetchMyRecipesPageApi,
   fetchSavedRecipesApi,
+  fetchSavedRecipesPageApi,
   fetchSubscribersApi,
   fetchSubscriptionsApi,
   subscribeUserApi,

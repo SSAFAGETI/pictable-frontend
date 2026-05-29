@@ -68,6 +68,58 @@ export const unwrapList = (body: unknown): unknown[] => {
 
 export const unwrapDetail = (body: unknown) => (isRecord(body) && body.data ? body.data : body)
 
+export const unwrapPagination = (body: unknown) => {
+  const items = unwrapList(body)
+  if (!isRecord(body)) return { items, hasNext: false, count: items.length, isPaginated: false }
+  const isPaginated =
+    body.next !== undefined ||
+    body.previous !== undefined ||
+    body.count !== undefined ||
+    body.total !== undefined ||
+    body.has_next !== undefined ||
+    body.hasNext !== undefined
+  return {
+    items,
+    hasNext: Boolean(body.next || body.has_next || body.hasNext),
+    count: asNumber(body.count || body.total, items.length),
+    isPaginated,
+  }
+}
+
+const getCursorFromUrl = (value: unknown) => {
+  const url = asString(value).trim()
+  if (!url) return null
+  try {
+    const parsed = new URL(url, window.location.origin)
+    return parsed.searchParams.get('cursor')
+  } catch {
+    return null
+  }
+}
+
+export const unwrapCursorPagination = (body: unknown) => {
+  const items = unwrapList(body)
+  if (!isRecord(body)) return { items, hasNext: false, nextCursor: null, isPaginated: false }
+
+  const nextCursor =
+    asString(body.next_cursor || body.nextCursor || body.cursor || '').trim() ||
+    getCursorFromUrl(body.next) ||
+    null
+  const isPaginated =
+    body.next !== undefined ||
+    body.previous !== undefined ||
+    body.next_cursor !== undefined ||
+    body.nextCursor !== undefined ||
+    body.cursor !== undefined ||
+    body.results !== undefined
+
+  return {
+    items,
+    hasNext: Boolean(nextCursor || body.has_next || body.hasNext),
+    nextCursor,
+    isPaginated,
+  }
+}
 export const normalizeMediaUrl = (value: unknown) => {
   const cachedMediaUrl = cachedMediaUrlFromId(value)
   if (cachedMediaUrl) return cachedMediaUrl
@@ -110,8 +162,8 @@ const getSortedStepRecords = (value: unknown) =>
 
 const getAuthorName = (value: unknown) => {
   if (typeof value === 'string') return value
-  if (!isRecord(value)) return '찰칵밥상'
-  return asString(value.nickname || value.name || value.email || value.username, '찰칵밥상')
+  if (!isRecord(value)) return '李곗뭇諛μ긽'
+  return asString(value.nickname || value.name || value.email || value.username, '李곗뭇諛μ긽')
 }
 
 const getTags = (value: unknown) =>
@@ -132,7 +184,7 @@ const getIngredients = (value: unknown, title: string): Ingredient[] => {
     })
     .filter((item): item is Ingredient => Boolean(item?.name))
 
-  return ingredients.length ? ingredients : [{ id: `${title}-ingredient`, name: '재료', amount: '적당량' }]
+  return ingredients.length ? ingredients : [{ id: `${title}-ingredient`, name: 'ingredient', amount: 'as needed' }]
 }
 
 const getSteps = (value: unknown) => {
@@ -145,7 +197,7 @@ const getSteps = (value: unknown) => {
   const images = steps.map((step) => getMediaUrl(getStepImageSource(step))).filter(Boolean)
 
   return {
-    descriptions: descriptions.length ? descriptions : ['맛있게 조리해주세요.'],
+    descriptions: descriptions.length ? descriptions : ['留쏆엳寃?議곕━?댁＜?몄슂.'],
     images,
   }
 }
@@ -157,14 +209,14 @@ const normalizeDifficulty = (value: unknown): Difficulty => {
 
 export const mapDjangoRecipe = (raw: unknown): Recipe => {
   const record = isRecord(raw) ? raw : {}
-  const title = asString(record.title || record.name, '이름 없는 레시피')
+  const title = asString(record.title || record.name, 'Untitled recipe')
   const steps = getSteps(record.steps)
   const image = getMediaUrl(getRecipeImageSource(record)) || steps.images[0] || fallbackImage
 
   return {
     id: asString(record.id || record.pk || record.uuid, `recipe-${Date.now()}`),
     title,
-    description: asString(record.description || record.summary, '맛있는 레시피입니다.'),
+    description: asString(record.description || record.summary, '留쏆엳???덉떆?쇱엯?덈떎.'),
     image,
     cookTime: asNumber(record.cook_time || record.cookTime || record.time, 10),
     difficulty: normalizeDifficulty(record.difficulty),
@@ -200,11 +252,22 @@ export const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> =>
   }
 }
 
-export const mapDjangoRecipeListWithMedia = (items: unknown[]) => Promise.all(items.map(mapDjangoRecipeWithMedia))
+export const mapDjangoRecipeListItemWithMedia = async (raw: unknown): Promise<Recipe> => {
+  const record = isRecord(raw) ? raw : {}
+  const recipe = mapDjangoRecipe(raw)
+  const mainImage = await resolveMediaUrl(getRecipeImageSource(record))
+
+  return {
+    ...recipe,
+    image: mainImage || recipe.image,
+  }
+}
+
+export const mapDjangoRecipeListWithMedia = (items: unknown[]) => Promise.all(items.map(mapDjangoRecipeListItemWithMedia))
 export const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
   const record = isRecord(raw) ? raw : {}
   const email = asString(record.email || record.username, '')
-  const name = asString(record.nickname || record.name || email.split('@')[0], '사용자')
+  const name = asString(record.nickname || record.name || email.split('@')[0], 'User')
 
   return {
     id: asString(record.id || record.pk || record.uuid, `user-${index}`),
@@ -216,16 +279,15 @@ export const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
 
 export const mapNotification = (raw: unknown, index = 0): NotificationItem => {
   const record = isRecord(raw) ? raw : {}
-  const type = asString(record.type || record.kind, '알림')
+  const type = asString(record.type || record.kind, '?뚮┝')
   const actor = asString(record.actor || record.sender || record.author || '')
   const content = asString(record.message || record.content || record.body, '')
 
   return {
     id: asString(record.id || record.pk || `notification-${index}`),
-    title: asString(record.title, actor ? `${actor}님의 ${type}` : type),
-    message: content || '새로운 알림이 도착했어요.',
+    title: asString(record.title, actor ? `${actor}?섏쓽 ${type}` : type),
+    message: content || '?덈줈???뚮┝???꾩갑?덉뼱??',
     isRead: Boolean(record.is_read || record.read),
     createdAt: asString(record.created_at || record.createdAt, new Date().toISOString()),
   }
 }
-

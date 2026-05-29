@@ -1,9 +1,9 @@
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchFeedRecipesApi } from '../api'
-import { fetchMyRecipesApi } from '../../user/api'
+import { fetchFeedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
+import { fetchMyRecipesPageApi } from '../../user/api'
 import { useAuth } from '../../../auth'
-import { recipes } from '../../../data'
+import type { Recipe } from '../../../data'
 import { getRecipeTagByName, getRecipeTagNamesByIds } from '../../../tags'
 
 export type FeedSortOption = 'popular' | 'recent' | 'likes'
@@ -14,6 +14,11 @@ const normalizeSort = (value: unknown): FeedSortOption => {
   return 'popular'
 }
 
+const mergeRecipes = (current: Recipe[], next: Recipe[]) => {
+  const seen = new Set(current.map((recipe) => recipe.id))
+  return [...current, ...next.filter((recipe) => !seen.has(recipe.id))]
+}
+
 export const useFeedRecipes = () => {
   const route = useRoute()
   const { isAuthenticated } = useAuth()
@@ -22,42 +27,87 @@ export const useFeedRecipes = () => {
   const selectedTagIds = ref<number[]>(initialTag ? [initialTag.id] : [])
   const feedRequestId = ref(0)
   const sortBy = ref<FeedSortOption>(normalizeSort(route.query.sort))
+  const feedRecipes = ref<Recipe[]>([])
+  const nextCursor = ref<string | null>(null)
+  const hasNextPage = ref(true)
+  const isLoadingPage = ref(false)
+  const sentinelRef = ref<HTMLElement | null>(null)
+  let observer: IntersectionObserver | null = null
 
   const resetFilters = () => {
     searchQuery.value = ''
     selectedTagIds.value = []
   }
 
-  const loadFeedFromApi = async () => {
-    const requestId = feedRequestId.value + 1
-    feedRequestId.value = requestId
+  const loadFeedPage = async (reset = false) => {
+    if (isLoadingPage.value) return
+    if (!reset && !hasNextPage.value) return
+
+    const requestId = reset ? feedRequestId.value + 1 : feedRequestId.value
+    if (reset) {
+      feedRequestId.value = requestId
+      nextCursor.value = null
+      hasNextPage.value = true
+      feedRecipes.value = []
+    }
+
+    isLoadingPage.value = true
     const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
 
     try {
-      const apiRecipes =
+      const result =
         route.query.source === 'my' && isAuthenticated.value
-          ? await fetchMyRecipesApi()
-          : await fetchFeedRecipesApi({
+          ? await fetchMyRecipesPageApi({ cursor: nextCursor.value, pageSize: RECIPE_PAGE_SIZE })
+          : await fetchFeedRecipesPageApi({
               sort: sortBy.value === 'recent' ? 'latest' : 'popular',
               search: searchQuery.value.trim() || undefined,
               tags: selectedTags,
+              cursor: nextCursor.value,
+              pageSize: RECIPE_PAGE_SIZE,
             })
 
-      if (requestId === feedRequestId.value && apiRecipes.length > 0) {
-        recipes.value = apiRecipes
-      }
+      if (requestId !== feedRequestId.value) return
+
+      const previousLength = feedRecipes.value.length
+      feedRecipes.value = reset ? result.items : mergeRecipes(feedRecipes.value, result.items)
+      const addedCount = feedRecipes.value.length - previousLength
+      nextCursor.value = result.nextCursor
+      hasNextPage.value = result.hasNext && Boolean(result.nextCursor) && (reset ? result.items.length > 0 : addedCount > 0)
     } catch {
-      // Keep local/public fallback recipes visible when the Django API is not reachable.
+      if (reset) feedRecipes.value = []
+      hasNextPage.value = false
+    } finally {
+      if (requestId === feedRequestId.value) isLoadingPage.value = false
     }
   }
 
+  const setupObserver = () => {
+    observer?.disconnect()
+    if (!sentinelRef.value) return
+
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void loadFeedPage(false)
+      },
+      { rootMargin: '480px 0px' },
+    )
+    observer.observe(sentinelRef.value)
+  }
+
   onMounted(() => {
-    void loadFeedFromApi()
+    void loadFeedPage(true)
+    setupObserver()
+  })
+
+  onUnmounted(() => {
+    observer?.disconnect()
   })
 
   watch([searchQuery, selectedTagIds, sortBy], () => {
-    void loadFeedFromApi()
+    void loadFeedPage(true)
   })
+
+  watch(sentinelRef, setupObserver)
 
   watch(
     () => route.query.tag,
@@ -77,14 +127,14 @@ export const useFeedRecipes = () => {
   watch(
     () => route.query.source,
     () => {
-      void loadFeedFromApi()
+      void loadFeedPage(true)
     },
   )
 
   const filteredRecipes = computed(() => {
     const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
 
-    return recipes.value
+    return feedRecipes.value
       .filter((recipe) => {
         const queryMatch =
           !searchQuery.value ||
@@ -103,9 +153,12 @@ export const useFeedRecipes = () => {
 
   return {
     filteredRecipes,
+    hasNextPage,
+    isLoadingPage,
     resetFilters,
     searchQuery,
     selectedTagIds,
+    sentinelRef,
     sortBy,
   }
 }

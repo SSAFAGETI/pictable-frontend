@@ -8,34 +8,82 @@
     <main v-else class="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
       <div class="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         <RecipeCard v-for="recipe in savedRecipes" :key="recipe.id" :recipe="{ ...recipe, isSaved: true }" />
+        <div ref="sentinelRef" class="col-span-full flex h-16 items-center justify-center text-sm text-muted-foreground">
+          <span v-if="isLoadingPage">저장한 레시피를 더 불러오는 중...</span>
+          <span v-else-if="hasNextPage">스크롤하면 더 불러와요</span>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
-import { fetchSavedRecipesApi } from '../api'
+import { fetchSavedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
 import { useAuth } from '../auth'
 import type { Recipe } from '../data'
 
 const { isAuthenticated } = useAuth()
 const savedRecipes = ref<Recipe[]>([])
+const nextCursor = ref<string | null>(null)
+const hasNextPage = ref(true)
+const isLoadingPage = ref(false)
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
-const loadSavedRecipes = async () => {
+const mergeRecipes = (current: Recipe[], next: Recipe[]) => {
+  const seen = new Set(current.map((recipe) => recipe.id))
+  return [...current, ...next.filter((recipe) => !seen.has(recipe.id))]
+}
+
+const loadSavedRecipes = async (reset = false) => {
   if (!isAuthenticated.value) {
     savedRecipes.value = []
+    nextCursor.value = null
+    hasNextPage.value = false
     return
   }
+  if (isLoadingPage.value) return
+  if (!reset && !hasNextPage.value) return
 
-  try {
-    savedRecipes.value = await fetchSavedRecipesApi()
-  } catch {
+  if (reset) {
     savedRecipes.value = []
+    nextCursor.value = null
+    hasNextPage.value = true
+  }
+
+  isLoadingPage.value = true
+  try {
+    const result = await fetchSavedRecipesPageApi({ cursor: nextCursor.value, pageSize: RECIPE_PAGE_SIZE })
+    const previousLength = savedRecipes.value.length
+    savedRecipes.value = reset ? result.items : mergeRecipes(savedRecipes.value, result.items)
+    const addedCount = savedRecipes.value.length - previousLength
+    nextCursor.value = result.nextCursor
+    hasNextPage.value = result.hasNext && Boolean(result.nextCursor) && (reset ? result.items.length > 0 : addedCount > 0)
+  } catch {
+    if (reset) savedRecipes.value = []
+    hasNextPage.value = false
+  } finally {
+    isLoadingPage.value = false
   }
 }
 
-watch(isAuthenticated, () => void loadSavedRecipes(), { immediate: true })
+const setupObserver = () => {
+  observer?.disconnect()
+  if (!sentinelRef.value) return
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) void loadSavedRecipes(false)
+    },
+    { rootMargin: '480px 0px' },
+  )
+  observer.observe(sentinelRef.value)
+}
+
+onMounted(setupObserver)
+onUnmounted(() => observer?.disconnect())
+watch(sentinelRef, setupObserver)
+watch(isAuthenticated, () => void loadSavedRecipes(true), { immediate: true })
 </script>

@@ -59,9 +59,14 @@
           </div>
         </RouterLink>
 
-        <div v-if="filteredRecipes.length === 0" class="col-span-full flex min-h-[320px] flex-col items-center justify-center py-12 text-center">
+        <div v-if="!isLoadingPage && filteredRecipes.length === 0" class="col-span-full flex min-h-[320px] flex-col items-center justify-center py-12 text-center">
           <p class="text-muted-foreground">검색 결과가 없습니다.</p>
           <button class="inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-bold text-primary hover:underline" @click="resetFilters">검색 초기화</button>
+        </div>
+
+        <div ref="sentinelRef" class="col-span-full flex h-16 items-center justify-center text-sm text-muted-foreground">
+          <span v-if="isLoadingPage">레시피를 더 불러오는 중...</span>
+          <span v-else-if="hasNextPage">스크롤하면 더 불러와요</span>
         </div>
       </div>
     </main>
@@ -74,7 +79,7 @@ import RecipeTagSelector from '../components/RecipeTagSelector.vue'
 import { useFeedRecipes, type FeedSortOption } from '../features/feed/composables/useFeedRecipes'
 import { difficultyLabels, type Difficulty } from '../data'
 
-const { filteredRecipes, resetFilters, searchQuery, selectedTagIds, sortBy } = useFeedRecipes()
+const { filteredRecipes, hasNextPage, isLoadingPage, resetFilters, searchQuery, selectedTagIds, sentinelRef, sortBy } = useFeedRecipes()
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',

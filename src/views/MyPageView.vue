@@ -11,7 +11,7 @@
           <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
             <div class="p-4">
               <div class="flex items-center gap-4">
-                <img class="h-16 w-16 rounded-full object-cover" :src="displayUser.avatar" alt="프로필" />
+                <img class="h-16 w-16 rounded-full object-cover" :src="displayUser.avatar" alt="profile" />
                 <div class="min-w-0 flex-1">
                   <h2 class="truncate text-lg font-bold">{{ displayUser.name }}</h2>
                   <p class="truncate text-sm text-muted-foreground">{{ displayUser.email }}</p>
@@ -28,8 +28,8 @@
                   <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ myRecipes.length }}</p><p class="text-xs text-muted-foreground">내 레시피</p></div>
                 </div>
                 <div class="grid grid-cols-2 divide-x divide-border border-t border-border p-3 lg:contents lg:divide-x-0 lg:border-t-0 lg:p-0">
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followingProfiles.length }}</p><p class="text-xs text-muted-foreground">구독</p></div>
-                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followerProfiles.length }}</p><p class="text-xs text-muted-foreground">구독자</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followingProfiles.length }}</p><p class="text-xs text-muted-foreground">내가 구독한 사람</p></div>
+                  <div class="text-center lg:p-3"><p class="text-xl font-bold text-primary">{{ followerProfiles.length }}</p><p class="text-xs text-muted-foreground">나를 구독한 사람</p></div>
                 </div>
               </div>
             </div>
@@ -46,10 +46,14 @@
 
           <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <RecipeCard v-for="recipe in visibleRecipes" :key="recipe.id" :recipe="recipe" variant="horizontal" />
+            <div ref="sentinelRef" class="col-span-full flex h-16 items-center justify-center text-sm text-muted-foreground">
+              <span v-if="activeTabLoading">레시피를 더 불러오는 중...</span>
+              <span v-else-if="activeTabHasNext">스크롤하면 더 불러와요</span>
+            </div>
           </div>
 
           <RouterLink v-if="activeTab === 'my'" to="/my-recipe/new" class="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-bold shadow-sm hover:bg-muted">
-            새 레시피 등록하기
+            레시피 등록하기
           </RouterLink>
 
           <section class="mt-6 space-y-3">
@@ -96,22 +100,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, ref, watch } from 'vue'
+import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, UserCheck } from 'lucide-vue-next'
-import { fetchLikedRecipesApi, fetchMyRecipesApi, fetchSavedRecipesApi, fetchSubscribersApi, fetchSubscriptionsApi, type UserProfile } from '../api'
+import {
+  fetchLikedRecipesPageApi,
+  fetchMyRecipesPageApi,
+  fetchSavedRecipesPageApi,
+  fetchSubscribersApi,
+  fetchSubscriptionsApi,
+  RECIPE_PAGE_SIZE,
+  type UserProfile,
+} from '../api'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import { useAuth } from '../auth'
 import type { Recipe } from '../data'
 import { APP_ROUTES } from '../shared/constants/routes'
 
+type RecipeTab = 'saved' | 'liked' | 'my'
+
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
-const activeTab = ref<'saved' | 'liked' | 'my'>('saved')
+const activeTab = ref<RecipeTab>('saved')
 const savedRecipes = ref<Recipe[]>([])
 const likedRecipes = ref<Recipe[]>([])
 const myRecipes = ref<Recipe[]>([])
+const tabCursors = ref<Record<RecipeTab, string | null>>({ saved: null, liked: null, my: null })
+const tabHasNext = ref<Record<RecipeTab, boolean>>({ saved: true, liked: true, my: true })
+const tabLoading = ref<Record<RecipeTab, boolean>>({ saved: false, liked: false, my: false })
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 const followingProfiles = ref<UserProfile[]>([])
 const followerProfiles = ref<UserProfile[]>([])
 const tabs = [
@@ -122,7 +141,7 @@ const tabs = [
 
 const menuItems = [
   { icon: Server, label: '백엔드 API 명세', href: APP_ROUTES.backendApi },
-  { icon: FileText, label: '웹/앱 플로우 프레임워크', href: '/user-flow-wireframe.html', external: true },
+  { icon: FileText, label: '사용자 플로우 와이어프레임', href: '/user-flow-wireframe.html', external: true },
   { icon: Bell, label: '알림 설정', href: '/settings/notifications' },
   { icon: HelpCircle, label: '고객센터', href: '/help' },
   { icon: FileText, label: '이용약관', href: '/terms' },
@@ -135,6 +154,9 @@ const visibleRecipes = computed(() => {
   return savedRecipes.value
 })
 
+const activeTabLoading = computed(() => tabLoading.value[activeTab.value])
+const activeTabHasNext = computed(() => tabHasNext.value[activeTab.value])
+
 const displayUser = computed(() => ({
   name: user.value?.name || '김요리',
   email: user.value?.email || 'user@example.com',
@@ -146,31 +168,104 @@ const handleLogout = async () => {
   router.push(APP_ROUTES.login)
 }
 
+const getTabRecipes = (tab: RecipeTab) => {
+  if (tab === 'liked') return likedRecipes.value
+  if (tab === 'my') return myRecipes.value
+  return savedRecipes.value
+}
+
+const setTabRecipes = (tab: RecipeTab, next: Recipe[]) => {
+  if (tab === 'liked') likedRecipes.value = next
+  else if (tab === 'my') myRecipes.value = next
+  else savedRecipes.value = next
+}
+
+const mergeRecipes = (current: Recipe[], next: Recipe[]) => {
+  const seen = new Set(current.map((recipe) => recipe.id))
+  return [...current, ...next.filter((recipe) => !seen.has(recipe.id))]
+}
+
+const fetchRecipeTabPage = (tab: RecipeTab) => {
+  const params = { cursor: tabCursors.value[tab], pageSize: RECIPE_PAGE_SIZE }
+  if (tab === 'liked') return fetchLikedRecipesPageApi(params)
+  if (tab === 'my') return fetchMyRecipesPageApi(params)
+  return fetchSavedRecipesPageApi(params)
+}
+
+const resetRecipeTabs = () => {
+  savedRecipes.value = []
+  likedRecipes.value = []
+  myRecipes.value = []
+  tabCursors.value = { saved: null, liked: null, my: null }
+  tabHasNext.value = { saved: true, liked: true, my: true }
+  tabLoading.value = { saved: false, liked: false, my: false }
+}
+
+const loadRecipeTab = async (tab: RecipeTab, reset = false) => {
+  if (!isAuthenticated.value) {
+    resetRecipeTabs()
+    return
+  }
+  if (tabLoading.value[tab]) return
+  if (!reset && !tabHasNext.value[tab]) return
+
+  if (reset) {
+    setTabRecipes(tab, [])
+    tabCursors.value[tab] = null
+    tabHasNext.value[tab] = true
+  }
+
+  tabLoading.value[tab] = true
+  try {
+    const result = await fetchRecipeTabPage(tab)
+    const current = getTabRecipes(tab)
+    const nextRecipes = reset ? result.items : mergeRecipes(current, result.items)
+    const addedCount = nextRecipes.length - current.length
+    setTabRecipes(tab, nextRecipes)
+    tabCursors.value[tab] = result.nextCursor
+    tabHasNext.value[tab] = result.hasNext && Boolean(result.nextCursor) && (reset ? result.items.length > 0 : addedCount > 0)
+  } catch {
+    if (reset) setTabRecipes(tab, [])
+    tabHasNext.value[tab] = false
+  } finally {
+    tabLoading.value[tab] = false
+  }
+}
+
 const loadMyPageData = async () => {
   if (!isAuthenticated.value) {
-    savedRecipes.value = []
-    likedRecipes.value = []
-    myRecipes.value = []
+    resetRecipeTabs()
     followingProfiles.value = []
     followerProfiles.value = []
     return
   }
 
-  const [savedResult, likedResult, myResult, followingResult, followerResult] = await Promise.allSettled([
-    fetchSavedRecipesApi(),
-    fetchLikedRecipesApi(),
-    fetchMyRecipesApi(),
-    fetchSubscriptionsApi(),
-    fetchSubscribersApi(),
-  ])
+  resetRecipeTabs()
+  const [followingResult, followerResult] = await Promise.allSettled([fetchSubscriptionsApi(), fetchSubscribersApi()])
 
-  savedRecipes.value = savedResult.status === 'fulfilled' ? savedResult.value : []
-  likedRecipes.value = likedResult.status === 'fulfilled' ? likedResult.value : []
-  myRecipes.value = myResult.status === 'fulfilled' ? myResult.value : []
   followingProfiles.value = followingResult.status === 'fulfilled' ? followingResult.value : []
   followerProfiles.value = followerResult.status === 'fulfilled' ? followerResult.value : []
+  await Promise.all([loadRecipeTab('saved', true), loadRecipeTab('liked', true), loadRecipeTab('my', true)])
 }
 
+const setupObserver = () => {
+  observer?.disconnect()
+  if (!sentinelRef.value) return
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) void loadRecipeTab(activeTab.value)
+    },
+    { rootMargin: '480px 0px' },
+  )
+  observer.observe(sentinelRef.value)
+}
+
+onMounted(setupObserver)
+onUnmounted(() => observer?.disconnect())
+watch(sentinelRef, setupObserver)
+watch(activeTab, () => {
+  if (getTabRecipes(activeTab.value).length === 0) void loadRecipeTab(activeTab.value)
+})
 watch(isAuthenticated, () => void loadMyPageData(), { immediate: true })
 
 const ProfileSection = defineComponent({

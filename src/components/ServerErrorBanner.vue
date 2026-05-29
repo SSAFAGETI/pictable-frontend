@@ -3,8 +3,8 @@
     <div class="mx-auto grid max-w-7xl gap-3">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-sm font-black text-destructive">서버 API 오류 {{ serverErrors.length }}건</p>
-          <p class="mt-1 text-sm leading-6 text-destructive/80">실패한 요청별로 오류를 기록했습니다. 화면은 임시 데이터로 계속 표시됩니다.</p>
+          <p class="text-sm font-black text-destructive">서버/API 확인 필요 {{ serverErrors.length }}건</p>
+          <p class="mt-1 text-sm leading-6 text-destructive/80">요청별 문제를 기록했습니다. 화면은 가능한 기본 데이터나 대체 이미지로 계속 표시됩니다.</p>
         </div>
         <div class="flex shrink-0 items-center gap-2">
           <RouterLink

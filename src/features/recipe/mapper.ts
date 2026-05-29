@@ -124,15 +124,7 @@ type MediaPurpose = 'thumbnail' | 'steps' | 'ingredient' | 'ingredient_detection
 
 const mediaPurposes: MediaPurpose[] = ['thumbnail', 'steps', 'ingredient', 'ingredient_detection']
 
-const normalizePurpose = (value: unknown, fallback: MediaPurpose = 'thumbnail'): MediaPurpose => {
-  const purpose = asString(value).trim()
-  if (purpose === 'step') return 'steps'
-  return mediaPurposes.includes(purpose as MediaPurpose) ? (purpose as MediaPurpose) : fallback
-}
-
-const looksLikeFilePath = (value: string) => /\.[a-z0-9]{2,8}(\?.*)?$/i.test(value)
-
-export const normalizeMediaUrl = (value: unknown, fallbackPurpose: MediaPurpose = 'thumbnail') => {
+export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose = 'thumbnail') => {
   const cachedMediaUrl = cachedMediaUrlFromId(value)
   if (cachedMediaUrl) return cachedMediaUrl
 
@@ -141,7 +133,7 @@ export const normalizeMediaUrl = (value: unknown, fallbackPurpose: MediaPurpose 
     typeof value === 'string'
       ? value
       : record
-        ? asString(record.url || record.file || record.thumbnail || record.src || record.image_url || record.path || record.original_name)
+        ? asString(record.url || record.file || record.thumbnail || record.src || record.image_url || record.path)
         : ''
   const url = rawUrl.trim()
   if (!url || getMediaId(url)) return ''
@@ -164,8 +156,11 @@ export const normalizeMediaUrl = (value: unknown, fallbackPurpose: MediaPurpose 
   const cleanUrl = url.replace(/^\/+/, '')
   const firstSegment = cleanUrl.split('/')[0]
   if (mediaPurposes.includes(firstSegment as MediaPurpose)) return `/media/${cleanUrl}`
-  if (looksLikeFilePath(cleanUrl)) return `/media/${normalizePurpose(record?.purpose || record?.type, fallbackPurpose)}/${cleanUrl}`
-  return url
+
+  // The API contract says upload/detail responses must include a usable url.
+  // Do not invent /media/{purpose}/{filename}; it creates false 404s when only
+  // a bare filename leaks through from a legacy record.
+  return ''
 }
 const getMediaUrl = normalizeMediaUrl
 
@@ -185,10 +180,9 @@ const getSortedStepRecords = (value: unknown) =>
 
 const getAuthorName = (value: unknown) => {
   if (typeof value === 'string') return value
-  if (!isRecord(value)) return '李곗뭇諛μ긽'
-  return asString(value.nickname || value.name || value.email || value.username, '李곗뭇諛μ긽')
+  if (!isRecord(value)) return 'Chalkakbabsang'
+  return asString(value.nickname || value.name || value.email || value.username, 'Chalkakbabsang')
 }
-
 const getTags = (value: unknown) =>
   asArray(value)
     .map((tag) => (isRecord(tag) ? asString(tag.name || tag.title || tag.label) : asString(tag)))
@@ -220,7 +214,7 @@ const getSteps = (value: unknown) => {
   const images = steps.map((step) => getMediaUrl(getStepImageSource(step), 'steps')).filter(Boolean)
 
   return {
-    descriptions: descriptions.length ? descriptions : ['留쏆엳寃?議곕━?댁＜?몄슂.'],
+    descriptions: descriptions.length ? descriptions : ['Cook this recipe step by step.'],
     images,
   }
 }
@@ -239,7 +233,7 @@ export const mapDjangoRecipe = (raw: unknown): Recipe => {
   return {
     id: asString(record.id || record.pk || record.uuid, `recipe-${Date.now()}`),
     title,
-    description: asString(record.description || record.summary, '留쏆엳???덉떆?쇱엯?덈떎.'),
+    description: asString(record.description || record.summary, 'Recipe description is not available.'),
     image,
     cookTime: asNumber(record.cook_time || record.cookTime || record.time, 10),
     difficulty: normalizeDifficulty(record.difficulty),
@@ -302,14 +296,14 @@ export const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
 
 export const mapNotification = (raw: unknown, index = 0): NotificationItem => {
   const record = isRecord(raw) ? raw : {}
-  const type = asString(record.type || record.kind, '?뚮┝')
+  const type = asString(record.type || record.kind, 'Notification')
   const actor = asString(record.actor || record.sender || record.author || '')
   const content = asString(record.message || record.content || record.body, '')
 
   return {
     id: asString(record.id || record.pk || `notification-${index}`),
-    title: asString(record.title, actor ? `${actor}??瑜곷꺄 ${type}` : type),
-    message: content || '?덈줈???뚮┝???꾩갑?덉뼱??',
+    title: asString(record.title, actor ? `${actor}'s ${type}` : type),
+    message: content || 'A new notification has arrived.',
     isRead: Boolean(record.is_read || record.read),
     createdAt: asString(record.created_at || record.createdAt, new Date().toISOString()),
   }

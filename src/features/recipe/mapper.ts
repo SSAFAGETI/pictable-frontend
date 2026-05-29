@@ -29,8 +29,8 @@ const cachedMediaUrlFromId = (value: unknown) => {
   return id ? mediaUrlCache.get(id) || '' : ''
 }
 
-const resolveMediaUrl = async (value: unknown): Promise<string> => {
-  const directUrl = normalizeMediaUrl(value)
+const resolveMediaUrl = async (value: unknown, fallbackPurpose: MediaPurpose = 'thumbnail'): Promise<string> => {
+  const directUrl = normalizeMediaUrl(value, fallbackPurpose)
   if (directUrl) return directUrl
 
   const id = getMediaId(value)
@@ -44,7 +44,7 @@ const resolveMediaUrl = async (value: unknown): Promise<string> => {
 
   const request = apiRequest<Record<string, unknown>>(`/media/${id}/`)
     .then((media) => {
-      const url = normalizeMediaUrl(media.url || media.file || media.image || media.src)
+      const url = normalizeMediaUrl(media, fallbackPurpose)
       if (url) mediaUrlCache.set(id, url)
       return url
     })
@@ -120,11 +120,29 @@ export const unwrapCursorPagination = (body: unknown) => {
     isPaginated,
   }
 }
-export const normalizeMediaUrl = (value: unknown) => {
+type MediaPurpose = 'thumbnail' | 'steps' | 'ingredient' | 'ingredient_detection'
+
+const mediaPurposes: MediaPurpose[] = ['thumbnail', 'steps', 'ingredient', 'ingredient_detection']
+
+const normalizePurpose = (value: unknown, fallback: MediaPurpose = 'thumbnail'): MediaPurpose => {
+  const purpose = asString(value).trim()
+  if (purpose === 'step') return 'steps'
+  return mediaPurposes.includes(purpose as MediaPurpose) ? (purpose as MediaPurpose) : fallback
+}
+
+const looksLikeFilePath = (value: string) => /\.[a-z0-9]{2,8}(\?.*)?$/i.test(value)
+
+export const normalizeMediaUrl = (value: unknown, fallbackPurpose: MediaPurpose = 'thumbnail') => {
   const cachedMediaUrl = cachedMediaUrlFromId(value)
   if (cachedMediaUrl) return cachedMediaUrl
 
-  const rawUrl = typeof value === 'string' ? value : isRecord(value) ? asString(value.url || value.file || value.thumbnail || value.src || value.image_url) : ''
+  const record = isRecord(value) ? value : null
+  const rawUrl =
+    typeof value === 'string'
+      ? value
+      : record
+        ? asString(record.url || record.file || record.thumbnail || record.src || record.image_url || record.path || record.original_name)
+        : ''
   const url = rawUrl.trim()
   if (!url || getMediaId(url)) return ''
   if (/^(data|blob):/.test(url)) return url
@@ -141,9 +159,14 @@ export const normalizeMediaUrl = (value: unknown) => {
 
   if (url.startsWith('/media/')) return url
   if (url.startsWith('media/')) return `/${url}`
+  if (url.startsWith('/')) return url
+
+  const cleanUrl = url.replace(/^\/+/, '')
+  const firstSegment = cleanUrl.split('/')[0]
+  if (mediaPurposes.includes(firstSegment as MediaPurpose)) return `/media/${cleanUrl}`
+  if (looksLikeFilePath(cleanUrl)) return `/media/${normalizePurpose(record?.purpose || record?.type, fallbackPurpose)}/${cleanUrl}`
   return url
 }
-
 const getMediaUrl = normalizeMediaUrl
 
 const getRecipeImageSource = (record: Record<string, unknown>) =>
@@ -194,7 +217,7 @@ const getSteps = (value: unknown) => {
     .map((step) => (isRecord(step) ? asString(step.description || step.text || step.content) : asString(step)))
     .filter(Boolean)
 
-  const images = steps.map((step) => getMediaUrl(getStepImageSource(step))).filter(Boolean)
+  const images = steps.map((step) => getMediaUrl(getStepImageSource(step), 'steps')).filter(Boolean)
 
   return {
     descriptions: descriptions.length ? descriptions : ['留쏆엳寃?議곕━?댁＜?몄슂.'],
@@ -240,8 +263,8 @@ export const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> =>
   const recipe = mapDjangoRecipe(raw)
   const stepRecords = getSortedStepRecords(record.steps)
   const [mainImage, stepImages] = await Promise.all([
-    resolveMediaUrl(getRecipeImageSource(record)),
-    Promise.all(stepRecords.map((step) => resolveMediaUrl(getStepImageSource(step)))),
+    resolveMediaUrl(getRecipeImageSource(record), 'thumbnail'),
+    Promise.all(stepRecords.map((step) => resolveMediaUrl(getStepImageSource(step), 'steps'))),
   ])
   const resolvedStepImages = stepImages.filter(Boolean)
 
@@ -255,7 +278,7 @@ export const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> =>
 export const mapDjangoRecipeListItemWithMedia = async (raw: unknown): Promise<Recipe> => {
   const record = isRecord(raw) ? raw : {}
   const recipe = mapDjangoRecipe(raw)
-  const mainImage = await resolveMediaUrl(getRecipeImageSource(record))
+  const mainImage = await resolveMediaUrl(getRecipeImageSource(record), 'thumbnail')
 
   return {
     ...recipe,
@@ -285,7 +308,7 @@ export const mapNotification = (raw: unknown, index = 0): NotificationItem => {
 
   return {
     id: asString(record.id || record.pk || `notification-${index}`),
-    title: asString(record.title, actor ? `${actor}?섏쓽 ${type}` : type),
+    title: asString(record.title, actor ? `${actor}??瑜곷꺄 ${type}` : type),
     message: content || '?덈줈???뚮┝???꾩갑?덉뼱??',
     isRead: Boolean(record.is_read || record.read),
     createdAt: asString(record.created_at || record.createdAt, new Date().toISOString()),

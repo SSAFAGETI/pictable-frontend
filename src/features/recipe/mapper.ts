@@ -2,7 +2,7 @@ import type { Difficulty, Ingredient, Recipe } from '../../data'
 import { apiRequest } from '../../shared/api/client'
 import type { NotificationItem, UserProfile } from '../../shared/api/types'
 
-const BACKEND_ORIGIN = 'http://15.164.170.144:8000'
+const BACKEND_ORIGIN = 'http://3.38.26.186:8000'
 
 export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
 
@@ -16,6 +16,9 @@ export const asNumber = (value: unknown, fallback = 0) => {
 
 const mediaUrlCache = new Map<string, string>()
 const mediaUrlRequests = new Map<string, Promise<string>>()
+const foodSafetyImageCache = new Map<string, Promise<string>>()
+let foodSafetyCatalogRequest: Promise<unknown[]> | null = null
+let foodSafetyLookupQueue = Promise.resolve()
 
 const getMediaId = (value: unknown): string => {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) return String(value)
@@ -97,12 +100,18 @@ const getCursorFromUrl = (value: unknown) => {
   }
 }
 
+const normalizeCursor = (value: unknown) => {
+  const cursor = asString(value).trim()
+  if (!cursor) return null
+  return getCursorFromUrl(cursor) || cursor
+}
+
 export const unwrapCursorPagination = (body: unknown) => {
   const items = unwrapList(body)
   if (!isRecord(body)) return { items, hasNext: false, nextCursor: null, isPaginated: false }
 
   const nextCursor =
-    asString(body.next_cursor || body.nextCursor || body.cursor || '').trim() ||
+    normalizeCursor(body.next_cursor || body.nextCursor || body.cursor) ||
     getCursorFromUrl(body.next) ||
     null
   const isPaginated =
@@ -123,6 +132,112 @@ export const unwrapCursorPagination = (body: unknown) => {
 type MediaPurpose = 'thumbnail' | 'steps' | 'ingredient' | 'ingredient_detection'
 
 const mediaPurposes: MediaPurpose[] = ['thumbnail', 'steps', 'ingredient', 'ingredient_detection']
+const FOODSAFETY_ORIGIN = 'https://www.foodsafetykorea.go.kr'
+const FOODSAFETY_API_KEY = import.meta.env.VITE_FOODSAFETY_API_KEY || '1db71fdb6a3e4d9593eb'
+
+const toFoodSafetyImageUrl = (value: string) => encodeURI(`${FOODSAFETY_ORIGIN}/${value.replace(/^\/+/, '')}`)
+
+const isFoodSafetyFileViewPath = (value: string) => value.startsWith('/common/ecmFileView.do') || value.startsWith('common/ecmFileView.do')
+
+const hasFoodSafetyFileQuery = (value: string) => value.includes('?') || value.includes('ecm_file_no=')
+
+const isUnresolvedFoodSafetyFileView = (value: unknown) => {
+  const record = isRecord(value) ? value : null
+  const rawUrl =
+    typeof value === 'string'
+      ? value
+      : record
+        ? asString(record.url || record.file || record.thumbnail || record.src || record.image_url || record.path)
+        : ''
+  const url = rawUrl.trim()
+  return isFoodSafetyFileViewPath(url) && !hasFoodSafetyFileQuery(url)
+}
+
+const normalizeRecipeName = (value: string) => value.replace(/\s+/g, '').trim()
+
+const getFoodSafetySearchTerms = (title: string) => {
+  const normalizedTitle = title.trim()
+  const words = normalizedTitle.split(/\s+/).filter(Boolean)
+  const firstWord = words[0] || normalizedTitle
+  const lastWord = words[words.length - 1] || normalizedTitle
+  const firstTwoWords = words.slice(0, 2).join(' ')
+  return Array.from(
+    new Set([normalizedTitle, firstTwoWords, firstWord, lastWord, normalizedTitle.slice(0, 6), normalizeRecipeName(normalizedTitle)].filter((term) => term.length >= 2)),
+  )
+}
+
+const getFoodSafetyImageFromRow = (row: unknown) => {
+  if (!isRecord(row)) return ''
+  return normalizeMediaUrl(row.ATT_FILE_NO_MAIN || row.ATT_FILE_NO_MK || row.MANUAL_IMG01)
+}
+
+const readFoodSafetyRows = (body: unknown) => {
+  const serviceBody = isRecord(body) && isRecord(body.COOKRCP01) ? body.COOKRCP01 : {}
+  return asArray(serviceBody.row)
+}
+
+const fetchFoodSafetyCatalog = async () => {
+  if (foodSafetyCatalogRequest) return foodSafetyCatalogRequest
+
+  foodSafetyCatalogRequest = fetch(`https://openapi.foodsafetykorea.go.kr/api/${FOODSAFETY_API_KEY}/COOKRCP01/json/1/1500`)
+    .then((response) => (response.ok ? response.json() : null))
+    .then(readFoodSafetyRows)
+    .catch(() => [])
+
+  return foodSafetyCatalogRequest
+}
+
+const findFoodSafetyImageInRows = (rows: unknown[], title: string) => {
+  const normalizedTitle = normalizeRecipeName(title)
+  const matched =
+    rows.find((row) => isRecord(row) && normalizeRecipeName(asString(row.RCP_NM)) === normalizedTitle) ||
+    rows.find((row) => isRecord(row) && normalizeRecipeName(asString(row.RCP_NM)).includes(normalizedTitle)) ||
+    rows.find((row) => isRecord(row) && normalizedTitle.includes(normalizeRecipeName(asString(row.RCP_NM))))
+
+  return getFoodSafetyImageFromRow(matched)
+}
+
+const fetchFoodSafetyImageByTitle = async (title: string) => {
+  const normalizedTitle = normalizeRecipeName(title)
+  if (!normalizedTitle) return ''
+
+  const catalogImage = findFoodSafetyImageInRows(await fetchFoodSafetyCatalog(), title)
+  if (catalogImage) return catalogImage
+
+  for (const term of getFoodSafetySearchTerms(title)) {
+    try {
+      const response = await fetch(
+        `https://openapi.foodsafetykorea.go.kr/api/${FOODSAFETY_API_KEY}/COOKRCP01/json/1/8/RCP_NM=${encodeURIComponent(term)}`,
+      )
+      if (!response.ok) continue
+
+      const rows = readFoodSafetyRows(await response.json())
+      const image = findFoodSafetyImageInRows(rows, title) || getFoodSafetyImageFromRow(rows[0])
+      if (image) return image
+    } catch {
+      // Keep the feed usable even when the public image lookup is unavailable.
+    }
+  }
+
+  return ''
+}
+
+const resolveFoodSafetyImageByTitle = (title: string) => {
+  const normalizedTitle = normalizeRecipeName(title)
+  if (!normalizedTitle) return Promise.resolve('')
+  const key = `food-safety-title-v4:${normalizedTitle}`
+
+  const cached = foodSafetyImageCache.get(key)
+  if (cached) return cached
+
+  const request = foodSafetyLookupQueue.then(() => fetchFoodSafetyImageByTitle(title))
+  foodSafetyLookupQueue = request.then(
+    () => undefined,
+    () => undefined,
+  )
+  foodSafetyImageCache.set(key, request)
+  return request
+}
 
 export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose = 'thumbnail') => {
   const cachedMediaUrl = cachedMediaUrlFromId(value)
@@ -138,9 +253,19 @@ export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose
   const url = rawUrl.trim()
   if (!url || getMediaId(url)) return ''
   if (/^(data|blob):/.test(url)) return url
+  if (isFoodSafetyFileViewPath(url)) return hasFoodSafetyFileQuery(url) ? toFoodSafetyImageUrl(url) : ''
+  if (url.startsWith('/uploadimg/')) return toFoodSafetyImageUrl(url)
+  if (url.startsWith('uploadimg/')) return toFoodSafetyImageUrl(url)
 
   try {
     const parsed = new URL(url)
+    if (parsed.hostname === 'www.foodsafetykorea.go.kr' && parsed.pathname === '/common/ecmFileView.do') {
+      return parsed.search ? encodeURI(parsed.toString()) : ''
+    }
+    if (parsed.hostname === 'www.foodsafetykorea.go.kr' && parsed.pathname.startsWith('/uploadimg/')) {
+      parsed.protocol = 'https:'
+      return encodeURI(parsed.toString())
+    }
     if (parsed.origin === BACKEND_ORIGIN && parsed.pathname.startsWith('/media/')) {
       return `${parsed.pathname}${parsed.search}`
     }
@@ -165,9 +290,28 @@ export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose
 const getMediaUrl = normalizeMediaUrl
 
 const getRecipeImageSource = (record: Record<string, unknown>) =>
-  record.thumbnail_media || record.thumbnail || record.image || record.main_image
+  record.thumbnail_media ||
+  record.thumbnail_url ||
+  record.thumbnail ||
+  record.image_url ||
+  record.image ||
+  record.main_image_url ||
+  record.main_image
 
-const getStepImageSource = (step: unknown) => (isRecord(step) ? step.image || step.image_url || step.media : '')
+const getStepImageSource = (step: unknown) =>
+  isRecord(step)
+    ? step.image ||
+      step.image_url ||
+      step.image_media ||
+      step.media_url ||
+      step.media ||
+      step.step_image ||
+      step.step_image_url
+    : ''
+
+const hasUnresolvedFoodSafetyImage = (record: Record<string, unknown>) =>
+  isUnresolvedFoodSafetyFileView(getRecipeImageSource(record)) ||
+  getSortedStepRecords(record.steps).some((step) => isUnresolvedFoodSafetyFileView(getStepImageSource(step)))
 
 const getSortedStepRecords = (value: unknown) =>
   asArray(value)
@@ -179,9 +323,15 @@ const getSortedStepRecords = (value: unknown) =>
     })
 
 const getAuthorName = (value: unknown) => {
-  if (typeof value === 'string') return value
+  if (typeof value === 'string') return value.includes('@') ? value.split('@')[0] : value
   if (!isRecord(value)) return 'Chalkakbabsang'
-  return asString(value.nickname || value.name || value.email || value.username, 'Chalkakbabsang')
+  return asString(value.nickname || value.display_name || value.name || value.username || asString(value.email).split('@')[0], 'Chalkakbabsang')
+}
+
+const getAuthorId = (record: Record<string, unknown>) => {
+  const author = record.author
+  if (isRecord(author)) return asString(author.id || author.pk || author.uuid || author.user_id)
+  return asString(record.author_id || record.author_user_id || record.user_id || record.created_by_id)
 }
 const getTags = (value: unknown) =>
   asArray(value)
@@ -248,6 +398,8 @@ export const mapDjangoRecipe = (raw: unknown): Recipe => {
     isSaved: Boolean(record.is_saved || record.saved),
     tags: getTags(record.tags),
     author: getAuthorName(record.author),
+    authorId: getAuthorId(record) || undefined,
+    needsPublicImageLookup: hasUnresolvedFoodSafetyImage(record) || undefined,
     createdAt: asString(record.created_at || record.createdAt, new Date().toISOString()),
   }
 }
@@ -256,15 +408,17 @@ export const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> =>
   const record = isRecord(raw) ? raw : {}
   const recipe = mapDjangoRecipe(raw)
   const stepRecords = getSortedStepRecords(record.steps)
-  const [mainImage, stepImages] = await Promise.all([
+  const shouldResolvePublicImage = hasUnresolvedFoodSafetyImage(record)
+  const [mainImage, stepImages, publicRecipeImage] = await Promise.all([
     resolveMediaUrl(getRecipeImageSource(record), 'thumbnail'),
     Promise.all(stepRecords.map((step) => resolveMediaUrl(getStepImageSource(step), 'steps'))),
+    shouldResolvePublicImage ? resolveFoodSafetyImageByTitle(recipe.title) : Promise.resolve(''),
   ])
   const resolvedStepImages = stepImages.filter(Boolean)
 
   return {
     ...recipe,
-    image: mainImage || resolvedStepImages[0] || recipe.image,
+    image: mainImage || resolvedStepImages[0] || publicRecipeImage || recipe.image,
     stepImages: resolvedStepImages.length ? resolvedStepImages : recipe.stepImages,
   }
 }
@@ -281,6 +435,8 @@ export const mapDjangoRecipeListItemWithMedia = async (raw: unknown): Promise<Re
 }
 
 export const mapDjangoRecipeListWithMedia = (items: unknown[]) => Promise.all(items.map(mapDjangoRecipeListItemWithMedia))
+
+export const resolveRecipePublicImage = (recipe: Recipe) => (recipe.needsPublicImageLookup ? resolveFoodSafetyImageByTitle(recipe.title) : Promise.resolve(''))
 export const mapUserProfile = (raw: unknown, index = 0): UserProfile => {
   const record = isRecord(raw) ? raw : {}
   const email = asString(record.email || record.username, '')

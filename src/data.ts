@@ -1,5 +1,5 @@
 export type { Difficulty, Ingredient, Recipe, RecipeStoreState } from './features/recipe/types'
 export { difficultyLabels } from './features/recipe/types'
 export { fallbackImage, fallbackRecipes } from './features/recipe/mock'
-export { recipes, recipesLoading, recipesError, loadDjangoRecipes, loadFoodSafetyRecipes } from './features/recipe/store'
+export { recipes, recipesLoading, recipesError, homeSummaryUnavailable, loadDjangoRecipes, loadFoodSafetyRecipes } from './features/recipe/store'
 export { popularTags, notifications, substitutes } from './features/recipe/fallbackContent'

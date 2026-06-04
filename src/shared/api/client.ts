@@ -48,6 +48,14 @@ const apiUrl = (path: string) => {
   return `${API_BASE_URL}/${path.replace(/^\/+/, '')}`
 }
 
+const isHomeSummaryEndpoint = (endpoint: string) => {
+  try {
+    return new URL(endpoint, window.location.origin).pathname === '/api/home/summary/'
+  } catch {
+    return endpoint.includes('/api/home/summary/')
+  }
+}
+
 const tryRefreshTokens = async (refresh: string) => {
   if (!refreshTokens) throw new ApiError(401, '로그인이 필요합니다.', null)
   const refreshed = await refreshTokens(refresh)
@@ -111,7 +119,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   if (!response.ok) {
-    if (response.status >= 500) {
+    if (response.status >= 500 && !isHomeSummaryEndpoint(endpoint)) {
       reportServerError({
         id: errorId,
         title: '서버 응답 오류',

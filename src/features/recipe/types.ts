@@ -26,6 +26,8 @@ export interface Recipe {
   isSaved?: boolean
   tags: string[]
   author: string
+  authorId?: string
+  needsPublicImageLookup?: boolean
   createdAt: string
 }
 

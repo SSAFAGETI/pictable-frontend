@@ -1,7 +1,9 @@
 <template>
   <div class="page-scrollbar flex min-h-screen flex-col">
     <main class="flex-1 pb-24 lg:pb-0">
-      <section class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <ServicePreparingState v-if="isServicePreparing" />
+
+      <section v-else class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-stretch">
           <div class="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border lg:min-h-[360px]">
             <div class="relative h-full min-h-[260px]">
@@ -92,17 +94,15 @@
         </div>
       </section>
 
-      <section class="px-4 py-2 sm:px-6 lg:px-8">
+      <section v-if="!isServicePreparing" class="px-4 py-2 sm:px-6 lg:px-8">
         <div class="mx-auto grid max-w-7xl grid-cols-5 gap-2 sm:flex sm:flex-wrap">
           <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="`/feed?tag=${encodeURIComponent(tag.name)}`" class="min-w-0">
-            <span class="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-border bg-background px-2 py-2 text-xs font-bold transition-colors hover:bg-primary hover:text-primary-foreground sm:w-auto sm:px-4 sm:text-sm">
-              #{{ tag.name }}
-            </span>
+            <RecipeTagChip :label="tag.name" />
           </RouterLink>
         </div>
       </section>
 
-      <section class="px-4 py-4 sm:px-6 lg:px-8">
+      <section v-if="!isServicePreparing" class="px-4 py-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="mb-3 flex items-center justify-between">
             <h2 class="text-lg font-bold lg:text-xl">오늘의 추천 요리</h2>
@@ -128,7 +128,7 @@
                       <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                         <span class="flex items-center gap-1"><Clock class="h-4 w-4" />{{ recipe.cookTime }}분</span>
                         <span class="flex items-center gap-1"><ChefHat class="h-4 w-4" />{{ recipe.servings }}인분</span>
-                        <span v-for="tag in recipe.tags.slice(0, 2)" :key="tag" class="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary-foreground">#{{ tag }}</span>
+                        <RecipeTagChip v-for="tag in recipe.tags.slice(0, 2)" :key="tag" :label="tag" compact />
                       </div>
                     </div>
                   </div>
@@ -150,7 +150,7 @@
         </div>
       </section>
 
-      <section class="px-4 py-5 sm:px-6 lg:px-8">
+      <section v-if="!isServicePreparing" class="px-4 py-5 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -168,7 +168,7 @@
         </div>
       </section>
 
-      <section class="px-4 py-5 sm:px-6 lg:px-8">
+      <section v-if="!isServicePreparing" class="px-4 py-5 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -197,7 +197,7 @@
                     <div class="min-w-0 flex-1">
                       <div class="mb-2 flex flex-wrap items-center gap-2">
                         <span class="rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold text-accent-foreground">{{ difficultyLabels[recipe.difficulty] }}</span>
-                        <span v-for="tag in recipe.tags.slice(0, 1)" :key="tag" class="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground">#{{ tag }}</span>
+                        <RecipeTagChip v-for="tag in recipe.tags.slice(0, 1)" :key="tag" :label="tag" compact />
                       </div>
                       <h3 class="line-clamp-1 font-semibold">{{ recipe.title }}</h3>
                       <p class="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground lg:text-sm">{{ recipe.description }}</p>
@@ -220,6 +220,8 @@
 <script setup lang="ts">
 import { ArrowRight, Camera, ChefHat, Clock, Heart, Image as ImageIcon, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
 import RecipeCard from '../components/RecipeCard.vue'
+import RecipeTagChip from '../components/RecipeTagChip.vue'
+import ServicePreparingState from '../components/ServicePreparingState.vue'
 import { useHomeRecipes } from '../features/home/composables/useHomeRecipes'
 import { difficultyLabels } from '../data'
 import { RECIPE_TAGS } from '../tags'
@@ -235,6 +237,7 @@ const {
   ingredients,
   inputValue,
   isAnalyzingImage,
+  isServicePreparing,
   openCameraPicker,
   openGalleryPicker,
   popularRecipes,

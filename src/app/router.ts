@@ -33,3 +33,8 @@ export const router = createRouter({
     return { top: 0 }
   },
 })
+
+router.beforeEach((to, from) => {
+  if (from.matched.length > 0 && to.fullPath === from.fullPath) return false
+  return true
+})

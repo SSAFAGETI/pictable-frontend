@@ -144,11 +144,27 @@
         </div>
       </div>
     </div>
+    <div v-if="isLeaveConfirmOpen" class="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-4 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="recipe-leave-title">
+      <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl">
+        <h2 id="recipe-leave-title" class="text-lg font-bold">작성한 레시피를 잃을 수 있어요!</h2>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">저장하지 않고 나가면 지금 작성한 내용이 사라집니다. 정말 나갈까요?</p>
+        <div class="mt-5 grid grid-cols-2 gap-2">
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-background text-sm font-bold hover:bg-muted" @click="cancelLeave">
+            계속 작성
+          </button>
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl bg-destructive text-sm font-bold text-destructive-foreground hover:bg-destructive/90" @click="confirmLeave">
+            나가기
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Camera, Clock, Image as ImageIcon, Plus, Trash2, Users, X } from 'lucide-vue-next'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
 import { useRecipeEditor } from '../features/recipe/composables/useRecipeEditor'
@@ -163,9 +179,11 @@ const {
   closeCamera,
   handleMainImage,
   handleStepImage,
+  hasUnsavedChanges,
   ingredients,
   isAuthenticated,
   isCameraOpen,
+  isSubmitComplete,
   mainImageFileInput,
   mainImagePreview,
   openCamera,
@@ -179,4 +197,44 @@ const {
   timeOptions,
   title,
 } = useRecipeEditor()
+
+const router = useRouter()
+const isLeaveConfirmOpen = ref(false)
+const pendingLeavePath = ref('')
+
+const shouldBlockLeave = () => isAuthenticated.value && hasUnsavedChanges.value && !isSubmitComplete.value
+
+const cancelLeave = () => {
+  pendingLeavePath.value = ''
+  isLeaveConfirmOpen.value = false
+}
+
+const confirmLeave = () => {
+  const nextPath = pendingLeavePath.value
+  isSubmitComplete.value = true
+  isLeaveConfirmOpen.value = false
+  pendingLeavePath.value = ''
+  if (nextPath) void router.push(nextPath)
+}
+
+onBeforeRouteLeave((to) => {
+  if (!shouldBlockLeave()) return true
+  pendingLeavePath.value = to.fullPath
+  isLeaveConfirmOpen.value = true
+  return false
+})
+
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (!shouldBlockLeave()) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 </script>

@@ -8,12 +8,14 @@ import { fetchFoodSafetyRecipes } from './foodSafety'
 export const recipes = ref<Recipe[]>(fallbackRecipes)
 export const recipesLoading = ref(false)
 export const recipesError = ref('')
+export const homeSummaryUnavailable = ref(false)
 
 export async function loadFoodSafetyRecipes(start = 1, end = 30) {
   if (recipesLoading.value) return
 
   recipesLoading.value = true
   recipesError.value = ''
+  homeSummaryUnavailable.value = false
 
   try {
     const apiRecipes = await fetchFoodSafetyRecipes(start, end)
@@ -47,6 +49,7 @@ export async function loadDjangoRecipes() {
     if (apiRecipes.length > 0) recipes.value = apiRecipes
   } catch (error) {
     recipesError.value = error instanceof Error ? error.message : 'Django API에서 레시피를 불러오지 못했습니다.'
+    homeSummaryUnavailable.value = true
     throw error
   } finally {
     recipesLoading.value = false

@@ -1,4 +1,4 @@
-import { nextTick, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ApiError, createRecipeApi, uploadMediaApi, type RecipeCreatePayload } from '../../../api'
 import { useAuth } from '../../../auth'
@@ -61,10 +61,27 @@ export const useRecipeEditor = () => {
   const cameraVideoRef = ref<HTMLVideoElement | null>(null)
   const isCameraOpen = ref(false)
   const cameraTarget = ref<{ type: 'main' | 'step'; index?: number } | null>(null)
+  const isSubmitComplete = ref(false)
   let cameraStream: MediaStream | null = null
 
   const timeOptions = [5, 10, 15, 20, 30, 45, 60]
   const servingOptions = [1, 2, 3, 4]
+
+  const hasUnsavedChanges = computed(() => {
+    const hasIngredient = ingredients.value.some((item) => item.name.trim() || item.amount.trim())
+    const hasStep = steps.value.some((step) => step.text.trim() || step.image || step.imageFile)
+    return Boolean(
+      mainImagePreview.value ||
+        mainImageFile.value ||
+        title.value.trim() ||
+        description.value.trim() ||
+        selectedTagIds.value.length ||
+        cookTime.value ||
+        servings.value ||
+        hasIngredient ||
+        hasStep,
+    )
+  })
 
   const addIngredient = () => {
     ingredients.value.push({ id: crypto.randomUUID(), name: '', amount: '' })
@@ -244,6 +261,7 @@ export const useRecipeEditor = () => {
         title: '레시피가 등록되었어요',
         message: '피드와 마이페이지에서 방금 등록한 레시피를 확인할 수 있어요.',
       })
+      isSubmitComplete.value = true
     } catch (error) {
       showToast({
         type: 'error',
@@ -270,9 +288,11 @@ export const useRecipeEditor = () => {
     closeCamera,
     handleMainImage,
     handleStepImage,
+    hasUnsavedChanges,
     ingredients,
     isAuthenticated,
     isCameraOpen,
+    isSubmitComplete,
     mainImageFileInput,
     mainImagePreview,
     openCamera,

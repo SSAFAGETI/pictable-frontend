@@ -1,6 +1,6 @@
 <template>
   <RouterLink :to="`/recipe/${recipe.id}`" class="block h-full">
-    <div class="h-full overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
+    <div class="h-full overflow-hidden rounded-lg bg-card text-card-foreground shadow-[0_8px_28px_rgba(24,24,27,0.045)] ring-1 ring-border/70 transition-shadow hover:shadow-[0_14px_36px_rgba(24,24,27,0.08)]">
       <template v-if="variant === 'horizontal'">
         <div class="flex h-full lg:flex-col">
           <div class="relative h-24 w-24 shrink-0 lg:h-40 lg:w-full">
@@ -15,6 +15,7 @@
               <span :class="['rounded-full px-2 py-0.5 text-[10px] font-bold', difficultyColors[recipe.difficulty]]">
                 {{ difficultyLabels[recipe.difficulty] }}
               </span>
+              <RecipeTagChip v-for="tag in recipe.tags.slice(0, 1)" :key="tag" :label="tag" compact />
             </div>
           </div>
         </div>
@@ -74,6 +75,7 @@
 
 <script setup lang="ts">
 import { Bookmark, ChefHat, Clock, Heart } from 'lucide-vue-next'
+import RecipeTagChip from './RecipeTagChip.vue'
 import type { Recipe } from '../data'
 import { difficultyLabels } from '../data'
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen flex-col pb-20 lg:pb-0">
+  <div class="flex min-h-screen flex-col pb-24 lg:pb-0">
     <AuthRequiredState
       v-if="!isAuthenticated"
       icon="chef"

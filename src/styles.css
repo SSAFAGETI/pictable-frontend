@@ -4,39 +4,39 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.01 80);
-  --foreground: oklch(0.25 0.02 60);
+  --background: oklch(0.99 0.004 95);
+  --foreground: oklch(0.22 0.02 70);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.02 60);
+  --card-foreground: oklch(0.22 0.02 70);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.02 60);
-  --primary: oklch(0.65 0.2 45);
+  --popover-foreground: oklch(0.22 0.02 70);
+  --primary: oklch(0.63 0.19 35);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.02 80);
-  --secondary-foreground: oklch(0.35 0.02 60);
-  --muted: oklch(0.94 0.01 80);
-  --muted-foreground: oklch(0.5 0.02 60);
-  --accent: oklch(0.75 0.15 140);
-  --accent-foreground: oklch(0.2 0.05 140);
+  --secondary: oklch(0.96 0.008 95);
+  --secondary-foreground: oklch(0.34 0.02 70);
+  --muted: oklch(0.95 0.006 95);
+  --muted-foreground: oklch(0.48 0.018 70);
+  --accent: oklch(0.72 0.15 145);
+  --accent-foreground: oklch(0.2 0.045 145);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0.02 80);
-  --input: oklch(0.92 0.01 80);
-  --ring: oklch(0.65 0.2 45);
-  --chart-1: oklch(0.65 0.2 45);
+  --border: oklch(0.9 0.006 95);
+  --input: oklch(0.9 0.006 95);
+  --ring: oklch(0.63 0.19 35);
+  --chart-1: oklch(0.63 0.19 35);
   --chart-2: oklch(0.75 0.15 140);
   --chart-3: oklch(0.7 0.15 200);
   --chart-4: oklch(0.8 0.18 90);
   --chart-5: oklch(0.6 0.18 30);
   --radius: 0.75rem;
-  --sidebar: oklch(0.98 0.01 80);
-  --sidebar-foreground: oklch(0.25 0.02 60);
-  --sidebar-primary: oklch(0.65 0.2 45);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.22 0.02 70);
+  --sidebar-primary: oklch(0.63 0.19 35);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.02 80);
-  --sidebar-accent-foreground: oklch(0.35 0.02 60);
-  --sidebar-border: oklch(0.9 0.02 80);
-  --sidebar-ring: oklch(0.65 0.2 45);
+  --sidebar-accent: oklch(0.96 0.008 95);
+  --sidebar-accent-foreground: oklch(0.34 0.02 70);
+  --sidebar-border: oklch(0.9 0.006 95);
+  --sidebar-ring: oklch(0.63 0.19 35);
 }
 
 .dark {
@@ -114,6 +114,53 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  button,
+  a[href],
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transform-origin: center;
+    transition-property: scale, transform, box-shadow, background-color, border-color, color, opacity, filter;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+
+  button:not(:disabled):not([aria-disabled='true']):active,
+  a[href]:not([aria-disabled='true']):active,
+  [role='button']:not([aria-disabled='true']):active,
+  input[type='button']:not(:disabled):active,
+  input[type='submit']:not(:disabled):active,
+  input[type='reset']:not(:disabled):active,
+  .is-pressing {
+    scale: 0.975;
+    filter: saturate(1.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button,
+    a[href],
+    [role='button'],
+    input[type='button'],
+    input[type='submit'],
+    input[type='reset'] {
+      transition-duration: 0.01ms;
+    }
+
+    button:active,
+    a[href]:active,
+    [role='button']:active,
+    input[type='button']:active,
+    input[type='submit']:active,
+    input[type='reset']:active,
+    .is-pressing {
+      scale: 1;
+      filter: none;
+    }
+  }
 }
 
 @layer utilities {
@@ -181,6 +228,21 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+
+  .food-image-auto {
+    filter: brightness(1.035) contrast(1.08) saturate(1.14);
+    image-rendering: auto;
+  }
+
+  img[src*='foodsafetykorea.go.kr'],
+  img[src*='/uploadimg/'] {
+    filter: brightness(1.035) contrast(1.08) saturate(1.14);
+    image-rendering: auto;
+  }
+
+  .food-image-auto[data-low-res='true'] {
+    filter: brightness(1.04) contrast(1.12) saturate(1.18);
   }
 
   @media (min-width: 1024px) {

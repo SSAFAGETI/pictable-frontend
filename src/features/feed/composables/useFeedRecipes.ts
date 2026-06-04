@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchFeedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
 import { fetchMyRecipesPageApi } from '../../user/api'
+import { resolveRecipePublicImage } from '../../recipe/mapper'
 import { useAuth } from '../../../auth'
 import type { Recipe } from '../../../data'
 import { getRecipeTagByName, getRecipeTagNamesByIds } from '../../../tags'
@@ -19,6 +20,9 @@ const mergeRecipes = (current: Recipe[], next: Recipe[]) => {
   return [...current, ...next.filter((recipe) => !seen.has(recipe.id))]
 }
 
+const mergeRecipeImage = (recipes: Recipe[], id: string, image: string) =>
+  recipes.map((recipe) => (recipe.id === id ? { ...recipe, image, needsPublicImageLookup: false } : recipe))
+
 export const useFeedRecipes = () => {
   const route = useRoute()
   const { isAuthenticated } = useAuth()
@@ -31,6 +35,7 @@ export const useFeedRecipes = () => {
   const nextCursor = ref<string | null>(null)
   const hasNextPage = ref(true)
   const isLoadingPage = ref(false)
+  const isServicePreparing = ref(false)
   const sentinelRef = ref<HTMLElement | null>(null)
   let observer: IntersectionObserver | null = null
 
@@ -49,6 +54,7 @@ export const useFeedRecipes = () => {
       nextCursor.value = null
       hasNextPage.value = true
       feedRecipes.value = []
+      isServicePreparing.value = false
     }
 
     isLoadingPage.value = true
@@ -70,14 +76,27 @@ export const useFeedRecipes = () => {
 
       const previousLength = feedRecipes.value.length
       feedRecipes.value = reset ? result.items : mergeRecipes(feedRecipes.value, result.items)
+      void hydratePublicImages(result.items, requestId)
       const addedCount = feedRecipes.value.length - previousLength
       nextCursor.value = result.nextCursor
       hasNextPage.value = result.hasNext && Boolean(result.nextCursor) && (reset ? result.items.length > 0 : addedCount > 0)
     } catch {
       if (reset) feedRecipes.value = []
+      if (reset) isServicePreparing.value = true
       hasNextPage.value = false
     } finally {
       if (requestId === feedRequestId.value) isLoadingPage.value = false
+    }
+  }
+
+  const hydratePublicImages = async (recipes: Recipe[], requestId: number) => {
+    const targets = recipes.filter((recipe) => recipe.needsPublicImageLookup)
+    if (!targets.length) return
+
+    for (const recipe of targets) {
+      const image = await resolveRecipePublicImage(recipe)
+      if (!image || requestId !== feedRequestId.value) continue
+      feedRecipes.value = mergeRecipeImage(feedRecipes.value, recipe.id, image)
     }
   }
 
@@ -155,6 +174,7 @@ export const useFeedRecipes = () => {
     filteredRecipes,
     hasNextPage,
     isLoadingPage,
+    isServicePreparing,
     resetFilters,
     searchQuery,
     selectedTagIds,

@@ -7,11 +7,11 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "http://15.164.170.144:8000/api/$1"
+      "dest": "http://3.38.26.186:8000/api/$1"
     },
     {
       "src": "/media/(.*)",
-      "dest": "http://15.164.170.144:8000/media/$1"
+      "dest": "http://3.38.26.186:8000/media/$1"
     },
     {
       "handle": "filesystem"

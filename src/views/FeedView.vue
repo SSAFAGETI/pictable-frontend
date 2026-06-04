@@ -1,6 +1,9 @@
 <template>
   <div class="page-scrollbar flex min-h-screen flex-col">
     <main class="flex-1 lg:px-8 lg:py-6">
+      <ServicePreparingState v-if="isServicePreparing" />
+
+      <template v-else>
       <div class="sticky top-14 z-30 border-b border-border bg-card/95 px-4 py-3 backdrop-blur-sm lg:top-16 lg:mx-auto lg:max-w-7xl lg:rounded-lg lg:border lg:shadow-sm">
         <div class="flex gap-2">
           <div class="relative flex-1">
@@ -47,7 +50,7 @@
                 <span :class="['rounded-full px-2.5 py-1 text-xs font-medium', difficultyColors[recipe.difficulty]]">
                   {{ difficultyLabels[recipe.difficulty] }}
                 </span>
-                <span v-for="tag in recipe.tags.slice(0, 1)" :key="tag" class="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">#{{ tag }}</span>
+                <RecipeTagChip v-for="tag in recipe.tags.slice(0, 1)" :key="tag" :label="tag" compact />
               </div>
               <h3 class="mt-3 line-clamp-1 text-lg font-bold">{{ recipe.title }}</h3>
               <p class="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{{ recipe.description }}</p>
@@ -69,6 +72,7 @@
           <span v-else-if="hasNextPage">스크롤하면 더 불러와요</span>
         </div>
       </div>
+      </template>
     </main>
   </div>
 </template>
@@ -76,10 +80,12 @@
 <script setup lang="ts">
 import { ChefHat, Clock, Heart, MessageCircle, Search, SlidersHorizontal, TrendingUp } from 'lucide-vue-next'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
+import RecipeTagChip from '../components/RecipeTagChip.vue'
+import ServicePreparingState from '../components/ServicePreparingState.vue'
 import { useFeedRecipes, type FeedSortOption } from '../features/feed/composables/useFeedRecipes'
 import { difficultyLabels, type Difficulty } from '../data'
 
-const { filteredRecipes, hasNextPage, isLoadingPage, resetFilters, searchQuery, selectedTagIds, sentinelRef, sortBy } = useFeedRecipes()
+const { filteredRecipes, hasNextPage, isLoadingPage, isServicePreparing, resetFilters, searchQuery, selectedTagIds, sentinelRef, sortBy } = useFeedRecipes()
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',

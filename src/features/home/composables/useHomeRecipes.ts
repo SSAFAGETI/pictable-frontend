@@ -1,6 +1,6 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { recipes } from '../../../data'
+import { homeSummaryUnavailable, recipes } from '../../../data'
 import { analyzeIngredientImageApi } from '../../ingredient/api'
 import { ApiError } from '../../../shared/api/error'
 import { recommendationsPath } from '../../../shared/constants/routes'
@@ -28,6 +28,7 @@ export const useHomeRecipes = () => {
   const isAnalyzingImage = ref(false)
   const imageAnalyzeError = ref('')
   const activeIndex = ref(0)
+  const isServicePreparing = computed(() => homeSummaryUnavailable.value)
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
   const recentRecipes = computed(() => recipes.value.slice(2, 5))
@@ -121,6 +122,7 @@ export const useHomeRecipes = () => {
     ingredients,
     inputValue,
     isAnalyzingImage,
+    isServicePreparing,
     openCameraPicker,
     openGalleryPicker,
     popularRecipes,

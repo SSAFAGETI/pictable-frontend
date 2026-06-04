@@ -3,24 +3,25 @@
     <button
       v-if="showAll"
       type="button"
-      :class="chipClass(modelValue.length === 0)"
+      :class="chipButtonClass"
       @click="$emit('update:modelValue', [])"
     >
-      전체
+      <RecipeTagChip label="전체" :active="modelValue.length === 0" />
     </button>
     <button
       v-for="tag in tags"
       :key="tag.id"
       type="button"
-      :class="chipClass(modelValue.includes(tag.id))"
+      :class="chipButtonClass"
       @click="toggleTag(tag.id)"
     >
-      #{{ tag.name }}
+      <RecipeTagChip :label="tag.name" :active="modelValue.includes(tag.id)" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
+import RecipeTagChip from './RecipeTagChip.vue'
 import { RECIPE_TAGS } from '../tags'
 
 const props = withDefaults(
@@ -40,6 +41,7 @@ const emit = defineEmits<{
 }>()
 
 const tags = RECIPE_TAGS
+const chipButtonClass = 'shrink-0 cursor-pointer rounded-full outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring'
 
 const toggleTag = (id: number) => {
   const nextValue = props.modelValue.includes(id)
@@ -48,9 +50,4 @@ const toggleTag = (id: number) => {
 
   emit('update:modelValue', nextValue)
 }
-
-const chipClass = (selected: boolean) => [
-  'shrink-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-bold transition-colors',
-  selected ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'border-border bg-background text-foreground hover:bg-muted',
-]
 </script>

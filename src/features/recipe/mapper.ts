@@ -2,7 +2,7 @@ import type { Difficulty, Ingredient, Recipe } from '../../data'
 import { apiRequest } from '../../shared/api/client'
 import type { NotificationItem, UserProfile } from '../../shared/api/types'
 
-const BACKEND_ORIGIN = 'http://3.38.26.186:8000'
+const BACKEND_ORIGIN = 'http://3.38.26.186'
 
 export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
 

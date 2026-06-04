@@ -28,10 +28,10 @@ const isBackendMediaSrc = (src: string) => {
     return (
       parsed.pathname.startsWith('/media/') ||
       parsed.pathname.startsWith('/api/media/') ||
-      parsed.origin === 'http://3.38.26.186:8000'
+      parsed.origin === 'http://3.38.26.186'
     )
   } catch {
-    return src.startsWith('/api/media/') || src.startsWith('/media/') || src.includes('3.38.26.186:8000/media/')
+    return src.startsWith('/api/media/') || src.startsWith('/media/') || src.includes('3.38.26.186/media/')
   }
 }
 

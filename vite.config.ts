@@ -8,11 +8,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://3.38.26.186:8000',
+        target: 'http://3.38.26.186',
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://3.38.26.186:8000',
+        target: 'http://3.38.26.186',
         changeOrigin: true,
       },
     },

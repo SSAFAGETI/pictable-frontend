@@ -45,7 +45,27 @@
           </div>
 
           <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <RecipeCard v-for="recipe in visibleRecipes" :key="recipe.id" :recipe="recipe" variant="horizontal" />
+            <RecipeCard v-for="recipe in visibleRecipes" :key="recipe.id" :recipe="recipe" variant="horizontal">
+              <template v-if="activeTab === 'my'" #actions>
+                <button
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-primary"
+                  aria-label="레시피 수정"
+                  @click.prevent.stop="editRecipe(recipe.id)"
+                >
+                  <Edit3 class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-destructive disabled:pointer-events-none disabled:opacity-60"
+                  aria-label="레시피 삭제"
+                  :disabled="deletingRecipeIds.has(recipe.id)"
+                  @click.prevent.stop="confirmDeleteRecipe(recipe.id)"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              </template>
+            </RecipeCard>
             <div ref="sentinelRef" class="col-span-full flex h-16 items-center justify-center text-sm text-muted-foreground">
               <span v-if="activeTabLoading">레시피를 더 불러오는 중...</span>
               <span v-else-if="activeTabHasNext">스크롤하면 더 불러와요</span>
@@ -102,8 +122,9 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, Bookmark, ChefHat, ChevronRight, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, UserCheck } from 'lucide-vue-next'
+import { Bell, Bookmark, ChefHat, ChevronRight, Edit3, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, Trash2, UserCheck } from 'lucide-vue-next'
 import {
+  deleteRecipeApi,
   fetchLikedRecipesPageApi,
   fetchMyRecipesPageApi,
   fetchSavedRecipesPageApi,
@@ -116,7 +137,8 @@ import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import { useAuth } from '../auth'
 import type { Recipe } from '../data'
-import { APP_ROUTES } from '../shared/constants/routes'
+import { APP_ROUTES, myRecipeEditPath } from '../shared/constants/routes'
+import { showToast } from '../toast'
 
 type RecipeTab = 'saved' | 'liked' | 'my'
 
@@ -129,6 +151,7 @@ const myRecipes = ref<Recipe[]>([])
 const tabCursors = ref<Record<RecipeTab, string | null>>({ saved: null, liked: null, my: null })
 const tabHasNext = ref<Record<RecipeTab, boolean>>({ saved: true, liked: true, my: true })
 const tabLoading = ref<Record<RecipeTab, boolean>>({ saved: false, liked: false, my: false })
+const deletingRecipeIds = ref(new Set<string>())
 const sentinelRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 const followingProfiles = ref<UserProfile[]>([])
@@ -166,6 +189,40 @@ const displayUser = computed(() => ({
 const handleLogout = async () => {
   await logout()
   router.push(APP_ROUTES.login)
+}
+
+const editRecipe = (id: string) => {
+  void router.push(myRecipeEditPath(id))
+}
+
+const confirmDeleteRecipe = (id: string) => {
+  if (!window.confirm('이 레시피를 삭제할까요? 삭제한 레시피는 되돌릴 수 없어요.')) return
+  void deleteMyRecipe(id)
+}
+
+const deleteMyRecipe = async (id: string) => {
+  if (deletingRecipeIds.value.has(id)) return
+
+  deletingRecipeIds.value = new Set(deletingRecipeIds.value).add(id)
+  try {
+    await deleteRecipeApi(id)
+    myRecipes.value = myRecipes.value.filter((recipe) => recipe.id !== id)
+    showToast({
+      type: 'success',
+      title: '레시피를 삭제했어요',
+      message: '내 레시피 목록에서 삭제된 레시피를 제거했습니다.',
+    })
+  } catch (error) {
+    showToast({
+      type: 'error',
+      title: '레시피 삭제 실패',
+      message: error instanceof Error && error.message ? error.message : '지금은 레시피를 삭제할 수 없어요.',
+    })
+  } finally {
+    const nextIds = new Set(deletingRecipeIds.value)
+    nextIds.delete(id)
+    deletingRecipeIds.value = nextIds
+  }
 }
 
 const getTabRecipes = (tab: RecipeTab) => {

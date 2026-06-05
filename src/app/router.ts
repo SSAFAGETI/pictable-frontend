@@ -19,6 +19,7 @@ export const router = createRouter({
     { path: APP_ROUTES.feed, component: FeedView },
     { path: APP_ROUTES.recipeDetail, component: RecipeDetailView },
     { path: APP_ROUTES.myRecipeNew, component: RecipeEditorView },
+    { path: APP_ROUTES.myRecipeEdit, component: RecipeEditorView },
     { path: APP_ROUTES.saved, component: SavedView },
     { path: APP_ROUTES.mypage, component: MyPageView },
     { path: APP_ROUTES.login, component: AuthView, props: { mode: 'login' } },

@@ -28,12 +28,14 @@ const { isAuthenticated } = useAuth()
 const isAuthPage = computed(() => isAuthRoute(route.path))
 const recipesLoaded = ref(false)
 const protectedAuthRequiredRoutes = new Set<string>([APP_ROUTES.myRecipeNew, APP_ROUTES.saved, APP_ROUTES.mypage])
+const isProtectedAuthRequiredRoute = (path: string) =>
+  protectedAuthRequiredRoutes.has(path) || /^\/my-recipe\/[^/]+\/edit$/.test(path)
 const showServerErrorBanner = computed(
   () =>
     route.path !== APP_ROUTES.home &&
     route.path !== APP_ROUTES.feed &&
     !isAuthPage.value &&
-    (isAuthenticated.value || !protectedAuthRequiredRoutes.has(route.path)),
+    (isAuthenticated.value || !isProtectedAuthRequiredRoute(route.path)),
 )
 
 const shouldLoadRecipes = computed(() => !isAppChromeHiddenRoute(route.path))

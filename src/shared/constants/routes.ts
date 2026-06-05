@@ -3,6 +3,7 @@ export const APP_ROUTES = {
   feed: '/feed',
   recipeDetail: '/recipe/:id',
   myRecipeNew: '/my-recipe/new',
+  myRecipeEdit: '/my-recipe/:id/edit',
   saved: '/saved',
   mypage: '/mypage',
   login: '/login',
@@ -48,6 +49,8 @@ export const isActiveRoute = (currentPath: string, href: string) =>
   currentPath === href || (href !== APP_ROUTES.home && currentPath.startsWith(href))
 
 export const recipeDetailPath = (id: string | number) => `/recipe/${encodeURIComponent(String(id))}`
+
+export const myRecipeEditPath = (id: string | number) => `/my-recipe/${encodeURIComponent(String(id))}/edit`
 
 export const recommendationsPath = (ingredients: string[]) =>
   `${APP_ROUTES.recommendations}?ingredients=${encodeURIComponent(ingredients.join(','))}`

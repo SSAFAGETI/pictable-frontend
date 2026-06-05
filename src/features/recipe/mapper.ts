@@ -244,6 +244,11 @@ export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose
   if (cachedMediaUrl) return cachedMediaUrl
 
   const record = isRecord(value) ? value : null
+  const recordMediaId = record ? getMediaId(record) : ''
+  const rememberRecordMediaUrl = (normalizedUrl: string) => {
+    if (recordMediaId && normalizedUrl) mediaUrlCache.set(recordMediaId, normalizedUrl)
+    return normalizedUrl
+  }
   const rawUrl =
     typeof value === 'string'
       ? value
@@ -260,27 +265,27 @@ export const normalizeMediaUrl = (value: unknown, _fallbackPurpose: MediaPurpose
   try {
     const parsed = new URL(url)
     if (parsed.hostname === 'www.foodsafetykorea.go.kr' && parsed.pathname === '/common/ecmFileView.do') {
-      return parsed.search ? encodeURI(parsed.toString()) : ''
+      return parsed.search ? rememberRecordMediaUrl(encodeURI(parsed.toString())) : ''
     }
     if (parsed.hostname === 'www.foodsafetykorea.go.kr' && parsed.pathname.startsWith('/uploadimg/')) {
       parsed.protocol = 'https:'
-      return encodeURI(parsed.toString())
+      return rememberRecordMediaUrl(encodeURI(parsed.toString()))
     }
     if (parsed.origin === BACKEND_ORIGIN && parsed.pathname.startsWith('/media/')) {
-      return `${parsed.pathname}${parsed.search}`
+      return rememberRecordMediaUrl(`${parsed.pathname}${parsed.search}`)
     }
-    return url
+    return rememberRecordMediaUrl(url)
   } catch {
     // Relative Django media paths must stay root-relative so Vite/Vercel can proxy them.
   }
 
-  if (url.startsWith('/media/')) return url
-  if (url.startsWith('media/')) return `/${url}`
-  if (url.startsWith('/')) return url
+  if (url.startsWith('/media/')) return rememberRecordMediaUrl(url)
+  if (url.startsWith('media/')) return rememberRecordMediaUrl(`/${url}`)
+  if (url.startsWith('/')) return rememberRecordMediaUrl(url)
 
   const cleanUrl = url.replace(/^\/+/, '')
   const firstSegment = cleanUrl.split('/')[0]
-  if (mediaPurposes.includes(firstSegment as MediaPurpose)) return `/media/${cleanUrl}`
+  if (mediaPurposes.includes(firstSegment as MediaPurpose)) return rememberRecordMediaUrl(`/media/${cleanUrl}`)
 
   // The API contract says upload/detail responses must include a usable url.
   // Do not invent /media/{purpose}/{filename}; it creates false 404s when only

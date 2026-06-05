@@ -6,7 +6,11 @@
       description="로그인하고 나만의 레시피를&#10;등록하고 관리해보세요."
     />
     <main v-else class="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
-      <form class="mx-auto max-w-3xl space-y-5 pb-16" @submit.prevent="submitRecipe">
+      <div v-if="isLoadingRecipe" class="mx-auto flex min-h-[420px] max-w-3xl items-center justify-center rounded-2xl border border-border bg-card text-sm font-semibold text-muted-foreground">
+        레시피 정보를 불러오는 중...
+      </div>
+
+      <form v-else class="mx-auto max-w-3xl space-y-5 pb-16" @submit.prevent="submitRecipe">
         <section class="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
           <p class="mb-4 text-base font-bold">메인 이미지</p>
           <input ref="mainImageFileInput" class="hidden" type="file" accept="image/*" @change="handleMainImage" />
@@ -116,8 +120,12 @@
           </div>
         </section>
 
-        <button type="submit" class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90">
-          레시피 등록하기
+        <button
+          type="submit"
+          class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
+          :disabled="isSubmitting"
+        >
+          {{ isSubmitting ? '저장 중...' : isEditMode ? '수정 저장하기' : '레시피 등록하기' }}
         </button>
       </form>
     </main>
@@ -183,7 +191,10 @@ const {
   ingredients,
   isAuthenticated,
   isCameraOpen,
+  isEditMode,
+  isLoadingRecipe,
   isSubmitComplete,
+  isSubmitting,
   mainImageFileInput,
   mainImagePreview,
   openCamera,

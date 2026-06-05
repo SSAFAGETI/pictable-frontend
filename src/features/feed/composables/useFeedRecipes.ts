@@ -2,10 +2,12 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchFeedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
 import { fetchMyRecipesPageApi } from '../../user/api'
+import { deleteRecipeApi } from '../../recipe/api'
 import { resolveRecipePublicImage } from '../../recipe/mapper'
 import { useAuth } from '../../../auth'
 import type { Recipe } from '../../../data'
 import { getRecipeTagByName, getRecipeTagNamesByIds } from '../../../tags'
+import { showToast } from '../../../toast'
 
 export type FeedSortOption = 'popular' | 'recent' | 'likes'
 
@@ -36,8 +38,10 @@ export const useFeedRecipes = () => {
   const hasNextPage = ref(true)
   const isLoadingPage = ref(false)
   const isServicePreparing = ref(false)
+  const deletingRecipeIds = ref(new Set<string>())
   const sentinelRef = ref<HTMLElement | null>(null)
   let observer: IntersectionObserver | null = null
+  const isMyRecipeFeed = computed(() => route.query.source === 'my' && isAuthenticated.value)
 
   const resetFilters = () => {
     searchQuery.value = ''
@@ -62,7 +66,7 @@ export const useFeedRecipes = () => {
 
     try {
       const result =
-        route.query.source === 'my' && isAuthenticated.value
+        isMyRecipeFeed.value && isAuthenticated.value
           ? await fetchMyRecipesPageApi({ cursor: nextCursor.value, pageSize: RECIPE_PAGE_SIZE })
           : await fetchFeedRecipesPageApi({
               sort: sortBy.value === 'recent' ? 'latest' : 'popular',
@@ -111,6 +115,31 @@ export const useFeedRecipes = () => {
       { rootMargin: '480px 0px' },
     )
     observer.observe(sentinelRef.value)
+  }
+
+  const deleteMyRecipe = async (id: string) => {
+    if (deletingRecipeIds.value.has(id)) return
+
+    deletingRecipeIds.value = new Set(deletingRecipeIds.value).add(id)
+    try {
+      await deleteRecipeApi(id)
+      feedRecipes.value = feedRecipes.value.filter((recipe) => recipe.id !== id)
+      showToast({
+        type: 'success',
+        title: '레시피를 삭제했어요',
+        message: '마이레시피 목록에서 삭제된 레시피를 제거했습니다.',
+      })
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: '레시피 삭제 실패',
+        message: error instanceof Error && error.message ? error.message : '지금은 레시피를 삭제할 수 없어요.',
+      })
+    } finally {
+      const nextIds = new Set(deletingRecipeIds.value)
+      nextIds.delete(id)
+      deletingRecipeIds.value = nextIds
+    }
   }
 
   onMounted(() => {
@@ -172,7 +201,10 @@ export const useFeedRecipes = () => {
 
   return {
     filteredRecipes,
+    deleteMyRecipe,
+    deletingRecipeIds,
     hasNextPage,
+    isMyRecipeFeed,
     isLoadingPage,
     isServicePreparing,
     resetFilters,

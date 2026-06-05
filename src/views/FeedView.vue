@@ -34,6 +34,25 @@
             <div class="relative aspect-[16/9]">
               <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+              <div v-if="isMyRecipeFeed" class="absolute right-2 top-2 flex gap-1.5">
+                <button
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-primary"
+                  aria-label="레시피 수정"
+                  @click.prevent.stop="editRecipe(recipe.id)"
+                >
+                  <Edit3 class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-destructive disabled:pointer-events-none disabled:opacity-60"
+                  aria-label="레시피 삭제"
+                  :disabled="deletingRecipeIds.has(recipe.id)"
+                  @click.prevent.stop="confirmDeleteRecipe(recipe.id)"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              </div>
               <div class="absolute bottom-2 right-2 flex items-center gap-1.5 text-[11px] font-medium text-white">
                 <span class="flex items-center gap-1 rounded-full bg-black/45 px-2 py-1 backdrop-blur-sm">
                   <Heart class="h-3 w-3" />
@@ -78,14 +97,39 @@
 </template>
 
 <script setup lang="ts">
-import { ChefHat, Clock, Heart, MessageCircle, Search, SlidersHorizontal, TrendingUp } from 'lucide-vue-next'
+import { ChefHat, Clock, Edit3, Heart, MessageCircle, Search, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
 import ServicePreparingState from '../components/ServicePreparingState.vue'
 import { useFeedRecipes, type FeedSortOption } from '../features/feed/composables/useFeedRecipes'
 import { difficultyLabels, type Difficulty } from '../data'
+import { myRecipeEditPath } from '../shared/constants/routes'
 
-const { filteredRecipes, hasNextPage, isLoadingPage, isServicePreparing, resetFilters, searchQuery, selectedTagIds, sentinelRef, sortBy } = useFeedRecipes()
+const router = useRouter()
+const {
+  deleteMyRecipe,
+  deletingRecipeIds,
+  filteredRecipes,
+  hasNextPage,
+  isLoadingPage,
+  isMyRecipeFeed,
+  isServicePreparing,
+  resetFilters,
+  searchQuery,
+  selectedTagIds,
+  sentinelRef,
+  sortBy,
+} = useFeedRecipes()
+
+const editRecipe = (id: string) => {
+  void router.push(myRecipeEditPath(id))
+}
+
+const confirmDeleteRecipe = (id: string) => {
+  if (!window.confirm('이 레시피를 삭제할까요? 삭제한 레시피는 되돌릴 수 없어요.')) return
+  void deleteMyRecipe(id)
+}
 
 const difficultyColors: Record<Difficulty, string> = {
   easy: 'bg-accent text-accent-foreground',

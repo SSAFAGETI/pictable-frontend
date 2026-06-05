@@ -1,10 +1,10 @@
-import { computed, nextTick, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ApiError, createRecipeApi, uploadMediaApi, type RecipeCreatePayload } from '../../../api'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ApiError, createRecipeApi, fetchRecipeApi, normalizeMediaUrl, updateRecipeApi, uploadMediaApi, type RecipeCreatePayload } from '../../../api'
 import { useAuth } from '../../../auth'
-import { recipes, type Ingredient, type Recipe } from '../../../data'
+import { type Ingredient, type Recipe } from '../../../data'
 import { myRecipeFeedPath } from '../../../shared/constants/routes'
-import { getRecipeTagNamesByIds } from '../../../tags'
+import { getRecipeTagIdsByNames, getRecipeTagNamesByIds } from '../../../tags'
 import { showToast } from '../../../toast'
 
 interface EditableIngredient {
@@ -46,8 +46,11 @@ const getMediaId = (body: unknown) => {
 }
 
 export const useRecipeEditor = () => {
+  const route = useRoute()
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
+  const recipeId = computed(() => (typeof route.params.id === 'string' ? route.params.id : ''))
+  const isEditMode = computed(() => Boolean(recipeId.value))
   const mainImageFileInput = ref<HTMLInputElement | null>(null)
   const mainImagePreview = ref('')
   const mainImageFile = ref<File | null>(null)
@@ -61,26 +64,34 @@ export const useRecipeEditor = () => {
   const cameraVideoRef = ref<HTMLVideoElement | null>(null)
   const isCameraOpen = ref(false)
   const cameraTarget = ref<{ type: 'main' | 'step'; index?: number } | null>(null)
+  const isLoadingRecipe = ref(false)
+  const isSubmitting = ref(false)
   const isSubmitComplete = ref(false)
+  const initialFormSnapshot = ref('')
   let cameraStream: MediaStream | null = null
 
   const timeOptions = [5, 10, 15, 20, 30, 45, 60]
   const servingOptions = [1, 2, 3, 4]
 
+  const getFormSnapshot = () =>
+    JSON.stringify({
+      mainImagePreview: mainImagePreview.value,
+      title: title.value.trim(),
+      description: description.value.trim(),
+      selectedTagIds: [...selectedTagIds.value].sort((a, b) => a - b),
+      cookTime: cookTime.value,
+      servings: servings.value,
+      ingredients: ingredients.value
+        .map((item) => ({ name: item.name.trim(), amount: item.amount.trim() }))
+        .filter((item) => item.name || item.amount),
+      steps: steps.value
+        .map((step) => ({ text: step.text.trim(), image: step.image }))
+        .filter((step) => step.text || step.image),
+    })
+
   const hasUnsavedChanges = computed(() => {
-    const hasIngredient = ingredients.value.some((item) => item.name.trim() || item.amount.trim())
-    const hasStep = steps.value.some((step) => step.text.trim() || step.image || step.imageFile)
-    return Boolean(
-      mainImagePreview.value ||
-        mainImageFile.value ||
-        title.value.trim() ||
-        description.value.trim() ||
-        selectedTagIds.value.length ||
-        cookTime.value ||
-        servings.value ||
-        hasIngredient ||
-        hasStep,
-    )
+    if (mainImageFile.value || steps.value.some((step) => step.imageFile)) return true
+    return getFormSnapshot() !== initialFormSnapshot.value
   })
 
   const addIngredient = () => {
@@ -192,15 +203,74 @@ export const useRecipeEditor = () => {
   }
 
   const uploadRecipeImages = async (stepItems: Array<{ imageFile?: File }>) => {
-    const thumbnailMediaId = mainImageFile.value ? getMediaId(await uploadMediaApi(mainImageFile.value, 'thumbnail')) : ''
+    const uploadThumbnail = mainImageFile.value ? await uploadMediaApi(mainImageFile.value, 'thumbnail') : null
+    if (uploadThumbnail) normalizeMediaUrl(uploadThumbnail, 'thumbnail')
+    const thumbnailMediaId = getMediaId(uploadThumbnail)
     const stepMediaIds = await Promise.all(
-      stepItems.map(async (step) => (step.imageFile ? getMediaId(await uploadMediaApi(step.imageFile, 'steps')) : '')),
+      stepItems.map(async (step) => {
+        if (!step.imageFile) return ''
+        const uploadStep = await uploadMediaApi(step.imageFile, 'steps')
+        normalizeMediaUrl(uploadStep, 'steps')
+        return getMediaId(uploadStep)
+      }),
     )
 
     return { thumbnailMediaId, stepMediaIds }
   }
 
+  const setInitialSnapshot = () => {
+    initialFormSnapshot.value = getFormSnapshot()
+  }
+
+  const populateRecipeForm = (recipe: Recipe) => {
+    title.value = recipe.title
+    description.value = recipe.description
+    mainImagePreview.value = recipe.image
+    mainImageFile.value = null
+    selectedTagIds.value = getRecipeTagIdsByNames(recipe.tags)
+    cookTime.value = recipe.cookTime
+    servings.value = recipe.servings
+    ingredients.value = recipe.ingredients.length
+      ? recipe.ingredients.map((item) => ({
+          id: item.id || crypto.randomUUID(),
+          name: item.name,
+          amount: item.amount || '',
+        }))
+      : [{ id: crypto.randomUUID(), name: '', amount: '' }]
+    steps.value = recipe.steps.length
+      ? recipe.steps.map((step, index) => ({
+          id: crypto.randomUUID(),
+          text: step,
+          image: recipe.stepImages[index] || '',
+        }))
+      : [{ id: crypto.randomUUID(), text: '', image: '' }]
+    setInitialSnapshot()
+  }
+
+  const loadRecipeForEdit = async () => {
+    if (!isEditMode.value) {
+      setInitialSnapshot()
+      return
+    }
+
+    isLoadingRecipe.value = true
+    try {
+      populateRecipeForm(await fetchRecipeApi(recipeId.value))
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: '레시피를 불러오지 못했어요',
+        message: error instanceof ApiError && error.status < 500 ? error.message : '수정할 레시피 정보를 불러오지 못했습니다.',
+      })
+      void router.push(myRecipeFeedPath())
+    } finally {
+      isLoadingRecipe.value = false
+    }
+  }
+
   const submitRecipe = async () => {
+    if (isSubmitting.value) return
+    isSubmitting.value = true
     const normalizedTitle = title.value.trim() || '나만의 레시피'
     const normalizedIngredients: Ingredient[] = ingredients.value
       .map((item, index) => ({ id: `${Date.now()}-${index}`, name: item.name.trim(), amount: item.amount.trim() }))
@@ -248,26 +318,21 @@ export const useRecipeEditor = () => {
         })),
       }
 
-      const createdRecipe = await createRecipeApi(payload)
-      recipes.value.unshift({
-        ...createdRecipe,
-        image: createdRecipe.image || localRecipe.image,
-        tags: createdRecipe.tags.length ? createdRecipe.tags : localRecipe.tags,
-        stepImages: createdRecipe.stepImages.length ? createdRecipe.stepImages : localRecipe.stepImages,
-        author: createdRecipe.author || localRecipe.author,
-      })
+      if (isEditMode.value) await updateRecipeApi(recipeId.value, payload)
+      else await createRecipeApi(payload)
       showToast({
         type: 'success',
-        title: '레시피가 등록되었어요',
-        message: '피드와 마이페이지에서 방금 등록한 레시피를 확인할 수 있어요.',
+        title: isEditMode.value ? '레시피가 수정되었어요' : '레시피가 등록되었어요',
+        message: isEditMode.value ? '마이레시피에 변경 내용이 반영되었어요.' : '피드와 마이페이지에서 방금 등록한 레시피를 확인할 수 있어요.',
       })
       isSubmitComplete.value = true
     } catch (error) {
       showToast({
         type: 'error',
-        title: '레시피 등록 실패',
-        message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 레시피를 등록할 수 없어요. 잠시 후 다시 시도해주세요.',
+        title: isEditMode.value ? '레시피 수정 실패' : '레시피 등록 실패',
+        message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 레시피를 저장할 수 없어요. 잠시 후 다시 시도해주세요.',
       })
+      isSubmitting.value = false
       return
     }
 
@@ -276,6 +341,10 @@ export const useRecipeEditor = () => {
 
   onUnmounted(() => {
     stopCameraStream()
+  })
+
+  onMounted(() => {
+    void loadRecipeForEdit()
   })
 
   return {
@@ -292,7 +361,10 @@ export const useRecipeEditor = () => {
     ingredients,
     isAuthenticated,
     isCameraOpen,
+    isEditMode,
+    isLoadingRecipe,
     isSubmitComplete,
+    isSubmitting,
     mainImageFileInput,
     mainImagePreview,
     openCamera,

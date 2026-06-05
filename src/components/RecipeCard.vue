@@ -5,6 +5,9 @@
         <div class="flex h-full lg:flex-col">
           <div class="relative h-24 w-24 shrink-0 lg:h-40 lg:w-full">
             <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
+            <div v-if="$slots.actions" class="absolute right-2 top-2 flex gap-1.5">
+              <slot name="actions" />
+            </div>
           </div>
           <div class="flex min-w-0 flex-1 flex-col justify-center p-3 lg:p-4">
             <h3 class="line-clamp-1 font-semibold">{{ recipe.title }}</h3>

@@ -12,6 +12,7 @@ import {
 } from '../../../api'
 import { useAuth } from '../../../auth'
 import { recipes } from '../../../data'
+import { applyRecipeSeo } from '../../../shared/seo'
 import { showToast } from '../../../toast'
 
 interface ViewComment {
@@ -329,6 +330,14 @@ export const useRecipeDetail = () => {
       cancelCommentEdit()
       void loadRecipeDetail()
       void loadComments()
+    },
+    { immediate: true },
+  )
+
+  watch(
+    recipe,
+    (currentRecipe) => {
+      if (currentRecipe) applyRecipeSeo(currentRecipe)
     },
     { immediate: true },
   )

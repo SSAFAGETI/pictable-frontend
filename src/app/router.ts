@@ -11,6 +11,7 @@ import RecommendationsView from '../views/RecommendationsView.vue'
 import IngredientsView from '../views/IngredientsView.vue'
 import BackendApiView from '../views/BackendApiView.vue'
 import ServerErrorView from '../views/ServerErrorView.vue'
+import { applyRouteSeo } from '../shared/seo'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -38,4 +39,8 @@ export const router = createRouter({
 router.beforeEach((to, from) => {
   if (from.matched.length > 0 && to.fullPath === from.fullPath) return false
   return true
+})
+
+router.afterEach((to) => {
+  applyRouteSeo(to)
 })

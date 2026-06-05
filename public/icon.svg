@@ -1,26 +1,26 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @media (prefers-color-scheme: light) {
-      .background { fill: black; }
-      .foreground { fill: white; }
-    }
-    @media (prefers-color-scheme: dark) {
-      .background { fill: white; }
-      .foreground { fill: black; }
-    }
-  </style>
-  <g clip-path="url(#clip0_7960_43945)">
-    <rect class="background" width="180" height="180" rx="37" />
-    <g style="transform: scale(95%); transform-origin: center">
-      <path class="foreground"
-        d="M101.141 53H136.632C151.023 53 162.689 64.6662 162.689 79.0573V112.904H148.112V79.0573C148.112 78.7105 148.098 78.3662 148.072 78.0251L112.581 112.898C112.701 112.902 112.821 112.904 112.941 112.904H148.112V126.672H112.941C98.5504 126.672 86.5638 114.891 86.5638 100.5V66.7434H101.141V100.5C101.141 101.15 101.191 101.792 101.289 102.422L137.56 66.7816C137.255 66.7563 136.945 66.7434 136.632 66.7434H101.141V53Z" />
-      <path class="foreground"
-        d="M65.2926 124.136L14 66.7372H34.6355L64.7495 100.436V66.7372H80.1365V118.47C80.1365 126.278 70.4953 129.958 65.2926 124.136Z" />
-    </g>
-  </g>
-  <defs>
-    <clipPath id="clip0_7960_43945">
-      <rect width="180" height="180" fill="white" />
-    </clipPath>
-  </defs>
+  <rect width="180" height="180" rx="40" fill="#EF4B25"/>
+  <path
+    d="M57.5 82.5C48.4 81.4 41.5 73.7 41.5 64.3C41.5 54.2 49.7 46 59.8 46C64.2 46 68.2 47.5 71.4 50.1C75.9 41.4 85 35.5 95.5 35.5C108.4 35.5 119.2 44.5 122 56.5C124 55.7 126.2 55.3 128.5 55.3C138.4 55.3 146.5 63.4 146.5 73.3C146.5 82.6 139.4 90.3 130.3 91.2V110.5C130.3 118.2 124.1 124.5 116.3 124.5H70.9C63.5 124.5 57.5 118.5 57.5 111.1V82.5Z"
+    fill="white"
+  />
+  <path
+    d="M70.5 91.5H117.5V111.3C117.5 113 116.1 114.5 114.3 114.5H73.7C71.9 114.5 70.5 113 70.5 111.3V91.5Z"
+    fill="#EF4B25"
+    opacity="0.12"
+  />
+  <path
+    d="M70.5 91.5H117.5M70.5 102.5H117.5"
+    stroke="#EF4B25"
+    stroke-width="7"
+    stroke-linecap="round"
+    opacity="0.22"
+  />
+  <path
+    d="M76 78C80.5 71.2 87 68 94.6 68C102.4 68 109.4 71.6 114 78"
+    stroke="#EF4B25"
+    stroke-width="7"
+    stroke-linecap="round"
+    opacity="0.18"
+  />
 </svg>

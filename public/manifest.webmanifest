@@ -1,0 +1,25 @@
+{
+  "name": "찰칵밥상",
+  "short_name": "찰칵밥상",
+  "description": "재료와 취향에 맞는 레시피를 찾고 나만의 요리 기록을 관리하는 레시피 서비스입니다.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFFDFC",
+  "theme_color": "#EF4B25",
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/icon.svg?v=2",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -37,6 +37,52 @@ const dataUrlToFile = (dataUrl: string, fileName: string) => {
   return new File([bytes], fileName, { type: mime })
 }
 
+const compressImageFile = (file: File, maxSize = 1600, quality = 0.82) =>
+  new Promise<File>((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      resolve(file)
+      return
+    }
+
+    const image = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      const ratio = Math.min(1, maxSize / Math.max(image.naturalWidth || 1, image.naturalHeight || 1))
+      const width = Math.max(1, Math.round((image.naturalWidth || maxSize) * ratio))
+      const height = Math.max(1, Math.round((image.naturalHeight || maxSize) * ratio))
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d')?.drawImage(image, 0, 0, width, height)
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file)
+            return
+          }
+
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg') || `image-${Date.now()}.jpg`, {
+            type: 'image/jpeg',
+          })
+          resolve(compressed.size < file.size ? compressed : file)
+        },
+        'image/jpeg',
+        quality,
+      )
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(file)
+    }
+
+    image.src = objectUrl
+  })
+
 const getMediaId = (body: unknown) => {
   if (!body || typeof body !== 'object') return ''
   const record = body as Record<string, unknown>
@@ -203,13 +249,13 @@ export const useRecipeEditor = () => {
   }
 
   const uploadRecipeImages = async (stepItems: Array<{ imageFile?: File }>) => {
-    const uploadThumbnail = mainImageFile.value ? await uploadMediaApi(mainImageFile.value, 'thumbnail') : null
+    const uploadThumbnail = mainImageFile.value ? await uploadMediaApi(await compressImageFile(mainImageFile.value), 'thumbnail') : null
     if (uploadThumbnail) normalizeMediaUrl(uploadThumbnail, 'thumbnail')
     const thumbnailMediaId = getMediaId(uploadThumbnail)
     const stepMediaIds = await Promise.all(
       stepItems.map(async (step) => {
         if (!step.imageFile) return ''
-        const uploadStep = await uploadMediaApi(step.imageFile, 'steps')
+        const uploadStep = await uploadMediaApi(await compressImageFile(step.imageFile), 'steps')
         normalizeMediaUrl(uploadStep, 'steps')
         return getMediaId(uploadStep)
       }),

@@ -367,12 +367,12 @@ export const useRecipeEditor = () => {
         servings: localRecipe.servings,
         is_public: true,
         tag_ids: selectedTagIds.value,
-        ...(thumbnailMediaId ? { thumbnail_media_id: thumbnailMediaId, thumbnail_media: thumbnailMediaId } : {}),
+        ...(thumbnailMediaId ? { thumbnail_media_id: thumbnailMediaId } : {}),
         ingredients: localRecipe.ingredients.map((item) => ({ name: item.name, amount: item.amount })),
         steps: localRecipe.steps.map((step, index) => ({
           order: index + 1,
           description: step,
-          ...(stepMediaIds[index] ? { image_id: stepMediaIds[index], image: stepMediaIds[index] } : {}),
+          ...(stepMediaIds[index] ? { image_id: stepMediaIds[index] } : {}),
         })),
       }
 

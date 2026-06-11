@@ -83,12 +83,20 @@ const compressImageFile = (file: File, maxSize = 1600, quality = 0.82) =>
     image.src = objectUrl
   })
 
-const getMediaId = (body: unknown) => {
-  if (!body || typeof body !== 'object') return ''
+const getMediaId = (body: unknown, seen = new Set<unknown>()): string | number | '' => {
+  if (!body || typeof body !== 'object' || seen.has(body)) return ''
+  seen.add(body)
+
   const record = body as Record<string, unknown>
-  const data = record.data && typeof record.data === 'object' ? (record.data as Record<string, unknown>) : {}
-  const id = record.id || record.media_id || record.mediaId || data.id || data.media_id || data.mediaId
-  return typeof id === 'number' || typeof id === 'string' ? id : ''
+  const id = record.id || record.pk || record.media_id || record.mediaId || record.media_file_id || record.mediaFileId
+  if (typeof id === 'number' || typeof id === 'string') return id
+
+  for (const key of ['data', 'media', 'media_file', 'mediaFile', 'file', 'result']) {
+    const nestedId = getMediaId(record[key], seen)
+    if (nestedId) return nestedId
+  }
+
+  return ''
 }
 
 export const useRecipeEditor = () => {
@@ -252,12 +260,16 @@ export const useRecipeEditor = () => {
     const uploadThumbnail = mainImageFile.value ? await uploadMediaApi(await compressImageFile(mainImageFile.value), 'thumbnail') : null
     if (uploadThumbnail) normalizeMediaUrl(uploadThumbnail, 'thumbnail')
     const thumbnailMediaId = getMediaId(uploadThumbnail)
+    if (uploadThumbnail && !thumbnailMediaId) throw new Error('대표 이미지 업로드 응답에서 media id를 찾지 못했어요.')
+
     const stepMediaIds = await Promise.all(
-      stepItems.map(async (step) => {
+      stepItems.map(async (step, index) => {
         if (!step.imageFile) return ''
         const uploadStep = await uploadMediaApi(await compressImageFile(step.imageFile), 'steps')
         normalizeMediaUrl(uploadStep, 'steps')
-        return getMediaId(uploadStep)
+        const stepMediaId = getMediaId(uploadStep)
+        if (!stepMediaId) throw new Error(`Step ${index + 1} 이미지 업로드 응답에서 media id를 찾지 못했어요.`)
+        return stepMediaId
       }),
     )
 
@@ -355,12 +367,12 @@ export const useRecipeEditor = () => {
         servings: localRecipe.servings,
         is_public: true,
         tag_ids: selectedTagIds.value,
-        ...(thumbnailMediaId ? { thumbnail_media_id: thumbnailMediaId } : {}),
+        ...(thumbnailMediaId ? { thumbnail_media_id: thumbnailMediaId, thumbnail_media: thumbnailMediaId } : {}),
         ingredients: localRecipe.ingredients.map((item) => ({ name: item.name, amount: item.amount })),
         steps: localRecipe.steps.map((step, index) => ({
           order: index + 1,
           description: step,
-          ...(stepMediaIds[index] ? { image_id: stepMediaIds[index] } : {}),
+          ...(stepMediaIds[index] ? { image_id: stepMediaIds[index], image: stepMediaIds[index] } : {}),
         })),
       }
 

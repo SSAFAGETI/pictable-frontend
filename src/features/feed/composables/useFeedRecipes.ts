@@ -2,8 +2,9 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchFeedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
 import { fetchMyRecipesPageApi } from '../../user/api'
-import { deleteRecipeApi } from '../../recipe/api'
+import { deleteRecipeApi, toggleSaveApi } from '../../recipe/api'
 import { resolveRecipePublicImage } from '../../recipe/mapper'
+import { ApiError } from '../../../shared/api/error'
 import { useAuth } from '../../../auth'
 import type { Recipe } from '../../../data'
 import { getRecipeTagByName, getRecipeTagNamesByIds } from '../../../tags'
@@ -39,6 +40,7 @@ export const useFeedRecipes = () => {
   const isLoadingPage = ref(false)
   const isServicePreparing = ref(false)
   const deletingRecipeIds = ref(new Set<string>())
+  const savingRecipeIds = ref(new Set<string>())
   const sentinelRef = ref<HTMLElement | null>(null)
   let observer: IntersectionObserver | null = null
   const isMyRecipeFeed = computed(() => route.query.source === 'my' && isAuthenticated.value)
@@ -142,6 +144,70 @@ export const useFeedRecipes = () => {
     }
   }
 
+  const updateRecipeSaveState = (id: string, saved: boolean, saveCount?: number) => {
+    feedRecipes.value = feedRecipes.value.map((recipe) => {
+      if (recipe.id !== id) return recipe
+
+      const nextSaves =
+        typeof saveCount === 'number'
+          ? saveCount
+          : Math.max(0, recipe.saves + (saved ? 1 : -1))
+
+      return {
+        ...recipe,
+        isSaved: saved,
+        saves: nextSaves,
+      }
+    })
+  }
+
+  const toggleSaveRecipe = async (id: string) => {
+    if (savingRecipeIds.value.has(id)) return
+
+    if (!isAuthenticated.value) {
+      showToast({
+        type: 'info',
+        title: '로그인이 필요해요',
+        message: '레시피 저장은 로그인 후 사용할 수 있어요.',
+      })
+      return
+    }
+
+    const target = feedRecipes.value.find((recipe) => recipe.id === id)
+    if (!target) return
+
+    const previousSaved = Boolean(target.isSaved)
+    const previousSaves = target.saves
+    const optimisticSaved = !previousSaved
+
+    savingRecipeIds.value = new Set(savingRecipeIds.value).add(id)
+    updateRecipeSaveState(id, optimisticSaved)
+
+    try {
+      const result = await toggleSaveApi(id)
+      const nextSaved = typeof result.saved === 'boolean' ? result.saved : optimisticSaved
+      updateRecipeSaveState(id, nextSaved, result.save_count)
+      showToast({
+        type: 'success',
+        title: nextSaved ? '레시피를 저장했어요' : '저장을 해제했어요',
+        message: nextSaved ? '저장 탭에서 다시 볼 수 있어요.' : '저장 탭에서 제거됐어요.',
+      })
+    } catch (error) {
+      feedRecipes.value = feedRecipes.value.map((recipe) =>
+        recipe.id === id ? { ...recipe, isSaved: previousSaved, saves: previousSaves } : recipe,
+      )
+      showToast({
+        type: 'error',
+        title: '저장 처리 실패',
+        message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 저장 상태를 바꿀 수 없어요. 잠시 후 다시 시도해주세요.',
+      })
+    } finally {
+      const nextIds = new Set(savingRecipeIds.value)
+      nextIds.delete(id)
+      savingRecipeIds.value = nextIds
+    }
+  }
+
   onMounted(() => {
     void loadFeedPage(true)
     setupObserver()
@@ -208,9 +274,11 @@ export const useFeedRecipes = () => {
     isLoadingPage,
     isServicePreparing,
     resetFilters,
+    savingRecipeIds,
     searchQuery,
     selectedTagIds,
     sentinelRef,
     sortBy,
+    toggleSaveRecipe,
   }
 }

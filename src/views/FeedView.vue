@@ -34,6 +34,18 @@
             <div class="relative aspect-[16/9]">
               <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+              <button
+                type="button"
+                :class="[
+                  'absolute left-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-primary disabled:pointer-events-none disabled:opacity-60',
+                  recipe.isSaved && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+                ]"
+                :aria-label="recipe.isSaved ? '저장 해제' : '저장'"
+                :disabled="savingRecipeIds.has(recipe.id)"
+                @click.prevent.stop="toggleSaveRecipe(recipe.id)"
+              >
+                <Bookmark :class="['h-4 w-4', recipe.isSaved && 'fill-current']" />
+              </button>
               <div v-if="isMyRecipeFeed" class="absolute right-2 top-2 flex gap-1.5">
                 <button
                   type="button"
@@ -97,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChefHat, Clock, Edit3, Heart, MessageCircle, Search, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-vue-next'
+import { Bookmark, ChefHat, Clock, Edit3, Heart, MessageCircle, Search, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import RecipeTagSelector from '../components/RecipeTagSelector.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
@@ -116,10 +128,12 @@ const {
   isMyRecipeFeed,
   isServicePreparing,
   resetFilters,
+  savingRecipeIds,
   searchQuery,
   selectedTagIds,
   sentinelRef,
   sortBy,
+  toggleSaveRecipe,
 } = useFeedRecipes()
 
 const editRecipe = (id: string) => {

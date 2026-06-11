@@ -7,6 +7,7 @@ import {
   fetchCommentsApi,
   fetchRecipeApi,
   toggleLikeApi,
+  toggleSaveApi,
   toggleSubscribeApi,
   updateCommentApi,
 } from '../../../api'
@@ -48,6 +49,9 @@ export const useRecipeDetail = () => {
   const recipe = computed(() => recipes.value.find((item) => item.id === route.params.id) || recipes.value[0])
   const likes = ref(recipe.value.likes)
   const isLiked = ref(Boolean(recipe.value.isLiked))
+  const saves = ref(recipe.value.saves)
+  const isSaved = ref(Boolean(recipe.value.isSaved))
+  const isSaving = ref(false)
   const likeBurst = ref(false)
   const commentText = ref('')
   const editingCommentId = ref<string | null>(null)
@@ -116,9 +120,13 @@ export const useRecipeDetail = () => {
       else recipes.value.unshift(apiRecipe)
       likes.value = apiRecipe.likes
       isLiked.value = Boolean(apiRecipe.isLiked)
+      saves.value = apiRecipe.saves
+      isSaved.value = Boolean(apiRecipe.isSaved)
     } catch {
       likes.value = recipe.value.likes
       isLiked.value = Boolean(recipe.value.isLiked)
+      saves.value = recipe.value.saves
+      isSaved.value = Boolean(recipe.value.isSaved)
     }
   }
 
@@ -165,6 +173,55 @@ export const useRecipeDetail = () => {
         title: '좋아요 처리 실패',
         message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 좋아요를 반영할 수 없어요. 잠시 후 다시 시도해주세요.',
       })
+    }
+  }
+
+  const handleSave = async () => {
+    const currentRecipe = recipe.value
+    if (!isAuthenticated.value) {
+      showToast({
+        type: 'info',
+        title: '로그인이 필요해요',
+        message: '레시피 저장은 로그인 후 사용할 수 있어요.',
+      })
+      return
+    }
+    if (isSaving.value) return
+
+    const previousSaved = isSaved.value
+    const previousSaves = saves.value
+    const optimisticSaved = !previousSaved
+
+    isSaving.value = true
+    isSaved.value = optimisticSaved
+    saves.value = Math.max(0, saves.value + (optimisticSaved ? 1 : -1))
+    currentRecipe.isSaved = optimisticSaved
+    currentRecipe.saves = saves.value
+
+    try {
+      const result = await toggleSaveApi(currentRecipe.id)
+      const nextSaved = typeof result.saved === 'boolean' ? result.saved : optimisticSaved
+      isSaved.value = nextSaved
+      if (typeof result.save_count === 'number') saves.value = result.save_count
+      currentRecipe.isSaved = nextSaved
+      currentRecipe.saves = saves.value
+      showToast({
+        type: 'success',
+        title: nextSaved ? '레시피를 저장했어요' : '저장을 해제했어요',
+        message: nextSaved ? '저장 탭에서 다시 볼 수 있어요.' : '저장 탭에서 제거됐어요.',
+      })
+    } catch (error) {
+      isSaved.value = previousSaved
+      saves.value = previousSaves
+      currentRecipe.isSaved = previousSaved
+      currentRecipe.saves = previousSaves
+      showToast({
+        type: 'error',
+        title: '저장 처리 실패',
+        message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 저장 상태를 바꿀 수 없어요. 잠시 후 다시 시도해주세요.',
+      })
+    } finally {
+      isSaving.value = false
     }
   }
 
@@ -326,6 +383,8 @@ export const useRecipeDetail = () => {
     () => {
       likes.value = recipe.value.likes
       isLiked.value = Boolean(recipe.value.isLiked)
+      saves.value = recipe.value.saves
+      isSaved.value = Boolean(recipe.value.isSaved)
       isSubscribed.value = false
       cancelCommentEdit()
       void loadRecipeDetail()
@@ -356,11 +415,15 @@ export const useRecipeDetail = () => {
     handleCommentSubmit,
     handleCommentUpdate,
     handleLike,
+    handleSave,
     handleSubscribe,
     isAuthenticated,
     isLiked,
+    isSaved,
+    isSaving,
     likeBurst,
     likes,
+    saves,
     recipe,
     startCommentEdit,
     isSubscribed,

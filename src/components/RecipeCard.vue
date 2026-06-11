@@ -42,10 +42,20 @@
         <div class="relative aspect-[4/3]">
           <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
           <div class="absolute right-2 top-2 flex gap-1">
-            <button class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground backdrop-blur-sm hover:bg-white" aria-label="좋아요" @click.prevent="$emit('like', recipe.id)">
+            <button
+              type="button"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground backdrop-blur-sm hover:bg-white"
+              aria-label="좋아요"
+              @click.prevent.stop="$emit('like', recipe.id)"
+            >
               <Heart :class="['h-4 w-4', recipe.isLiked && 'fill-primary text-primary']" />
             </button>
-            <button class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground backdrop-blur-sm hover:bg-white" aria-label="저장" @click.prevent="$emit('save', recipe.id)">
+            <button
+              type="button"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground backdrop-blur-sm hover:bg-white"
+              :aria-label="recipe.isSaved ? '저장 해제' : '저장'"
+              @click.prevent.stop="$emit('save', recipe.id)"
+            >
               <Bookmark :class="['h-4 w-4', recipe.isSaved && 'fill-primary text-primary']" />
             </button>
           </div>

@@ -28,9 +28,10 @@ export interface RecipeCreatePayload {
   servings: number
   is_public: boolean
   tag_ids?: number[]
+  thumbnail_media_id?: string | number
   thumbnail_media?: string | number
   ingredients: Array<{ name: string; amount?: string }>
-  steps: Array<{ order: number; description: string; image?: string | number }>
+  steps: Array<{ order: number; description: string; image_id?: string | number; image?: string | number }>
 }
 
 export type RecipeUpdatePayload = Partial<RecipeCreatePayload>

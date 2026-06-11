@@ -7,7 +7,12 @@
     />
     <main v-else class="flex-1 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
       <div class="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        <RecipeCard v-for="recipe in savedRecipes" :key="recipe.id" :recipe="{ ...recipe, isSaved: true }" />
+        <RecipeCard
+          v-for="recipe in savedRecipes"
+          :key="recipe.id"
+          :recipe="{ ...recipe, isSaved: true }"
+          @save="removeSavedRecipe"
+        />
         <div ref="sentinelRef" class="col-span-full flex h-16 items-center justify-center text-sm text-muted-foreground">
           <span v-if="isLoadingPage">저장한 레시피를 더 불러오는 중...</span>
           <span v-else-if="hasNextPage">스크롤하면 더 불러와요</span>
@@ -21,15 +26,17 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import AuthRequiredState from '../components/AuthRequiredState.vue'
 import RecipeCard from '../components/RecipeCard.vue'
-import { fetchSavedRecipesPageApi, RECIPE_PAGE_SIZE } from '../api'
+import { ApiError, fetchSavedRecipesPageApi, RECIPE_PAGE_SIZE, toggleSaveApi } from '../api'
 import { useAuth } from '../auth'
 import type { Recipe } from '../data'
+import { showToast } from '../toast'
 
 const { isAuthenticated } = useAuth()
 const savedRecipes = ref<Recipe[]>([])
 const nextCursor = ref<string | null>(null)
 const hasNextPage = ref(true)
 const isLoadingPage = ref(false)
+const removingRecipeIds = ref(new Set<string>())
 const sentinelRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
@@ -80,6 +87,34 @@ const setupObserver = () => {
     { rootMargin: '480px 0px' },
   )
   observer.observe(sentinelRef.value)
+}
+
+const removeSavedRecipe = async (id: string) => {
+  if (removingRecipeIds.value.has(id)) return
+
+  const previousRecipes = savedRecipes.value
+  removingRecipeIds.value = new Set(removingRecipeIds.value).add(id)
+  savedRecipes.value = savedRecipes.value.filter((recipe) => recipe.id !== id)
+
+  try {
+    await toggleSaveApi(id)
+    showToast({
+      type: 'success',
+      title: '저장을 해제했어요',
+      message: '저장 탭에서 제거됐어요.',
+    })
+  } catch (error) {
+    savedRecipes.value = previousRecipes
+    showToast({
+      type: 'error',
+      title: '저장 해제 실패',
+      message: error instanceof ApiError && error.status < 500 ? error.message : '지금은 저장 상태를 바꿀 수 없어요. 잠시 후 다시 시도해주세요.',
+    })
+  } finally {
+    const nextIds = new Set(removingRecipeIds.value)
+    nextIds.delete(id)
+    removingRecipeIds.value = nextIds
+  }
 }
 
 onMounted(setupObserver)

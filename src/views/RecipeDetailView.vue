@@ -17,6 +17,7 @@
             <span class="flex items-center gap-1"><Clock class="h-4 w-4" />{{ recipe.cookTime }}분</span>
             <span class="flex items-center gap-1"><ChefHat class="h-4 w-4" />{{ recipe.servings }}인분</span>
             <span class="flex items-center gap-1"><Heart class="h-4 w-4" />{{ likes.toLocaleString() }}</span>
+            <span class="flex items-center gap-1"><Bookmark class="h-4 w-4" />{{ saves.toLocaleString() }}</span>
             <span class="flex items-center gap-1"><MessageCircle class="h-4 w-4" />{{ recipe.comments }}</span>
           </div>
           <div class="mt-5 flex items-center justify-between gap-4">
@@ -176,12 +177,23 @@
         <MessageCircle class="h-4 w-4" />
         댓글
       </button>
+      <button
+        :class="[
+          'inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-5 text-sm font-bold shadow-lg transition-all duration-200 hover:border-primary/50 hover:text-primary active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60',
+          isSaved && 'border-primary/30 bg-primary/10 text-primary',
+        ]"
+        :disabled="isSaving"
+        @click="handleSave"
+      >
+        <Bookmark :class="['h-4 w-4', isSaved && 'fill-current']" />
+        저장
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, ChefHat, Clock, Heart, LoaderCircle, MessageCircle, Pencil, Trash2, UserPlus, Users } from 'lucide-vue-next'
+import { Bookmark, Check, ChefHat, Clock, Heart, LoaderCircle, MessageCircle, Pencil, Trash2, UserPlus, Users } from 'lucide-vue-next'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
 import { difficultyLabels } from '../data'
 import { useRecipeDetail } from '../features/recipe/composables/useRecipeDetail'
@@ -200,13 +212,17 @@ const {
   handleCommentSubmit,
   handleCommentUpdate,
   handleLike,
+  handleSave,
   handleSubscribe,
   isAuthenticated,
   isSubscribed,
   isSubscribing,
   isLiked,
+  isSaved,
+  isSaving,
   likeBurst,
   likes,
+  saves,
   recipe,
   startCommentEdit,
   updatingCommentId,

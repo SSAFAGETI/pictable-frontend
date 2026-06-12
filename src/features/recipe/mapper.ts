@@ -1,6 +1,7 @@
 import type { Difficulty, Ingredient, Recipe } from '../../data'
 import { apiRequest } from '../../shared/api/client'
 import type { NotificationItem, UserProfile } from '../../shared/api/types'
+import { normalizeRecipeTagName } from '../../tags'
 
 const BACKEND_ORIGIN = 'http://3.38.26.186'
 
@@ -341,6 +342,7 @@ const getAuthorId = (record: Record<string, unknown>) => {
 const getTags = (value: unknown) =>
   asArray(value)
     .map((tag) => (isRecord(tag) ? asString(tag.name || tag.title || tag.label) : asString(tag)))
+    .map(normalizeRecipeTagName)
     .filter(Boolean)
 
 const getIngredients = (value: unknown, title: string): Ingredient[] => {

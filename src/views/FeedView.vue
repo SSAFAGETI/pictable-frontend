@@ -1,10 +1,10 @@
 <template>
   <div class="page-scrollbar flex min-h-screen flex-col">
-    <main class="flex-1 lg:px-8 lg:py-6">
+    <main class="flex-1 lg:px-8 lg:pb-6 lg:pt-0">
       <ServicePreparingState v-if="isServicePreparing" />
 
       <template v-else>
-      <div class="sticky top-14 z-30 border-b border-border bg-card/95 px-4 py-3 backdrop-blur-sm lg:top-16 lg:mx-auto lg:max-w-7xl lg:rounded-lg lg:border lg:shadow-sm">
+      <div class="sticky top-14 z-30 border-b border-border bg-card/95 px-4 py-3 backdrop-blur-sm lg:top-0 lg:mx-auto lg:max-w-7xl lg:rounded-b-lg lg:border-x lg:border-b lg:border-t-0 lg:shadow-sm">
         <div class="flex gap-2">
           <div class="relative flex-1">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

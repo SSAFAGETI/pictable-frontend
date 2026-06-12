@@ -7,7 +7,7 @@ import { resolveRecipePublicImage } from '../../recipe/mapper'
 import { ApiError } from '../../../shared/api/error'
 import { useAuth } from '../../../auth'
 import type { Recipe } from '../../../data'
-import { getRecipeTagByName, getRecipeTagNamesByIds } from '../../../tags'
+import { getRecipeTagByName, getRecipeTagNamesByIds, getRecipeTagQueryNamesByIds } from '../../../tags'
 import { showToast } from '../../../toast'
 
 export type FeedSortOption = 'popular' | 'recent' | 'likes'
@@ -64,7 +64,7 @@ export const useFeedRecipes = () => {
     }
 
     isLoadingPage.value = true
-    const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
+    const selectedTags = getRecipeTagQueryNamesByIds(selectedTagIds.value)
 
     try {
       const result =

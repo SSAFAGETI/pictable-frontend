@@ -30,6 +30,50 @@ const dataUrlToFile = (dataUrl: string, filename: string) => {
 
 const normalizeIngredient = (ingredient: string) => ingredient.trim().replace(/\s+/g, ' ')
 
+const getCameraErrorMessage = (error: unknown) => {
+  const errorName = error instanceof DOMException ? error.name : ''
+
+  if (!window.isSecureContext) {
+    return {
+      title: '카메라를 열 수 없어요',
+      message: '카메라는 HTTPS 또는 localhost 환경에서만 사용할 수 있어요.',
+    }
+  }
+
+  if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
+    return {
+      title: '카메라 권한이 차단되어 있어요',
+      message: '브라우저 주소창의 사이트 설정에서 카메라 권한을 허용한 뒤 다시 시도해주세요.',
+    }
+  }
+
+  if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+    return {
+      title: '사용 가능한 카메라가 없어요',
+      message: '웹캠 또는 휴대폰 카메라가 연결되어 있는지 확인해주세요.',
+    }
+  }
+
+  if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+    return {
+      title: '카메라를 사용할 수 없어요',
+      message: '다른 앱에서 카메라를 사용 중일 수 있어요. 잠시 후 다시 시도해주세요.',
+    }
+  }
+
+  if (errorName === 'OverconstrainedError' || errorName === 'ConstraintNotSatisfiedError') {
+    return {
+      title: '카메라 설정을 맞출 수 없어요',
+      message: '현재 기기에서 요청한 카메라 설정을 지원하지 않습니다.',
+    }
+  }
+
+  return {
+    title: '카메라를 열 수 없어요',
+    message: '브라우저 카메라 권한 또는 장치 상태를 확인한 뒤 다시 시도해주세요.',
+  }
+}
+
 export const useHomeRecipes = () => {
   const router = useRouter()
   const inputValue = ref('')
@@ -113,6 +157,15 @@ export const useHomeRecipes = () => {
   const openCameraPicker = async () => {
     showUploadMenu.value = false
 
+    if (!window.isSecureContext) {
+      showToast({
+        type: 'error',
+        title: '카메라를 열 수 없어요',
+        message: '카메라는 HTTPS 또는 localhost 환경에서만 사용할 수 있어요.',
+      })
+      return
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
       showToast({
         type: 'error',
@@ -137,12 +190,13 @@ export const useHomeRecipes = () => {
         cameraVideoRef.value.srcObject = cameraStream
         await cameraVideoRef.value.play()
       }
-    } catch {
+    } catch (error) {
       closeCamera()
+      const cameraError = getCameraErrorMessage(error)
       showToast({
         type: 'error',
-        title: '카메라 권한이 필요해요',
-        message: '브라우저 카메라 권한을 허용한 뒤 다시 시도해주세요.',
+        title: cameraError.title,
+        message: cameraError.message,
       })
     } finally {
       isCameraStarting.value = false

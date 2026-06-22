@@ -65,7 +65,7 @@ export const fetchRecipeRecommendationsApi = async (ingredients: string[]) => {
   query.set('ingredients', normalizedIngredients.join(','))
 
   const body = await apiRequest<unknown>(`/recipes/recommendations/?${query}`, {
-    auth: Boolean(getStoredTokens()),
+    auth: true,
   })
   const record = isRecord(body) ? body : {}
   const canMake = await Promise.all(asArray(record.can_make || record.canMake).map((item) => mapRecommendationItem(item, normalizedIngredients)))

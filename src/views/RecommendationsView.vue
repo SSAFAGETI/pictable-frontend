@@ -44,7 +44,31 @@
         </div>
       </section>
 
-      <section v-if="isLoading" class="mx-auto mt-6 max-w-7xl">
+      <section v-if="requiresLogin" class="mx-auto mt-6 max-w-7xl rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <LockKeyhole class="h-7 w-7" />
+        </div>
+        <h2 class="mt-4 text-xl font-bold">로그인이 필요해요</h2>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          재료 기반 추천은 로그인 후 이용할 수 있어요. 로그인하면 가진 재료에 맞춰 만들 수 있는 레시피를 추천해드릴게요.
+        </p>
+        <div class="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
+          <RouterLink
+            :to="`${APP_ROUTES.login}?next=${encodeURIComponent(route.fullPath)}`"
+            class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90"
+          >
+            로그인하러 가기
+          </RouterLink>
+          <RouterLink
+            :to="APP_ROUTES.home"
+            class="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-5 text-sm font-bold shadow-sm hover:bg-muted"
+          >
+            홈으로 돌아가기
+          </RouterLink>
+        </div>
+      </section>
+
+      <section v-else-if="isLoading" class="mx-auto mt-6 max-w-7xl">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div v-for="index in 6" :key="index" class="h-80 animate-pulse rounded-lg bg-muted" />
         </div>
@@ -104,14 +128,16 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { ChefHat, Clock, Heart, Plus } from 'lucide-vue-next'
+import { ChefHat, Clock, Heart, LockKeyhole, Plus } from 'lucide-vue-next'
 import { fetchRecipeRecommendationsApi } from '../features/recipe/api'
 import type { RecipeRecommendation } from '../features/recipe/types'
+import { getStoredTokens } from '../shared/api/token'
 import { APP_ROUTES, recipeDetailPath } from '../shared/constants/routes'
 
 const route = useRoute()
 const isLoading = ref(false)
 const errorMessage = ref('')
+const requiresLogin = ref(false)
 const canMake = ref<RecipeRecommendation[]>([])
 const almost = ref<RecipeRecommendation[]>([])
 
@@ -131,18 +157,33 @@ const loadRecommendations = async () => {
   if (selectedIngredients.value.length === 0) {
     canMake.value = []
     almost.value = []
+    requiresLogin.value = false
+    return
+  }
+
+  if (!getStoredTokens()) {
+    canMake.value = []
+    almost.value = []
+    errorMessage.value = ''
+    requiresLogin.value = true
     return
   }
 
   isLoading.value = true
   errorMessage.value = ''
+  requiresLogin.value = false
 
   try {
     const result = await fetchRecipeRecommendationsApi(selectedIngredients.value)
     canMake.value = result.canMake
     almost.value = result.almost
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '추천 레시피를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'
+    const status = typeof error === 'object' && error && 'status' in error ? Number((error as { status?: unknown }).status) : 0
+    if (status === 401) {
+      requiresLogin.value = true
+      return
+    }
+    errorMessage.value = '추천 레시피를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'
   } finally {
     isLoading.value = false
   }

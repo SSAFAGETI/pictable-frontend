@@ -1,23 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
   <url>
-    <loc>https://ssafagetti.vercel.app/</loc>
+    <loc>https://pictable.online/</loc>
+    <xhtml:link rel="alternate" hreflang="ko-KR" href="https://pictable.online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://pictable.online/" />
+    <lastmod>2026-06-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://pictable.online/og-image.svg?v=4</image:loc>
+      <image:title>찰칵밥상 - 오늘 뭐 먹지?</image:title>
+      <image:caption>가진 재료로 레시피를 찾고 나만의 요리 기록을 관리하는 찰칵밥상</image:caption>
+    </image:image>
   </url>
   <url>
-    <loc>https://ssafagetti.vercel.app/feed</loc>
+    <loc>https://pictable.online/feed</loc>
+    <xhtml:link rel="alternate" hreflang="ko-KR" href="https://pictable.online/feed" />
+    <lastmod>2026-06-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ssafagetti.vercel.app/recommendations</loc>
+    <loc>https://pictable.online/recommendations</loc>
+    <xhtml:link rel="alternate" hreflang="ko-KR" href="https://pictable.online/recommendations" />
+    <lastmod>2026-06-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ssafagetti.vercel.app/ingredients</loc>
+    <loc>https://pictable.online/ingredients</loc>
+    <xhtml:link rel="alternate" hreflang="ko-KR" href="https://pictable.online/ingredients" />
+    <lastmod>2026-06-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
 </urlset>

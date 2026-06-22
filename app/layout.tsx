@@ -17,7 +17,6 @@ const notoSansKR = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: '찰칵밥상 - AI 기반 재료 맞춤 요리 추천',
   description: '냉장고 속 재료를 입력하면 AI가 맞춤 요리를 추천해드립니다. 자취생을 위한 간편 레시피 서비스',
-  generator: 'v0.app',
   keywords: ['요리', '레시피', 'AI', '자취', '요리추천', '재료', '냉장고', '찰칵밥상'],
   icons: {
     icon: [

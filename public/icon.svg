@@ -1,26 +1,11 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="40" fill="#EF4B25"/>
-  <path
-    d="M57.5 82.5C48.4 81.4 41.5 73.7 41.5 64.3C41.5 54.2 49.7 46 59.8 46C64.2 46 68.2 47.5 71.4 50.1C75.9 41.4 85 35.5 95.5 35.5C108.4 35.5 119.2 44.5 122 56.5C124 55.7 126.2 55.3 128.5 55.3C138.4 55.3 146.5 63.4 146.5 73.3C146.5 82.6 139.4 90.3 130.3 91.2V110.5C130.3 118.2 124.1 124.5 116.3 124.5H70.9C63.5 124.5 57.5 118.5 57.5 111.1V82.5Z"
-    fill="white"
-  />
-  <path
-    d="M70.5 91.5H117.5V111.3C117.5 113 116.1 114.5 114.3 114.5H73.7C71.9 114.5 70.5 113 70.5 111.3V91.5Z"
-    fill="#EF4B25"
-    opacity="0.12"
-  />
-  <path
-    d="M70.5 91.5H117.5M70.5 102.5H117.5"
-    stroke="#EF4B25"
-    stroke-width="7"
-    stroke-linecap="round"
-    opacity="0.22"
-  />
-  <path
-    d="M76 78C80.5 71.2 87 68 94.6 68C102.4 68 109.4 71.6 114 78"
-    stroke="#EF4B25"
-    stroke-width="7"
-    stroke-linecap="round"
-    opacity="0.18"
-  />
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="찰칵밥상">
+  <rect width="180" height="180" rx="39" fill="#EF4B25"/>
+  <g transform="translate(-10 2)">
+    <circle cx="64" cy="67" r="21" fill="#FFF7ED"/>
+    <circle cx="100" cy="60" r="33" fill="#FFF7ED"/>
+    <circle cx="136" cy="74" r="21" fill="#FFF7ED"/>
+    <rect x="57" y="70" width="86" height="58" rx="14" fill="#FFF7ED"/>
+    <path d="M83 77C87.8 68.6 94.2 64.4 102 64.4C109.8 64.4 116.2 68.6 121 77" stroke="#FFD4C5" stroke-width="7" stroke-linecap="round"/>
+    <path d="M75 93H125M75 104H125M80 115H120" stroke="#EF4B25" stroke-width="7" stroke-linecap="round"/>
+  </g>
 </svg>

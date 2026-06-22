@@ -1,5 +1,5 @@
-<svg width="420" height="120" viewBox="0 0 420 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="찰칵밥상 로고">
-  <g transform="translate(8 8) scale(0.577778)">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="찰칵밥상 사용자 기본 이미지">
+  <g transform="scale(2.844444)">
     <rect width="180" height="180" rx="39" fill="#EF4B25"/>
     <g transform="translate(-10 2)">
       <circle cx="64" cy="67" r="21" fill="#FFF7ED"/>
@@ -10,6 +10,4 @@
       <path d="M75 93H125M75 104H125M80 115H120" stroke="#EF4B25" stroke-width="7" stroke-linecap="round"/>
     </g>
   </g>
-  <text x="136" y="56" fill="#1F2937" font-family="Arial, sans-serif" font-size="36" font-weight="800">찰칵밥상</text>
-  <text x="138" y="88" fill="#EF4B25" font-family="Arial, sans-serif" font-size="20" font-weight="800">오늘 뭐 먹지?</text>
 </svg>

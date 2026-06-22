@@ -1,0 +1,53 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="찰칵밥상 - 오늘 뭐 먹지? 가진 재료로 레시피를 찾고 요리 기록을 관리하세요.">
+  <rect width="1200" height="630" fill="#FFF6EF"/>
+  <rect x="60" y="58" width="1080" height="514" rx="42" fill="#FFFFFF"/>
+  <rect x="96" y="96" width="1008" height="442" rx="30" fill="#FFFDFC"/>
+  <path d="M96 448C245 388 384 404 518 439C680 482 818 512 1104 430V538H96V448Z" fill="#FFE2CE"/>
+  <path d="M96 488C254 438 420 450 574 482C746 518 890 516 1104 468V538H96V488Z" fill="#F9C7A5"/>
+
+  <g transform="translate(126 122) scale(0.622222)">
+    <rect width="180" height="180" rx="39" fill="#EF4B25"/>
+    <g transform="translate(-10 2)">
+      <circle cx="64" cy="67" r="21" fill="#FFF7ED"/>
+      <circle cx="100" cy="60" r="33" fill="#FFF7ED"/>
+      <circle cx="136" cy="74" r="21" fill="#FFF7ED"/>
+      <rect x="57" y="70" width="86" height="58" rx="14" fill="#FFF7ED"/>
+      <path d="M83 77C87.8 68.6 94.2 64.4 102 64.4C109.8 64.4 116.2 68.6 121 77" stroke="#FFD4C5" stroke-width="7" stroke-linecap="round"/>
+      <path d="M75 93H125M75 104H125M80 115H120" stroke="#EF4B25" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <text x="126" y="326" fill="#1F2937" font-family="Arial, sans-serif" font-size="78" font-weight="800">찰칵밥상</text>
+  <text x="130" y="397" fill="#EF4B25" font-family="Arial, sans-serif" font-size="42" font-weight="800">오늘 뭐 먹지?</text>
+  <text x="130" y="463" fill="#374151" font-family="Arial, sans-serif" font-size="32" font-weight="700">가진 재료로 레시피를 찾고</text>
+  <text x="130" y="512" fill="#374151" font-family="Arial, sans-serif" font-size="32" font-weight="700">나만의 요리 기록을 관리하세요.</text>
+
+  <rect x="682" y="116" width="356" height="356" rx="48" fill="#FFF4EA"/>
+  <circle cx="860" cy="294" r="128" fill="#FFFFFF"/>
+  <circle cx="860" cy="294" r="96" fill="#F2D8C7"/>
+  <circle cx="860" cy="294" r="72" fill="#FFFDF9"/>
+  <rect x="792" y="260" width="136" height="96" rx="24" fill="#8A4F2F"/>
+  <ellipse cx="860" cy="258" rx="75" ry="30" fill="#B96937"/>
+  <ellipse cx="860" cy="254" rx="55" ry="17" fill="#F4A261"/>
+  <circle cx="828" cy="246" r="11" fill="#D62828"/>
+  <circle cx="864" cy="236" r="12" fill="#2F7D32"/>
+  <circle cx="898" cy="252" r="10" fill="#F7C948"/>
+  <path d="M812 289C843 306 878 306 910 289" stroke="#F8D5A7" stroke-width="13" stroke-linecap="round"/>
+  <path d="M820 324C850 341 882 341 912 324" stroke="#F8D5A7" stroke-width="13" stroke-linecap="round"/>
+  <path d="M802 365H918" stroke="#E7C5AD" stroke-width="15" stroke-linecap="round"/>
+
+  <rect x="718" y="446" width="300" height="62" rx="22" fill="#FFFFFF"/>
+  <g transform="translate(736 459) scale(0.2)">
+    <rect width="180" height="180" rx="39" fill="#EF4B25"/>
+    <g transform="translate(-10 2)">
+      <circle cx="64" cy="67" r="21" fill="#FFF7ED"/>
+      <circle cx="100" cy="60" r="33" fill="#FFF7ED"/>
+      <circle cx="136" cy="74" r="21" fill="#FFF7ED"/>
+      <rect x="57" y="70" width="86" height="58" rx="14" fill="#FFF7ED"/>
+      <path d="M83 77C87.8 68.6 94.2 64.4 102 64.4C109.8 64.4 116.2 68.6 121 77" stroke="#FFD4C5" stroke-width="7" stroke-linecap="round"/>
+      <path d="M75 93H125M75 104H125M80 115H120" stroke="#EF4B25" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
+  <text x="786" y="472" fill="#1F2937" font-family="Arial, sans-serif" font-size="21" font-weight="800">냉장고 속 재료로</text>
+  <text x="786" y="496" fill="#6B7280" font-family="Arial, sans-serif" font-size="18" font-weight="700">오늘의 레시피를 추천해요</text>
+</svg>

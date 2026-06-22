@@ -21,28 +21,28 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/favicon.ico?v=6',
+        url: '/favicon.ico?v=7',
         sizes: 'any',
       },
       {
-        url: '/favicon-48x48.png?v=6',
+        url: '/favicon-48x48.png?v=7',
         sizes: '48x48',
         type: 'image/png',
       },
       {
-        url: '/icon-light-32x32.png?v=6',
+        url: '/icon-light-32x32.png?v=7',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png?v=6',
+        url: '/icon-dark-32x32.png?v=7',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg?v=6',
+        url: '/icon.svg?v=7',
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png?v=6',
+    apple: '/apple-icon.png?v=7',
   },
 }
 

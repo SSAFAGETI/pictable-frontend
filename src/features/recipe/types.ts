@@ -31,6 +31,12 @@ export interface Recipe {
   createdAt: string
 }
 
+export interface RecipeRecommendation extends Recipe {
+  matchRate?: number
+  matchedIngredients: string[]
+  missingIngredients: string[]
+}
+
 export const difficultyLabels: Record<Difficulty, string> = {
   easy: '쉬움',
   medium: '보통',

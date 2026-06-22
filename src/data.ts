@@ -1,4 +1,4 @@
-export type { Difficulty, Ingredient, Recipe, RecipeStoreState } from './features/recipe/types'
+export type { Difficulty, Ingredient, Recipe, RecipeRecommendation, RecipeStoreState } from './features/recipe/types'
 export { difficultyLabels } from './features/recipe/types'
 export { fallbackImage, fallbackRecipes } from './features/recipe/mock'
 export { recipes, recipesLoading, recipesError, homeSummaryUnavailable, loadDjangoRecipes, loadFoodSafetyRecipes } from './features/recipe/store'

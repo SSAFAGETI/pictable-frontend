@@ -297,6 +297,8 @@ const getMediaUrl = normalizeMediaUrl
 
 const getRecipeImageSource = (record: Record<string, unknown>) =>
   record.thumbnail_media ||
+  record.thumbnail_media_id ||
+  record.media_id ||
   record.thumbnail_url ||
   record.thumbnail ||
   record.image_url ||

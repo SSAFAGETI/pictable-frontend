@@ -14,13 +14,19 @@
   "categories": ["food", "lifestyle", "productivity"],
   "icons": [
     {
-      "src": "/icon.svg?v=5",
+      "src": "/favicon-48x48.png?v=6",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg?v=6",
       "sizes": "180x180",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/apple-icon.png?v=5",
+      "src": "/apple-icon.png?v=6",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any maskable"
@@ -32,19 +38,19 @@
       "short_name": "피드",
       "description": "찰칵밥상 레시피 피드 보기",
       "url": "/feed",
-      "icons": [{ "src": "/icon.svg?v=5", "sizes": "180x180", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon.svg?v=6", "sizes": "180x180", "type": "image/svg+xml" }]
     },
     {
       "name": "재료로 추천받기",
       "short_name": "추천",
       "description": "가진 재료로 만들 수 있는 레시피 찾기",
       "url": "/ingredients",
-      "icons": [{ "src": "/icon.svg?v=5", "sizes": "180x180", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/icon.svg?v=6", "sizes": "180x180", "type": "image/svg+xml" }]
     }
   ],
   "screenshots": [
     {
-      "src": "/og-image.svg?v=5",
+      "src": "/og-image.svg?v=6",
       "sizes": "1200x630",
       "type": "image/svg+xml",
       "form_factor": "wide",

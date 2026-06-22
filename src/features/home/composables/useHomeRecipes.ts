@@ -1,9 +1,10 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { homeSummaryUnavailable, recipes } from '../../../data'
-import { analyzeIngredientImageApi } from '../../ingredient/api'
 import { ApiError } from '../../../shared/api/error'
 import { recommendationsPath } from '../../../shared/constants/routes'
+import { showToast } from '../../../toast'
+import { analyzeIngredientImageApi } from '../../ingredient/api'
 
 const MAX_INGREDIENTS = 10
 const CAROUSEL_INTERVAL_MS = 6000
@@ -14,6 +15,19 @@ const readImageFile = (file: File, callback: (value: string) => void) => {
   reader.readAsDataURL(file)
 }
 
+const dataUrlToFile = (dataUrl: string, filename: string) => {
+  const [header, data] = dataUrl.split(',')
+  const mime = header.match(/data:(.*?);base64/)?.[1] || 'image/jpeg'
+  const binary = window.atob(data || '')
+  const bytes = new Uint8Array(binary.length)
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+
+  return new File([bytes], filename, { type: mime })
+}
+
 const normalizeIngredient = (ingredient: string) => ingredient.trim().replace(/\s+/g, ' ')
 
 export const useHomeRecipes = () => {
@@ -22,7 +36,9 @@ export const useHomeRecipes = () => {
   const ingredients = ref<string[]>([])
   const showUploadMenu = ref(false)
   const galleryImageInput = ref<HTMLInputElement | null>(null)
-  const cameraImageInput = ref<HTMLInputElement | null>(null)
+  const cameraVideoRef = ref<HTMLVideoElement | null>(null)
+  const isCameraOpen = ref(false)
+  const isCameraStarting = ref(false)
   const selectedImageName = ref('')
   const selectedImagePreview = ref('')
   const isAnalyzingImage = ref(false)
@@ -32,11 +48,14 @@ export const useHomeRecipes = () => {
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
   const recentRecipes = computed(() => recipes.value.slice(2, 5))
+
   let timer: number | undefined
+  let cameraStream: MediaStream | null = null
 
   const addIngredient = (ingredient: string) => {
     const normalized = normalizeIngredient(ingredient)
     if (!normalized || ingredients.value.includes(normalized) || ingredients.value.length >= MAX_INGREDIENTS) return
+
     ingredients.value.push(normalized)
     inputValue.value = ''
   }
@@ -54,17 +73,7 @@ export const useHomeRecipes = () => {
     showUploadMenu.value = false
   }
 
-  const openCameraPicker = () => {
-    cameraImageInput.value?.click()
-    showUploadMenu.value = false
-  }
-
-  const handleImageUpload = async (event: Event) => {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
-    input.value = ''
-    if (!file) return
-
+  const processSelectedImageFile = async (file: File) => {
     selectedImageName.value = file.name || 'camera-photo.jpg'
     imageAnalyzeError.value = ''
     readImageFile(file, (value) => {
@@ -90,6 +99,93 @@ export const useHomeRecipes = () => {
     }
   }
 
+  const stopCameraStream = () => {
+    cameraStream?.getTracks().forEach((track) => track.stop())
+    cameraStream = null
+  }
+
+  const closeCamera = () => {
+    stopCameraStream()
+    isCameraOpen.value = false
+    isCameraStarting.value = false
+  }
+
+  const openCameraPicker = async () => {
+    showUploadMenu.value = false
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      showToast({
+        type: 'error',
+        title: '카메라를 열 수 없어요',
+        message: '현재 브라우저에서 카메라 촬영을 지원하지 않습니다. 갤러리에서 선택해주세요.',
+      })
+      return
+    }
+
+    try {
+      stopCameraStream()
+      isCameraOpen.value = true
+      isCameraStarting.value = true
+      await nextTick()
+
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      })
+
+      if (cameraVideoRef.value) {
+        cameraVideoRef.value.srcObject = cameraStream
+        await cameraVideoRef.value.play()
+      }
+    } catch {
+      closeCamera()
+      showToast({
+        type: 'error',
+        title: '카메라 권한이 필요해요',
+        message: '브라우저 카메라 권한을 허용한 뒤 다시 시도해주세요.',
+      })
+    } finally {
+      isCameraStarting.value = false
+    }
+  }
+
+  const captureCameraPhoto = async () => {
+    const video = cameraVideoRef.value
+    if (!video) return
+
+    if (!video.videoWidth || !video.videoHeight) {
+      showToast({
+        type: 'error',
+        title: '촬영할 수 없어요',
+        message: '카메라 화면이 준비된 뒤 다시 눌러주세요.',
+      })
+      return
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+
+    const context = canvas.getContext('2d')
+    if (!context) return
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const image = canvas.toDataURL('image/jpeg', 0.9)
+    const file = dataUrlToFile(image, `ingredient-camera-${Date.now()}.jpg`)
+
+    closeCamera()
+    await processSelectedImageFile(file)
+  }
+
+  const handleImageUpload = async (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+
+    await processSelectedImageFile(file)
+  }
+
   const removeSelectedImage = () => {
     selectedImageName.value = ''
     selectedImagePreview.value = ''
@@ -103,18 +199,23 @@ export const useHomeRecipes = () => {
 
   onMounted(() => {
     timer = window.setInterval(() => {
-      if (todayRecipes.value.length > 0) activeIndex.value = (activeIndex.value + 1) % todayRecipes.value.length
+      if (todayRecipes.value.length > 0) {
+        activeIndex.value = (activeIndex.value + 1) % todayRecipes.value.length
+      }
     }, CAROUSEL_INTERVAL_MS)
   })
 
   onUnmounted(() => {
     if (timer) window.clearInterval(timer)
+    closeCamera()
   })
 
   return {
     activeIndex,
     addIngredient,
-    cameraImageInput,
+    cameraVideoRef,
+    captureCameraPhoto,
+    closeCamera,
     galleryImageInput,
     goRecommendations,
     handleImageUpload,
@@ -122,6 +223,8 @@ export const useHomeRecipes = () => {
     ingredients,
     inputValue,
     isAnalyzingImage,
+    isCameraOpen,
+    isCameraStarting,
     isServicePreparing,
     openCameraPicker,
     openGalleryPicker,

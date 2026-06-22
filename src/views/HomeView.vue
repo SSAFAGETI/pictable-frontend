@@ -9,7 +9,7 @@
             <div class="relative h-full min-h-[260px]">
               <img
                 src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop"
-                alt="신선한 재료와 조리 도구가 놓인 주방"
+                alt="Kitchen tablet and cooking tools"
                 class="h-full min-h-[260px] w-full object-cover"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5" />
@@ -39,7 +39,6 @@
               />
               <div class="relative">
                 <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
-                <input ref="cameraImageInput" class="hidden" type="file" accept="image/*" capture="environment" @change="handleImageUpload" />
                 <button type="button" class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-input bg-background hover:bg-muted" @click="showUploadMenu = !showUploadMenu">
                   <Plus class="h-5 w-5" />
                 </button>
@@ -60,23 +59,25 @@
               <div class="flex items-center gap-3 p-3">
                 <img :src="selectedImagePreview" :alt="selectedImageName" class="h-16 w-16 rounded-md object-cover" />
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-bold">{{ selectedImageName || '선택한 이미지' }}</p>
+                  <p class="truncate text-sm font-bold">{{ selectedImageName || 'Selected image' }}</p>
                   <p class="text-xs text-muted-foreground">이미지 1장이 선택되었습니다.</p>
                 </div>
-                <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-destructive" aria-label="선택 이미지 삭제" @click="removeSelectedImage">
+                <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-destructive" aria-label="선택 이미지 제거" @click="removeSelectedImage">
                   <X class="h-4 w-4" />
                 </button>
               </div>
             </div>
+
             <div v-if="isAnalyzingImage || imageAnalyzeError || (selectedImagePreview && ingredients.length > 0)" class="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-sm">
               <p v-if="isAnalyzingImage" class="font-semibold text-primary">이미지에서 재료를 찾고 있어요...</p>
               <p v-else-if="imageAnalyzeError" class="font-semibold text-destructive">{{ imageAnalyzeError }}</p>
               <p v-else class="text-muted-foreground">인식된 재료를 확인하고 필요 없는 항목은 X로 제거해주세요.</p>
             </div>
+
             <div v-if="ingredients.length > 0" class="mt-4 flex flex-wrap gap-2">
               <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
                 {{ ingredient }}
-                <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 삭제`" @click="removeIngredient(ingredient)">
+                <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 제거`" @click="removeIngredient(ingredient)">
                   <X class="h-3 w-3" />
                 </button>
               </span>
@@ -96,7 +97,7 @@
 
       <section v-if="!isServicePreparing" class="px-4 py-2 sm:px-6 lg:px-8">
         <div class="mx-auto grid max-w-7xl grid-cols-5 gap-2 sm:flex sm:flex-wrap">
-          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="`/feed?tag=${encodeURIComponent(tag.name)}`" class="min-w-0">
+          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="{ path: '/feed', query: { tag: tag.name } }" class="min-w-0">
             <RecipeTagChip :label="tag.name" />
           </RouterLink>
         </div>
@@ -142,7 +143,7 @@
               v-for="(recipe, index) in todayRecipes"
               :key="recipe.id"
               type="button"
-              :aria-label="`${index + 1}번째 추천 요리 보기`"
+              :aria-label="`${index + 1}번째 추천 요리`"
               :class="['h-2 rounded-full transition-all', activeIndex === index ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50']"
               @click="activeIndex = index"
             />
@@ -214,6 +215,33 @@
         </div>
       </section>
     </main>
+
+    <div v-if="isCameraOpen" class="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="home-camera-title" @click.self="closeCamera">
+      <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <div class="flex items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <p id="home-camera-title" class="text-base font-bold">카메라로 촬영</p>
+            <p class="text-xs text-muted-foreground">재료 사진을 촬영하면 바로 이미지 인식을 시작합니다.</p>
+          </div>
+          <button type="button" class="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="카메라 닫기" @click="closeCamera">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="relative bg-black">
+          <video ref="cameraVideoRef" class="aspect-[4/3] max-h-[68vh] w-full object-contain" autoplay muted playsinline />
+          <div v-if="isCameraStarting" class="absolute inset-0 grid place-items-center bg-black/50 text-sm font-bold text-white">
+            카메라를 여는 중...
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 p-4">
+          <button type="button" class="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background text-sm font-bold hover:bg-muted" @click="closeCamera">취소</button>
+          <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60" :disabled="isCameraStarting" @click="captureCameraPhoto">
+            <Camera class="h-4 w-4" />
+            사진 사용
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -229,7 +257,9 @@ import { RECIPE_TAGS } from '../tags'
 const {
   activeIndex,
   addIngredient,
-  cameraImageInput,
+  cameraVideoRef,
+  captureCameraPhoto,
+  closeCamera,
   galleryImageInput,
   goRecommendations,
   handleImageUpload,
@@ -237,6 +267,8 @@ const {
   ingredients,
   inputValue,
   isAnalyzingImage,
+  isCameraOpen,
+  isCameraStarting,
   isServicePreparing,
   openCameraPicker,
   openGalleryPicker,

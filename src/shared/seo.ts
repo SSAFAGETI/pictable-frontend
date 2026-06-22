@@ -7,7 +7,7 @@ const SITE_URL = 'https://pictable.online'
 const DEFAULT_TITLE = '찰칵밥상 - 오늘 뭐 먹지? 레시피 추천과 요리 기록'
 const DEFAULT_DESCRIPTION =
   '찰칵밥상은 가진 재료와 취향에 맞는 레시피를 찾고, 직접 만든 요리를 기록하고 관리할 수 있는 레시피 서비스입니다.'
-const DEFAULT_IMAGE = '/og-image.svg?v=4'
+const DEFAULT_IMAGE = '/og-image.svg?v=5'
 
 interface SeoInput {
   title?: string

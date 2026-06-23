@@ -2,11 +2,12 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { homeSummaryUnavailable, recipes } from '../../../data'
 import { ApiError } from '../../../shared/api/error'
+import { MAX_INGREDIENTS } from '../../../shared/constants/ingredients'
 import { recommendationsPath } from '../../../shared/constants/routes'
 import { showToast } from '../../../toast'
 import { analyzeIngredientImageApi } from '../../ingredient/api'
 
-export const MAX_INGREDIENTS = 20
+export { MAX_INGREDIENTS }
 const CAROUSEL_INTERVAL_MS = 6000
 
 const readImageFile = (file: File, callback: (value: string) => void) => {

@@ -1,5 +1,6 @@
 import { apiRequest } from '../../shared/api/client'
 import { getStoredTokens } from '../../shared/api/token'
+import { MAX_INGREDIENTS } from '../../shared/constants/ingredients'
 import { asString, isRecord, unwrapList } from '../recipe/mapper'
 
 const DETECTION_POLL_COUNT = 6
@@ -65,8 +66,8 @@ const collectIngredientNames = (value: unknown, results: string[] = []): string[
   return results
 }
 
-const uniqueIngredients = (items: string[]) =>
-  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).slice(0, 10)
+export const uniqueIngredients = (items: string[]) =>
+  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).slice(0, MAX_INGREDIENTS)
 
 const getDetectionJobId = (body: unknown): string => {
   if (!isRecord(body)) return ''

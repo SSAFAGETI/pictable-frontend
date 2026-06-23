@@ -1,13 +1,13 @@
 import type { Recipe } from './types'
 
-const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
+const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop&auto=format&q=75'
 
 const fallbackRecipes: Recipe[] = [
   {
     id: '1',
     title: '김치볶음밥',
     description: '신김치와 밥만 있으면 뚝딱 만드는 자취생 대표 한 끼',
-    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 15,
     difficulty: 'easy',
     servings: 1,
@@ -30,7 +30,7 @@ const fallbackRecipes: Recipe[] = [
     id: '2',
     title: '계란볶음밥',
     description: '달걀과 밥의 완벽한 조합, 10분이면 완성되는 초간단 레시피',
-    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 10,
     difficulty: 'easy',
     servings: 1,
@@ -53,7 +53,7 @@ const fallbackRecipes: Recipe[] = [
     id: '3',
     title: '된장찌개',
     description: '구수한 된장 향이 가득한 따끈한 국물 요리',
-    image: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 25,
     difficulty: 'medium',
     servings: 2,
@@ -76,7 +76,7 @@ const fallbackRecipes: Recipe[] = [
     id: '4',
     title: '라면 업그레이드 레시피',
     description: '평범한 라면을 식당 스타일로 바꾸는 작은 팁',
-    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 8,
     difficulty: 'easy',
     servings: 1,
@@ -98,7 +98,7 @@ const fallbackRecipes: Recipe[] = [
     id: '5',
     title: '초간단 참치마요 덮밥',
     description: '5분이면 완성되는 자취생 최애 한 그릇 메뉴',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 5,
     difficulty: 'easy',
     servings: 1,
@@ -121,7 +121,7 @@ const fallbackRecipes: Recipe[] = [
     id: '6',
     title: '치즈 감자전',
     description: '바삭한 감자전에 치즈를 듬뿍 올린 든든한 안주',
-    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=900&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=900&h=600&fit=crop&auto=format&q=75',
     cookTime: 20,
     difficulty: 'medium',
     servings: 2,

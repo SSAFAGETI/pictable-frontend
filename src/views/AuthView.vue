@@ -2,7 +2,7 @@
   <main class="min-h-screen bg-background lg:grid lg:h-screen lg:grid-cols-[minmax(420px,0.95fr)_minmax(520px,1.05fr)] lg:overflow-hidden">
     <section class="relative hidden h-full overflow-hidden bg-card lg:block">
       <img
-        :src="isSignup ? 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1400&h=1600&fit=crop' : 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=1400&h=1600&fit=crop'"
+        :src="isSignup ? 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1400&h=1600&fit=crop&auto=format&q=75' : 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=1400&h=1600&fit=crop&auto=format&q=75'"
         alt="요리를 준비하는 주방"
         class="h-full w-full object-cover"
       />

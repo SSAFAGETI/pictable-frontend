@@ -4,7 +4,7 @@
       <template v-if="variant === 'horizontal'">
         <div class="flex h-full lg:flex-col">
           <div class="relative h-24 w-24 shrink-0 lg:h-40 lg:w-full">
-            <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
+            <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" :loading="imageLoading || 'eager'" decoding="async" />
             <div v-if="$slots.actions" class="absolute right-2 top-2 flex gap-1.5">
               <slot name="actions" />
             </div>
@@ -26,7 +26,7 @@
 
       <template v-else-if="variant === 'compact'">
         <div class="relative aspect-square">
-          <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
+          <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" :loading="imageLoading || 'eager'" decoding="async" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
           <div class="absolute bottom-2 left-2 right-2">
             <h3 class="line-clamp-1 text-sm font-semibold text-white lg:text-base">{{ recipe.title }}</h3>
@@ -40,7 +40,7 @@
 
       <template v-else>
         <div class="relative aspect-[4/3]">
-          <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
+          <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" :loading="imageLoading || 'eager'" decoding="async" />
           <div class="absolute right-2 top-2 flex gap-1">
             <button
               type="button"
@@ -95,6 +95,7 @@ import { difficultyLabels } from '../data'
 defineProps<{
   recipe: Recipe
   variant?: 'default' | 'compact' | 'horizontal'
+  imageLoading?: 'eager' | 'lazy'
 }>()
 
 defineEmits<{

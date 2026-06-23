@@ -20,7 +20,7 @@ interface EditableStep {
   imageFile?: File
 }
 
-const fallbackRecipeImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
+const fallbackRecipeImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop&auto=format&q=75'
 
 const readImage = (file: File, callback: (value: string) => void) => {
   const reader = new FileReader()

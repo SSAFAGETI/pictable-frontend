@@ -22,7 +22,7 @@
           </div>
           <div class="mt-5 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-              <img class="h-11 w-11 rounded-full object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop" alt="" />
+              <img class="h-11 w-11 rounded-full object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&auto=format&q=75" alt="" />
               <div>
                 <p class="font-semibold">{{ recipe.author }}</p>
                 <p class="text-sm text-muted-foreground">레시피 작성자</p>

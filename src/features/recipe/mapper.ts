@@ -5,7 +5,7 @@ import { normalizeRecipeTagName } from '../../tags'
 
 const BACKEND_ORIGIN = 'http://3.38.26.186'
 
-export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop'
+export const fallbackImage = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop&auto=format&q=75'
 
 export const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 export const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])

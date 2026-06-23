@@ -8,8 +8,14 @@
           <div class="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border lg:min-h-[360px]">
             <div class="relative h-full min-h-[260px]">
               <img
-                src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=1200&h=800&fit=crop"
+                src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75"
+                srcset="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=480&h=320&fit=crop&auto=format&q=75 480w, https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75 720w"
+                sizes="(min-width: 1280px) 672px, (min-width: 1024px) 54vw, calc(100vw - 2rem)"
                 alt="Kitchen tablet and cooking tools"
+                width="720"
+                height="480"
+                fetchpriority="high"
+                decoding="async"
                 class="h-full min-h-[260px] w-full object-cover"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5" />
@@ -31,23 +37,33 @@
 
             <div class="mt-5 flex items-center gap-2">
               <input
-                v-model="inputValue"
+                :value="inputValue"
                 type="text"
                 placeholder="재료 입력 후 Enter"
                 class="flex h-12 min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                @keydown.enter.prevent="addIngredient(inputValue.trim())"
+                aria-label="재료 입력"
+                :disabled="ingredients.length >= maxIngredients"
+                @input="handleIngredientInput"
+                @keydown.enter.prevent="addIngredient(inputValue)"
               />
               <div class="relative">
                 <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
-                <button type="button" class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-input bg-background hover:bg-muted" @click="showUploadMenu = !showUploadMenu">
+                <button
+                  type="button"
+                  class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-input bg-background hover:bg-muted"
+                  aria-label="사진으로 재료 추가"
+                  aria-haspopup="menu"
+                  :aria-expanded="showUploadMenu"
+                  @click="showUploadMenu = !showUploadMenu"
+                >
                   <Plus class="h-5 w-5" />
                 </button>
-                <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-md border border-border bg-card p-2 shadow-lg">
-                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="openGalleryPicker">
+                <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-md border border-border bg-card p-2 shadow-lg" role="menu" aria-label="재료 이미지 추가 방식">
+                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openGalleryPicker">
                     <ImageIcon class="h-4 w-4 text-muted-foreground" />
                     갤러리에서 선택
                   </button>
-                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="openCameraPicker">
+                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openCameraPicker">
                     <Camera class="h-4 w-4 text-muted-foreground" />
                     카메라로 촬영
                   </button>
@@ -118,7 +134,7 @@
                 <RouterLink :to="`/recipe/${recipe.id}`">
                   <div class="overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-lg lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                     <div class="relative h-[170px] sm:h-[220px] lg:h-[220px] xl:h-[240px]">
-                      <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" :loading="index === 0 ? 'eager' : 'lazy'" />
+                      <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" loading="lazy" decoding="async" />
                     </div>
                     <div class="flex flex-col justify-center p-3 sm:p-4 lg:p-5">
                       <span class="mb-2 w-fit rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">
@@ -144,9 +160,15 @@
               :key="recipe.id"
               type="button"
               :aria-label="`${index + 1}번째 추천 요리`"
-              :class="['h-2 rounded-full transition-all', activeIndex === index ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50']"
+              :aria-current="activeIndex === index ? 'true' : undefined"
+              class="group grid h-6 w-6 place-items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               @click="activeIndex = index"
-            />
+            >
+              <span
+                aria-hidden="true"
+                :class="['h-2 rounded-full transition-all', activeIndex === index ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/40 group-hover:bg-muted-foreground/60']"
+              />
+            </button>
           </div>
         </div>
       </section>
@@ -164,7 +186,7 @@
           </div>
 
           <div class="tag-filter-scroll grid auto-cols-[210px] grid-flow-col gap-4 overflow-x-auto pb-2 lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible">
-            <RecipeCard v-for="recipe in popularRecipes" :key="recipe.id" :recipe="recipe" variant="compact" />
+            <RecipeCard v-for="recipe in popularRecipes" :key="recipe.id" :recipe="recipe" variant="compact" image-loading="lazy" />
           </div>
         </div>
       </section>
@@ -186,7 +208,7 @@
               <div class="h-full overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
                 <div class="flex h-full lg:flex-col">
                   <div class="relative h-28 w-28 shrink-0 lg:h-44 lg:w-full">
-                    <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" />
+                    <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover" loading="lazy" decoding="async" />
                     <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-2">
                       <div class="flex items-center justify-end gap-1.5 text-[11px] font-medium text-white">
                         <span class="flex items-center gap-1 rounded-full bg-black/45 px-2 py-1 backdrop-blur-sm"><Heart class="h-3 w-3" />{{ recipe.likes.toLocaleString() }}</span>
@@ -263,6 +285,7 @@ const {
   galleryImageInput,
   goRecommendations,
   handleImageUpload,
+  handleIngredientInput,
   imageAnalyzeError,
   ingredients,
   inputValue,
@@ -270,6 +293,7 @@ const {
   isCameraOpen,
   isCameraStarting,
   isServicePreparing,
+  maxIngredients,
   openCameraPicker,
   openGalleryPicker,
   popularRecipes,

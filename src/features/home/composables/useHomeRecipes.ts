@@ -6,7 +6,7 @@ import { recommendationsPath } from '../../../shared/constants/routes'
 import { showToast } from '../../../toast'
 import { analyzeIngredientImageApi } from '../../ingredient/api'
 
-const MAX_INGREDIENTS = 10
+export const MAX_INGREDIENTS = 20
 const CAROUSEL_INTERVAL_MS = 6000
 
 const readImageFile = (file: File, callback: (value: string) => void) => {
@@ -28,7 +28,9 @@ const dataUrlToFile = (dataUrl: string, filename: string) => {
   return new File([bytes], filename, { type: mime })
 }
 
-const normalizeIngredient = (ingredient: string) => ingredient.trim().replace(/\s+/g, ' ')
+export const sanitizeIngredientInput = (ingredient: string) => ingredient.replace(/[^\p{L}\p{N}\s]/gu, '')
+
+export const normalizeIngredient = (ingredient: string) => sanitizeIngredientInput(ingredient).trim().replace(/\s+/g, ' ')
 
 const getCameraErrorMessage = (error: unknown) => {
   const errorName = error instanceof DOMException ? error.name : ''
@@ -102,6 +104,13 @@ export const useHomeRecipes = () => {
 
     ingredients.value.push(normalized)
     inputValue.value = ''
+  }
+
+  const handleIngredientInput = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const sanitized = sanitizeIngredientInput(input.value)
+    if (input.value !== sanitized) input.value = sanitized
+    inputValue.value = sanitized
   }
 
   const addIngredients = (items: string[]) => {
@@ -273,6 +282,7 @@ export const useHomeRecipes = () => {
     galleryImageInput,
     goRecommendations,
     handleImageUpload,
+    handleIngredientInput,
     imageAnalyzeError,
     ingredients,
     inputValue,
@@ -280,6 +290,7 @@ export const useHomeRecipes = () => {
     isCameraOpen,
     isCameraStarting,
     isServicePreparing,
+    maxIngredients: MAX_INGREDIENTS,
     openCameraPicker,
     openGalleryPicker,
     popularRecipes,

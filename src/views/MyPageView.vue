@@ -183,7 +183,7 @@ const activeTabHasNext = computed(() => tabHasNext.value[activeTab.value])
 const displayUser = computed(() => ({
   name: user.value?.name || '김요리',
   email: user.value?.email || 'user@example.com',
-  avatar: user.value?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+  avatar: user.value?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&auto=format&q=75',
 }))
 
 const handleLogout = async () => {
@@ -334,7 +334,7 @@ const ProfileSection = defineComponent({
     },
   },
   setup(props) {
-    const fallbackAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
+    const fallbackAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&auto=format&q=75'
 
     return () =>
       h('div', { class: 'rounded-lg border border-border bg-card text-card-foreground shadow-sm' }, [

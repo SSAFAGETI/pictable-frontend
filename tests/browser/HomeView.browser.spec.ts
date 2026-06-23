@@ -74,7 +74,7 @@ describe('HomeView ingredient input', () => {
     expect(input!.disabled).toBe(true)
 
     const clearButton = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
-      button.textContent?.includes('전체 삭제'),
+      button.textContent?.includes('모두 삭제'),
     )
     expect(clearButton).toBeTruthy()
 

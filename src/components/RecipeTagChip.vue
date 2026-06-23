@@ -1,7 +1,7 @@
 <template>
   <span :class="chipClass">
     <component :is="iconComponent" :class="iconClass" />
-    <span class="truncate">{{ normalizedLabel }}</span>
+    <span class="whitespace-nowrap">{{ normalizedLabel }}</span>
   </span>
 </template>
 

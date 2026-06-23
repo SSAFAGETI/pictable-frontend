@@ -10,12 +10,13 @@
               입력한 재료가 많이 포함된 레시피부터 추천해드려요.
             </p>
           </div>
-          <RouterLink
-            :to="APP_ROUTES.ingredients"
+          <button
+            type="button"
             class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90"
+            @click="openIngredientDialog"
           >
             재료 다시 고르기
-          </RouterLink>
+          </button>
         </div>
 
         <div v-if="selectedIngredients.length > 0" class="mt-4 flex flex-wrap gap-2">
@@ -122,24 +123,63 @@
         </section>
       </template>
     </main>
+
+    <div
+      v-if="isIngredientDialogOpen"
+      class="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recommendation-ingredient-dialog-title"
+      @click.self="closeIngredientDialog"
+    >
+      <section class="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-border bg-card p-5 shadow-2xl sm:p-6">
+        <h2 id="recommendation-ingredient-dialog-title" class="sr-only">추천 재료 다시 고르기</h2>
+        <button type="button" class="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="재료 다시 고르기 닫기" @click="closeIngredientDialog">
+          <X class="h-5 w-5" />
+        </button>
+
+        <IngredientPicker
+          v-model="draftIngredients"
+          eyebrow="Ingredient Match"
+          title="추천 재료 다시 고르기"
+          description="현재 결과는 유지한 채로 재료를 다시 고르고, 적용할 때 추천을 새로 불러올게요."
+          :show-submit="false"
+          autofocus
+        />
+
+        <div class="mt-5 grid gap-2 border-t border-border pt-4 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+          <p class="text-xs font-semibold text-muted-foreground">적용하면 선택한 재료 기준으로 추천 결과가 다시 계산됩니다.</p>
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl border border-input bg-background px-5 text-sm font-bold shadow-sm hover:bg-muted" @click="closeIngredientDialog">
+            취소
+          </button>
+          <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50" :disabled="draftIngredients.length === 0" @click="applyIngredientDialog">
+            추천 다시 보기
+          </button>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { ChefHat, Clock, Heart, LockKeyhole, Plus } from 'lucide-vue-next'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ChefHat, Clock, Heart, LockKeyhole, Plus, X } from 'lucide-vue-next'
+import IngredientPicker from '../components/IngredientPicker.vue'
 import { fetchRecipeRecommendationsApi } from '../features/recipe/api'
 import type { RecipeRecommendation } from '../features/recipe/types'
 import { getStoredTokens } from '../shared/api/token'
-import { APP_ROUTES, recipeDetailPath } from '../shared/constants/routes'
+import { APP_ROUTES, recipeDetailPath, recommendationsPath } from '../shared/constants/routes'
 
 const route = useRoute()
+const router = useRouter()
 const isLoading = ref(false)
 const errorMessage = ref('')
 const requiresLogin = ref(false)
 const canMake = ref<RecipeRecommendation[]>([])
 const almost = ref<RecipeRecommendation[]>([])
+const isIngredientDialogOpen = ref(false)
+const draftIngredients = ref<string[]>([])
 
 const selectedIngredients = computed(() => {
   const raw = Array.isArray(route.query.ingredients) ? route.query.ingredients.join(',') : String(route.query.ingredients || '')
@@ -191,6 +231,21 @@ const loadRecommendations = async () => {
 
 onMounted(loadRecommendations)
 watch(() => route.query.ingredients, loadRecommendations)
+
+const openIngredientDialog = () => {
+  draftIngredients.value = [...selectedIngredients.value]
+  isIngredientDialogOpen.value = true
+}
+
+const closeIngredientDialog = () => {
+  isIngredientDialogOpen.value = false
+}
+
+const applyIngredientDialog = () => {
+  if (draftIngredients.value.length === 0) return
+  isIngredientDialogOpen.value = false
+  router.push(recommendationsPath(draftIngredients.value))
+}
 
 const formatPercent = (value?: number) => `${Math.round(Math.max(0, Math.min(1, value || 0)) * 100)}%`
 

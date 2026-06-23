@@ -27,6 +27,19 @@ const createTestRouter = async (path: string) => {
   return router
 }
 
+const setInputValue = (input: HTMLInputElement, value: string) => {
+  input.value = value
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+const submitIngredient = async (input: HTMLInputElement, value: string) => {
+  setInputValue(input, value)
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }))
+  await new Promise((resolve) => {
+    window.requestAnimationFrame(resolve)
+  })
+}
+
 describe('RecommendationsView', () => {
   it('shows a login-required state without tokens', async () => {
     const recommendationRequests: string[] = []
@@ -68,5 +81,33 @@ describe('RecommendationsView', () => {
     await expect.element(screen.getByText('#egg')).toBeInTheDocument()
     await expect.element(screen.getByText('#milk')).toBeInTheDocument()
     expect(authHeaders).toEqual(['Bearer access-token'])
+  })
+
+  it('edits selected ingredients in a dialog before reloading recommendations', async () => {
+    const router = await createTestRouter('/recommendations?ingredients=egg,milk')
+    const screen = await render(RecommendationsView, { global: { plugins: [router] } })
+
+    await screen.getByText('재료 다시 고르기').click()
+
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-labelledby="recommendation-ingredient-dialog-title"]')
+    expect(dialog).toBeTruthy()
+
+    const clearButton = Array.from(dialog!.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.includes('모두 삭제'),
+    )
+    expect(clearButton).toBeTruthy()
+    await clearButton!.click()
+
+    const input = dialog!.querySelector<HTMLInputElement>('input[type="text"]')
+    expect(input).toBeTruthy()
+    await submitIngredient(input!, 'rice')
+
+    const applyButton = Array.from(dialog!.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.includes('추천 다시 보기'),
+    )
+    expect(applyButton).toBeTruthy()
+    await applyButton!.click()
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.ingredients).toBe('rice'))
   })
 })

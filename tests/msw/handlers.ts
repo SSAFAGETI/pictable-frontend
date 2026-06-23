@@ -11,6 +11,12 @@ export const handlers = [
     }),
   ),
   http.get('/api/home/summary/', () => HttpResponse.json(createHomeSummaryResponse())),
+  http.get('/api/recipes/ingredients/', ({ request }) => {
+    const url = new URL(request.url)
+    const search = url.searchParams.get('search')?.trim() || 'egg'
+
+    return HttpResponse.json([{ name: search }, { name: `${search} 추천` }])
+  }),
   http.get('/api/feeds/', () =>
     HttpResponse.json({
       results: [createApiRecipe('20', { title: 'Feed Recipe 20' }), createApiRecipe('21', { title: 'Feed Recipe 21' })],

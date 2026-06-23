@@ -28,125 +28,47 @@
             </div>
           </div>
 
-          <div class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5 lg:flex lg:flex-col lg:justify-center lg:p-6">
-            <div>
-              <p class="text-sm font-semibold text-primary">재료로 시작하기</p>
-              <h2 class="mt-1 text-xl font-bold">가지고 있는 재료를 추가하세요</h2>
-              <p class="mt-2 text-sm leading-6 text-muted-foreground">직접 입력하거나 사진으로 재료를 인식해 맞춤 레시피를 추천받을 수 있습니다.</p>
-            </div>
-
-            <div class="mt-5 flex items-center gap-2">
-              <input
-                :value="inputValue"
-                type="text"
-                placeholder="재료 입력 후 Enter"
-                class="flex h-12 min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                aria-label="재료 입력"
-                :disabled="ingredients.length >= maxIngredients"
-                @input="handleIngredientInput"
-                @compositionend="handleIngredientCompositionEnd"
-                @keydown.enter="handleIngredientEnter"
-              />
-              <div class="relative">
-                <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
-                <button
-                  type="button"
-                  class="inline-flex h-12 w-12 items-center justify-center rounded-md border border-input bg-background hover:bg-muted"
-                  aria-label="사진으로 재료 추가"
-                  aria-haspopup="menu"
-                  :aria-expanded="showUploadMenu"
-                  @click="showUploadMenu = !showUploadMenu"
-                >
-                  <Plus class="h-5 w-5" />
-                </button>
-                <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-md border border-border bg-card p-2 shadow-lg" role="menu" aria-label="재료 이미지 추가 방식">
-                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openGalleryPicker">
-                    <ImageIcon class="h-4 w-4 text-muted-foreground" />
-                    갤러리에서 선택
-                  </button>
-                  <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openCameraPicker">
-                    <Camera class="h-4 w-4 text-muted-foreground" />
-                    카메라로 촬영
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="selectedImagePreview" class="mt-4 overflow-hidden rounded-lg border border-border bg-muted/30">
-              <div class="flex items-center gap-3 p-3">
-                <img :src="selectedImagePreview" :alt="selectedImageName" class="h-16 w-16 rounded-md object-cover" />
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-bold">{{ selectedImageName || 'Selected image' }}</p>
-                  <p class="text-xs text-muted-foreground">이미지 1장이 선택되었습니다.</p>
-                </div>
-                <button type="button" class="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-background hover:text-destructive" aria-label="선택 이미지 제거" @click="removeSelectedImage">
-                  <X class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            <div v-if="isAnalyzingImage || imageAnalyzeError || (selectedImagePreview && ingredients.length > 0)" class="mt-3 rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              <p v-if="isAnalyzingImage" class="font-semibold text-primary">이미지에서 재료를 찾고 있어요...</p>
-              <p v-else-if="imageAnalyzeError" class="font-semibold text-destructive">{{ imageAnalyzeError }}</p>
-              <p v-else class="text-muted-foreground">인식된 재료를 확인하고 필요 없는 항목은 X로 제거해주세요.</p>
-            </div>
-
-            <div v-if="ingredients.length > 0" class="mt-4">
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <p class="text-xs font-semibold text-muted-foreground">{{ ingredients.length }}/{{ maxIngredients }}개 선택됨</p>
-                <button type="button" class="rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-destructive" @click="clearIngredients">
-                  전체 삭제
-                </button>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-                  {{ ingredient }}
-                  <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 제거`" @click="removeIngredient(ingredient)">
-                    <X class="h-3 w-3" />
-                  </button>
-                </span>
-              </div>
-            </div>
-
-            <button
-              class="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-              :disabled="ingredients.length === 0"
-              @click="goRecommendations"
-            >
-              <Sparkles class="h-5 w-5" />
-              {{ ingredients.length > 0 ? '레시피를 찾아볼게요' : '재료를 추가해주세요' }}
-            </button>
+          <div class="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:flex lg:flex-col lg:justify-center lg:p-6">
+            <IngredientPicker v-model="ingredients" @submit="goRecommendations" />
           </div>
         </div>
       </section>
 
       <section v-if="!isServicePreparing" class="px-4 py-2 sm:px-6 lg:px-8">
-        <div class="mx-auto grid max-w-7xl grid-cols-5 gap-2 sm:flex sm:flex-wrap">
-          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="{ path: '/feed', query: { tag: tag.name } }" class="min-w-0">
+        <div class="mx-auto grid max-w-7xl grid-cols-3 justify-items-center gap-2 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
+          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="{ path: '/feed', query: { tag: tag.name } }" class="flex w-full max-w-[9rem] justify-center sm:w-auto sm:max-w-none">
             <RecipeTagChip :label="tag.name" />
           </RouterLink>
         </div>
       </section>
 
       <section v-if="!isServicePreparing" class="px-4 py-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-7xl rounded-lg border border-border bg-card p-4 shadow-sm">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p class="text-sm font-semibold text-primary">레시피 검색</p>
-              <h2 class="mt-1 text-lg font-bold">이름으로 원하는 레시피를 찾아보세요</h2>
+        <div class="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-sm sm:p-6">
+          <div class="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-primary/15 blur-2xl" />
+          <div class="pointer-events-none absolute -bottom-12 right-8 h-36 w-36 rounded-full bg-accent/20 blur-2xl" />
+          <div class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.8fr)] lg:items-center">
+            <div class="flex items-start gap-4">
+              <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+                <Sparkles class="h-6 w-6" />
+              </div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-primary">Recipe Finder</p>
+                <h2 class="mt-2 text-xl font-black tracking-tight sm:text-2xl">먹고 싶은 레시피를 이름으로 콕 찾아봐요</h2>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">볶음밥, 장국, 샐러드처럼 떠오르는 요리명을 바로 검색할 수 있어요.</p>
+              </div>
             </div>
-            <form class="flex gap-2 lg:min-w-[420px]" @submit.prevent="goRecipeSearch">
+            <form class="relative flex rounded-2xl border border-primary/15 bg-background/90 p-2 shadow-sm backdrop-blur" @submit.prevent="goRecipeSearch">
               <div class="relative min-w-0 flex-1">
-                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
                 <input
                   v-model="recipeSearchQuery"
                   type="search"
                   placeholder="예: 볶음밥, 장국, 샐러드"
-                  class="flex h-11 w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  class="flex h-12 w-full rounded-xl border-0 bg-transparent py-2 pl-11 pr-3 text-sm font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="레시피 이름 검색"
                 />
               </div>
-              <button type="submit" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
+              <button type="submit" class="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90">
                 검색
               </button>
             </form>
@@ -273,37 +195,12 @@
       </section>
     </main>
 
-    <div v-if="isCameraOpen" class="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="home-camera-title" @click.self="closeCamera">
-      <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        <div class="flex items-center justify-between border-b border-border px-4 py-3">
-          <div>
-            <p id="home-camera-title" class="text-base font-bold">카메라로 촬영</p>
-            <p class="text-xs text-muted-foreground">재료 사진을 촬영하면 바로 이미지 인식을 시작합니다.</p>
-          </div>
-          <button type="button" class="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="카메라 닫기" @click="closeCamera">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-        <div class="relative bg-black">
-          <video ref="cameraVideoRef" class="aspect-[4/3] max-h-[68vh] w-full object-contain" autoplay muted playsinline />
-          <div v-if="isCameraStarting" class="absolute inset-0 grid place-items-center bg-black/50 text-sm font-bold text-white">
-            카메라를 여는 중...
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 p-4">
-          <button type="button" class="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background text-sm font-bold hover:bg-muted" @click="closeCamera">취소</button>
-          <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60" :disabled="isCameraStarting" @click="captureCameraPhoto">
-            <Camera class="h-4 w-4" />
-            사진 사용
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Camera, ChefHat, Clock, Heart, Image as ImageIcon, MessageCircle, Plus, Search, Sparkles, TrendingUp, X } from 'lucide-vue-next'
+import { ArrowRight, ChefHat, Clock, Heart, MessageCircle, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
+import IngredientPicker from '../components/IngredientPicker.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
 import ServicePreparingState from '../components/ServicePreparingState.vue'
@@ -313,36 +210,13 @@ import { RECIPE_TAGS } from '../tags'
 
 const {
   activeIndex,
-  addIngredient,
-  cameraVideoRef,
-  captureCameraPhoto,
-  clearIngredients,
-  closeCamera,
-  galleryImageInput,
   goRecipeSearch,
   goRecommendations,
-  handleImageUpload,
-  handleIngredientCompositionEnd,
-  handleIngredientEnter,
-  handleIngredientInput,
-  imageAnalyzeError,
   ingredients,
-  inputValue,
-  isAnalyzingImage,
-  isCameraOpen,
-  isCameraStarting,
   isServicePreparing,
-  maxIngredients,
-  openCameraPicker,
-  openGalleryPicker,
   popularRecipes,
   recentRecipes,
   recipeSearchQuery,
-  removeIngredient,
-  removeSelectedImage,
-  selectedImageName,
-  selectedImagePreview,
-  showUploadMenu,
   todayRecipes,
 } = useHomeRecipes()
 </script>

@@ -43,35 +43,38 @@
       </section>
 
       <section v-if="!isServicePreparing" class="px-4 py-4 sm:px-6 lg:px-8">
-        <div class="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-sm sm:p-6">
-          <div class="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full bg-primary/15 blur-2xl" />
-          <div class="pointer-events-none absolute -bottom-12 right-8 h-36 w-36 rounded-full bg-accent/20 blur-2xl" />
-          <div class="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.8fr)] lg:items-center">
-            <div class="flex items-start gap-4">
-              <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary shadow-inner">
-                <Sparkles class="h-6 w-6" />
-              </div>
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.18em] text-primary">Recipe Finder</p>
-                <h2 class="mt-2 text-xl font-black tracking-tight sm:text-2xl">먹고 싶은 레시피를 이름으로 콕 찾아봐요</h2>
-                <p class="mt-2 text-sm leading-6 text-muted-foreground">볶음밥, 장국, 샐러드처럼 떠오르는 요리명을 바로 검색할 수 있어요.</p>
-              </div>
-            </div>
-            <form class="relative flex rounded-2xl border border-primary/15 bg-background/90 p-2 shadow-sm backdrop-blur" @submit.prevent="goRecipeSearch">
-              <div class="relative min-w-0 flex-1">
-                <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-                <input
-                  v-model="recipeSearchQuery"
-                  type="search"
-                  placeholder="예: 볶음밥, 장국, 샐러드"
-                  class="flex h-12 w-full rounded-xl border-0 bg-transparent py-2 pl-11 pr-3 text-sm font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="레시피 이름 검색"
-                />
-              </div>
-              <button type="submit" class="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90">
-                검색
-              </button>
+        <div class="mx-auto max-w-7xl">
+          <h2 class="text-center text-xl font-black tracking-tight sm:text-2xl">레시피 찾기</h2>
+          <div class="relative mx-auto mt-4 max-w-4xl">
+            <form class="relative" @submit.prevent="goRecipeSearch()">
+              <Search class="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <input
+                v-model="recipeSearchQuery"
+                type="search"
+                placeholder="먹고 싶은 레시피 이름을 입력해보세요"
+                class="h-14 w-full rounded-full border border-primary/30 bg-primary/5 py-2 pl-14 pr-5 text-base font-semibold text-foreground shadow-sm shadow-primary/10 outline-none backdrop-blur placeholder:text-muted-foreground focus-visible:border-primary focus-visible:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/40"
+                aria-label="레시피 이름 검색"
+                aria-controls="home-recipe-search-suggestions"
+              />
+              <button type="submit" class="sr-only">검색</button>
             </form>
+
+            <div
+              v-if="recipeSearchSuggestions.length > 0"
+              id="home-recipe-search-suggestions"
+              class="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-3xl border border-primary/15 bg-card/95 p-2 shadow-xl shadow-primary/10 backdrop-blur"
+            >
+              <button
+                v-for="suggestion in recipeSearchSuggestions"
+                :key="suggestion"
+                type="button"
+                class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold hover:bg-primary/10 hover:text-primary"
+                @click="goRecipeSearch(suggestion)"
+              >
+                <Search class="h-4 w-4 shrink-0 text-primary" />
+                <span class="line-clamp-1">{{ suggestion }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -199,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ChefHat, Clock, Heart, MessageCircle, Search, Sparkles, TrendingUp } from 'lucide-vue-next'
+import { ArrowRight, ChefHat, Clock, Heart, MessageCircle, Search, TrendingUp } from 'lucide-vue-next'
 import IngredientPicker from '../components/IngredientPicker.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
@@ -216,6 +219,7 @@ const {
   isServicePreparing,
   popularRecipes,
   recentRecipes,
+  recipeSearchSuggestions,
   recipeSearchQuery,
   todayRecipes,
 } = useHomeRecipes()

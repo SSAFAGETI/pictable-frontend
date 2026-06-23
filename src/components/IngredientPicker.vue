@@ -6,7 +6,7 @@
       <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
     </div>
 
-    <form class="mt-5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]" @submit.prevent="addIngredient(inputValue)">
+    <form class="mt-5 grid grid-cols-[minmax(0,1fr)_auto] gap-2" @submit.prevent="addIngredient(inputValue)">
       <div class="relative min-w-0">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -23,27 +23,17 @@
         />
       </div>
 
-      <button
-        type="submit"
-        class="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-        :disabled="ingredients.length >= maxIngredients || normalizeIngredient(inputValue).length === 0"
-      >
-        <Plus class="h-4 w-4" />
-        추가
-      </button>
-
       <div class="relative">
         <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
         <button
           type="button"
-          class="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border border-input bg-background px-4 text-sm font-bold shadow-sm hover:bg-muted sm:w-12 sm:px-0"
+          class="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-input bg-background text-foreground shadow-sm hover:bg-muted"
           aria-label="사진으로 재료 추가"
           aria-haspopup="menu"
           :aria-expanded="showUploadMenu"
           @click="showUploadMenu = !showUploadMenu"
         >
-          <ImageIcon class="h-4 w-4" />
-          <span class="sm:sr-only">사진</span>
+          <Plus class="h-5 w-5" />
         </button>
         <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-2 shadow-lg" role="menu" aria-label="재료 이미지 추가 방식">
           <button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openGalleryPicker">

@@ -18,6 +18,18 @@ export const useHomeRecipes = () => {
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
   const recentRecipes = computed(() => recipes.value.slice(2, 5))
+  const recipeSearchSuggestions = computed(() => {
+    const query = recipeSearchQuery.value.trim().toLowerCase()
+    if (!query) return []
+
+    return recipes.value
+      .filter((recipe) => {
+        const searchable = [recipe.title, recipe.description, ...recipe.tags].join(' ').toLowerCase()
+        return searchable.includes(query)
+      })
+      .slice(0, 5)
+      .map((recipe) => recipe.title)
+  })
 
   let timer: number | undefined
 
@@ -26,8 +38,9 @@ export const useHomeRecipes = () => {
     router.push(recommendationsPath(ingredients.value))
   }
 
-  const goRecipeSearch = () => {
-    const search = recipeSearchQuery.value.trim()
+  const goRecipeSearch = (searchOverride?: string) => {
+    const search = (searchOverride ?? recipeSearchQuery.value).trim()
+    recipeSearchQuery.value = search
 
     router.push({
       path: APP_ROUTES.feed,
@@ -56,6 +69,7 @@ export const useHomeRecipes = () => {
     maxIngredients: MAX_INGREDIENTS,
     popularRecipes,
     recentRecipes,
+    recipeSearchSuggestions,
     recipeSearchQuery,
     todayRecipes,
   }

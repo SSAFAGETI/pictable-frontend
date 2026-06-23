@@ -36,6 +36,20 @@
               </button>
             </div>
           </div>
+
+          <div class="mx-auto mt-3 grid max-w-5xl grid-cols-3 gap-2 sm:grid-cols-6">
+            <RouterLink
+              v-for="tag in RECIPE_TAGS"
+              :key="tag.id"
+              :to="{ path: '/feed', query: { tag: tag.name } }"
+              class="group flex h-20 flex-col items-center justify-center rounded-2xl border border-border bg-card px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md lg:h-16 lg:flex-row lg:gap-2"
+            >
+              <span class="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground lg:h-8 lg:w-8">
+                <component :is="homeTagIcon(tag.name)" class="h-5 w-5 lg:h-4 lg:w-4" />
+              </span>
+              <span class="mt-1.5 text-sm font-black lg:mt-0">{{ tag.name }}</span>
+            </RouterLink>
+          </div>
         </div>
       </section>
 
@@ -67,22 +81,6 @@
           <div class="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:flex lg:flex-col lg:justify-center lg:p-6">
             <IngredientPicker v-model="ingredients" @submit="goRecommendations" />
           </div>
-        </div>
-      </section>
-
-      <section v-if="!isServicePreparing" class="px-4 py-2 sm:px-6 lg:px-8">
-        <div class="mx-auto grid max-w-7xl grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
-          <RouterLink
-            v-for="tag in RECIPE_TAGS"
-            :key="tag.id"
-            :to="{ path: '/feed', query: { tag: tag.name } }"
-            class="group flex min-h-24 flex-col items-center justify-center rounded-3xl border border-border bg-card px-2 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md sm:min-h-0 sm:flex-row sm:gap-2 sm:rounded-full sm:px-3 sm:py-1.5"
-          >
-            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground sm:h-6 sm:w-6 sm:rounded-full">
-              <component :is="homeTagIcon(tag.name)" class="h-6 w-6 sm:h-3.5 sm:w-3.5" />
-            </span>
-            <span class="mt-2 text-sm font-black sm:mt-0 sm:text-sm">{{ tag.name }}</span>
-          </RouterLink>
         </div>
       </section>
 

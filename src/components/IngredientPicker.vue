@@ -14,7 +14,7 @@
           :value="inputValue"
           type="text"
           placeholder="재료 입력 후 Enter"
-          class="flex h-12 w-full min-w-0 rounded-xl border border-input bg-background py-2 pl-10 pr-3 text-base outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          class="flex h-12 w-full min-w-0 border border-input bg-background py-2 pl-10 pr-3 text-base outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="재료 입력"
           :disabled="ingredients.length >= maxIngredients"
           @input="handleIngredientInput"
@@ -27,7 +27,7 @@
         <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
         <button
           type="button"
-          class="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-input bg-background text-foreground shadow-sm hover:bg-muted"
+          class="inline-flex h-12 w-12 items-center justify-center border border-input bg-background text-foreground shadow-sm hover:bg-muted"
           aria-label="사진으로 재료 추가"
           aria-haspopup="menu"
           :aria-expanded="showUploadMenu"
@@ -35,12 +35,12 @@
         >
           <Plus class="h-5 w-5" />
         </button>
-        <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-2 shadow-lg" role="menu" aria-label="재료 이미지 추가 방식">
-          <button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openGalleryPicker">
+        <div v-if="showUploadMenu" class="absolute right-0 top-full z-50 mt-2 w-52 border border-border bg-card p-2 shadow-lg" role="menu" aria-label="재료 이미지 추가 방식">
+          <button type="button" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openGalleryPicker">
             <ImageIcon class="h-4 w-4 text-muted-foreground" />
             갤러리에서 선택
           </button>
-          <button type="button" class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openCameraPicker">
+          <button type="button" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted" role="menuitem" @click="openCameraPicker">
             <Camera class="h-4 w-4 text-muted-foreground" />
             카메라로 촬영
           </button>
@@ -53,14 +53,14 @@
         v-for="ingredient in suggestions"
         :key="ingredient"
         type="button"
-        class="rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/10"
+        class="border border-primary/15 bg-primary/5 px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/10"
         @click="addIngredient(ingredient)"
       >
         {{ ingredient }}
       </button>
     </div>
 
-    <div v-if="selectedImagePreview" class="mt-4 overflow-hidden rounded-xl border border-border bg-muted/30">
+    <div v-if="selectedImagePreview" class="mt-4 overflow-hidden border border-border bg-muted/30">
       <div class="flex items-center gap-3 p-3">
         <img :src="selectedImagePreview" :alt="selectedImageName" class="h-16 w-16 rounded-lg object-cover" />
         <div class="min-w-0 flex-1">
@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    <div v-if="isAnalyzingImage || imageAnalyzeError || (selectedImagePreview && ingredients.length > 0)" class="mt-3 rounded-xl border border-border bg-background px-3 py-2 text-sm">
+    <div v-if="isAnalyzingImage || imageAnalyzeError || (selectedImagePreview && ingredients.length > 0)" class="mt-3 border border-border bg-background px-3 py-2 text-sm">
       <p v-if="isAnalyzingImage" class="font-semibold text-primary">이미지에서 재료를 찾고 있어요...</p>
       <p v-else-if="imageAnalyzeError" class="font-semibold text-destructive">{{ imageAnalyzeError }}</p>
       <p v-else class="text-muted-foreground">인식된 재료를 확인하고 필요 없는 항목은 X로 제거해주세요.</p>
@@ -82,7 +82,7 @@
     <div v-if="ingredients.length > 0" class="mt-4">
       <div class="mb-2 flex items-center justify-between gap-3">
         <p class="text-xs font-semibold text-muted-foreground">{{ ingredients.length }}/{{ maxIngredients }}개 선택됨</p>
-        <button type="button" class="rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-destructive" @click="clearIngredients">
+        <button type="button" class="px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-destructive" @click="clearIngredients">
           모두 삭제
         </button>
       </div>
@@ -98,7 +98,7 @@
 
     <button
       v-if="showSubmit"
-      class="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+      class="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 bg-primary px-8 text-sm font-black text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
       :disabled="ingredients.length === 0"
       @click="$emit('submit')"
     >

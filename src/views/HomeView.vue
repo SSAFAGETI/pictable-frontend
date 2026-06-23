@@ -1,6 +1,6 @@
 <template>
   <div class="page-scrollbar flex min-h-screen flex-col">
-    <main class="flex-1 pb-24 lg:pb-0">
+    <main class="home-gradient-surface flex-1 pb-24 lg:pb-0">
       <ServicePreparingState v-if="isServicePreparing" />
 
       <section v-if="!isServicePreparing" class="px-4 pb-2 pt-5 sm:px-6 lg:px-8 lg:pt-7">
@@ -42,9 +42,10 @@
               v-for="tag in RECIPE_TAGS"
               :key="tag.id"
               :to="{ path: '/feed', query: { tag: tag.name } }"
-              class="group flex h-20 flex-col items-center justify-center rounded-2xl border border-border bg-card px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md lg:h-16 lg:flex-row lg:gap-2"
+              class="group relative flex h-20 flex-col items-center justify-center overflow-hidden border border-primary/10 bg-white/75 px-2 text-center shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/35 hover:bg-white lg:h-16 lg:flex-row lg:gap-2"
             >
-              <span class="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground lg:h-8 lg:w-8">
+              <span class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/80 via-primary/35 to-transparent opacity-70" />
+              <span class="grid h-10 w-10 place-items-center bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground lg:h-8 lg:w-8">
                 <component :is="homeTagIcon(tag.name)" class="h-5 w-5 lg:h-4 lg:w-4" />
               </span>
               <span class="mt-1.5 text-sm font-black lg:mt-0">{{ tag.name }}</span>
@@ -54,32 +55,36 @@
       </section>
 
       <section v-if="!isServicePreparing" class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-stretch">
-          <div class="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border lg:min-h-[360px]">
-            <div class="relative h-full min-h-[260px]">
-              <img
-                src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75"
-                srcset="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=480&h=320&fit=crop&auto=format&q=75 480w, https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75 720w"
-                sizes="(min-width: 1280px) 672px, (min-width: 1024px) 54vw, calc(100vw - 2rem)"
-                alt="Kitchen tablet and cooking tools"
-                width="720"
-                height="480"
-                fetchpriority="high"
-                decoding="async"
-                class="h-full min-h-[260px] w-full object-cover"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5" />
-              <div class="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6 lg:p-8">
-                <h1 class="max-w-xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">찰칵밥상</h1>
-                <p class="mt-3 max-w-xl text-sm leading-6 text-white/85 sm:text-base">
-                  냉장고 속 재료를 입력하고 지금 만들 수 있는 레시피를 바로 찾아보세요.
-                </p>
-              </div>
+        <div class="mx-auto max-w-7xl border border-primary/10 bg-white/80 shadow-xl shadow-primary/5 backdrop-blur">
+          <div class="relative min-h-[300px] overflow-hidden lg:min-h-[360px]">
+            <img
+              src="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75"
+              srcset="https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=480&h=320&fit=crop&auto=format&q=75 480w, https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=720&h=480&fit=crop&auto=format&q=75 720w"
+              sizes="(min-width: 1280px) 672px, (min-width: 1024px) 54vw, calc(100vw - 2rem)"
+              alt="Kitchen tablet and cooking tools"
+              width="720"
+              height="480"
+              fetchpriority="high"
+              decoding="async"
+              class="absolute inset-0 h-full w-full object-cover"
+            />
+            <div class="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,0.78)_0%,rgba(0,0,0,0.52)_38%,rgba(240,74,36,0.12)_100%)]" />
+            <div class="relative flex min-h-[300px] max-w-3xl flex-col justify-end p-6 text-white sm:p-8 lg:min-h-[360px] lg:p-10">
+              <p class="mb-3 w-fit border border-white/30 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] backdrop-blur">Snap to Cook</p>
+              <h1 class="max-w-xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">찰칵밥상</h1>
+              <p class="mt-4 max-w-xl text-sm leading-6 text-white/85 sm:text-base">
+                냉장고 속 재료를 입력하고 지금 만들 수 있는 레시피를 바로 찾아보세요.
+              </p>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:flex lg:flex-col lg:justify-center lg:p-6">
-            <IngredientPicker v-model="ingredients" @submit="goRecommendations" />
+          <div class="home-ingredient-strip border-t border-primary/10 p-5 sm:p-6 lg:p-7">
+            <IngredientPicker
+              v-model="ingredients"
+              title="가지고 있는 재료를 입력하세요"
+              description="재료를 엔터로 추가하고, 바로 추천받을 수 있어요."
+              @submit="goRecommendations"
+            />
           </div>
         </div>
       </section>

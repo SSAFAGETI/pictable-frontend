@@ -164,6 +164,19 @@
 }
 
 @layer utilities {
+  .home-gradient-surface {
+    background:
+      radial-gradient(circle at 14% 8%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 30%),
+      radial-gradient(circle at 88% 14%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 32%),
+      linear-gradient(180deg, color-mix(in oklch, var(--primary) 6%, white) 0%, color-mix(in oklch, var(--background) 86%, white) 46%, var(--background) 100%);
+  }
+
+  .home-ingredient-strip {
+    background:
+      linear-gradient(135deg, color-mix(in oklch, var(--primary) 8%, white), color-mix(in oklch, var(--card) 90%, transparent)),
+      color-mix(in oklch, var(--card) 92%, transparent);
+  }
+
   .tag-filter-scroll {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklch, var(--primary) 62%, transparent) transparent;

@@ -36,21 +36,6 @@
               </button>
             </div>
           </div>
-
-          <div class="mx-auto mt-3 grid max-w-5xl grid-cols-3 gap-2 sm:grid-cols-6">
-            <RouterLink
-              v-for="tag in RECIPE_TAGS"
-              :key="tag.id"
-              :to="{ path: '/feed', query: { tag: tag.name } }"
-              class="group relative flex h-20 flex-col items-center justify-center overflow-hidden border border-primary/10 bg-white/75 px-2 text-center shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/35 hover:bg-white lg:h-16 lg:flex-row lg:gap-2"
-            >
-              <span class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/80 via-primary/35 to-transparent opacity-70" />
-              <span class="grid h-10 w-10 place-items-center bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground lg:h-8 lg:w-8">
-                <component :is="homeTagIcon(tag.name)" class="h-5 w-5 lg:h-4 lg:w-4" />
-              </span>
-              <span class="mt-1.5 text-sm font-black lg:mt-0">{{ tag.name }}</span>
-            </RouterLink>
-          </div>
         </div>
       </section>
 
@@ -212,14 +197,13 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ChefHat, Clock, CookingPot, Heart, Leaf, MessageCircle, MoreHorizontal, Salad, Search, Soup, TrendingUp, UtensilsCrossed } from 'lucide-vue-next'
+import { ArrowRight, ChefHat, Clock, Heart, MessageCircle, Search, TrendingUp } from 'lucide-vue-next'
 import IngredientPicker from '../components/IngredientPicker.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
 import ServicePreparingState from '../components/ServicePreparingState.vue'
 import { useHomeRecipes } from '../features/home/composables/useHomeRecipes'
 import { difficultyLabels } from '../data'
-import { RECIPE_TAGS } from '../tags'
 
 const {
   activeIndex,
@@ -233,13 +217,4 @@ const {
   recipeSearchQuery,
   todayRecipes,
 } = useHomeRecipes()
-
-const homeTagIcon = (tagName: string) => {
-  if (tagName === '반찬') return Leaf
-  if (tagName === '국물요리') return Soup
-  if (tagName === '후식') return Salad
-  if (tagName === '일품') return UtensilsCrossed
-  if (tagName === '볶음밥') return CookingPot
-  return MoreHorizontal
-}
 </script>

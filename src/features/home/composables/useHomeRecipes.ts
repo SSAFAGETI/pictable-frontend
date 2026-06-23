@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { homeSummaryUnavailable, recipes } from '../../../data'
 import { ApiError } from '../../../shared/api/error'
 import { MAX_INGREDIENTS } from '../../../shared/constants/ingredients'
-import { recommendationsPath } from '../../../shared/constants/routes'
+import { APP_ROUTES, recommendationsPath } from '../../../shared/constants/routes'
 import { showToast } from '../../../toast'
 import { analyzeIngredientImageApi } from '../../ingredient/api'
 
@@ -80,6 +80,7 @@ const getCameraErrorMessage = (error: unknown) => {
 export const useHomeRecipes = () => {
   const router = useRouter()
   const inputValue = ref('')
+  const recipeSearchQuery = ref('')
   const ingredients = ref<string[]>([])
   const showUploadMenu = ref(false)
   const galleryImageInput = ref<HTMLInputElement | null>(null)
@@ -137,6 +138,11 @@ export const useHomeRecipes = () => {
 
   const removeIngredient = (ingredient: string) => {
     ingredients.value = ingredients.value.filter((item) => item !== ingredient)
+  }
+
+  const clearIngredients = () => {
+    ingredients.value = []
+    inputValue.value = ''
   }
 
   const openGalleryPicker = () => {
@@ -278,6 +284,15 @@ export const useHomeRecipes = () => {
     router.push(recommendationsPath(ingredients.value))
   }
 
+  const goRecipeSearch = () => {
+    const search = recipeSearchQuery.value.trim()
+
+    router.push({
+      path: APP_ROUTES.feed,
+      query: search ? { search } : {},
+    })
+  }
+
   onMounted(() => {
     timer = window.setInterval(() => {
       if (todayRecipes.value.length > 0) {
@@ -296,8 +311,10 @@ export const useHomeRecipes = () => {
     addIngredient,
     cameraVideoRef,
     captureCameraPhoto,
+    clearIngredients,
     closeCamera,
     galleryImageInput,
+    goRecipeSearch,
     goRecommendations,
     handleImageUpload,
     handleIngredientCompositionEnd,
@@ -315,6 +332,7 @@ export const useHomeRecipes = () => {
     openGalleryPicker,
     popularRecipes,
     recentRecipes,
+    recipeSearchQuery,
     removeIngredient,
     removeSelectedImage,
     selectedImageName,

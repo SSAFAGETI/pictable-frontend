@@ -1,5 +1,6 @@
 import type { Difficulty, Ingredient, Recipe } from './types'
 import { fallbackImage } from './mock'
+import { normalizeRecipeTagName } from '../../tags'
 
 const apiKey = import.meta.env.VITE_FOODSAFETY_API_KEY || '1db71fdb6a3e4d9593eb'
 const apiBaseUrl = 'https://openapi.foodsafetykorea.go.kr/api'
@@ -41,12 +42,14 @@ const parseIngredients = (value: string, recipeTitle: string): Ingredient[] => {
 }
 
 const getTags = (row: Element) => {
-  return [textOf(row, 'RCP_PAT2'), textOf(row, 'RCP_WAY2'), textOf(row, 'HASH_TAG')]
+  const tags = [textOf(row, 'RCP_PAT2'), textOf(row, 'RCP_WAY2'), textOf(row, 'HASH_TAG')]
     .filter(Boolean)
     .flatMap((tag) => tag.split(/[,#\s]+/))
     .map((tag) => tag.trim())
+    .map(normalizeRecipeTagName)
     .filter(Boolean)
-    .slice(0, 4)
+
+  return Array.from(new Set(tags)).slice(0, 4)
 }
 
 const getDifficulty = (steps: string[]): Difficulty => {

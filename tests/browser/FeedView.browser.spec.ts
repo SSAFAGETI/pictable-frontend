@@ -78,4 +78,32 @@ describe('FeedView', () => {
 
     await vi.waitFor(() => expect(saveRequests).toEqual(['feed-2']))
   })
+
+  it('hydrates recipe-name search from the route query', async () => {
+    const feedRequests: string[] = []
+
+    worker.use(
+      http.get('/api/feeds/', ({ request }) => {
+        feedRequests.push(new URL(request.url).search)
+
+        return HttpResponse.json({
+          results: [
+            createApiRecipe('feed-1', { title: 'Apple Soup' }),
+            createApiRecipe('feed-2', { title: 'Banana Rice' }),
+          ],
+          next: null,
+        })
+      }),
+    )
+
+    const router = await createTestRouter('/feed?search=Banana')
+    const screen = await render(FeedView, { global: { plugins: [router] } })
+    const searchInput = document.querySelector<HTMLInputElement>('input:not([type="file"])')
+
+    expect(searchInput).toBeTruthy()
+    expect(searchInput!.value).toBe('Banana')
+    await vi.waitFor(() => expect(feedRequests[0]).toContain('search=Banana'))
+    await expect.element(screen.getByText('Banana Rice')).toBeInTheDocument()
+    await vi.waitFor(() => expect(document.body.textContent).not.toContain('Apple Soup'))
+  })
 })

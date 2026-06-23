@@ -1,13 +1,14 @@
 <template>
   <span :class="chipClass">
     <component :is="iconComponent" :class="iconClass" />
-    <span class="truncate">{{ label }}</span>
+    <span class="truncate">{{ normalizedLabel }}</span>
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CookingPot, Flame, Home, Leaf, Moon, MoreHorizontal, Package, Salad, Soup, UtensilsCrossed, Wine, Zap } from 'lucide-vue-next'
+import { CookingPot, Leaf, MoreHorizontal, Salad, Soup, UtensilsCrossed } from 'lucide-vue-next'
+import { normalizeRecipeTagName } from '../tags'
 
 const props = withDefaults(
   defineProps<{
@@ -21,23 +22,15 @@ const props = withDefaults(
   },
 )
 
-const normalizedLabel = computed(() => props.label.replace(/^#/, '').trim())
+const normalizedLabel = computed(() => (props.label === '전체' ? props.label : normalizeRecipeTagName(props.label)))
 
 const iconComponent = computed(() => {
-  const label = normalizedLabel.value
-  if (/자취/i.test(label)) return Home
-  if (/한식|집밥/i.test(label)) return UtensilsCrossed
-  if (/초간단|간단|quick|easy/i.test(label)) return Zap
-  if (/국|찌개|탕|국물|스프|soup/i.test(label)) return Soup
-  if (/다이어트|채소|샐러드|건강|비건/i.test(label)) return Salad
-  if (/야식|밤/i.test(label)) return Moon
-  if (/볶음밥|볶음|밥/i.test(label)) return CookingPot
-  if (/반찬/i.test(label)) return Leaf
-  if (/도시락/i.test(label)) return Package
-  if (/라면|매운|불|핫/i.test(label)) return Flame
-  if (/안주|술/i.test(label)) return Wine
-  if (/기타/i.test(label)) return MoreHorizontal
-  return UtensilsCrossed
+  if (normalizedLabel.value === '반찬') return Leaf
+  if (normalizedLabel.value === '국물요리') return Soup
+  if (normalizedLabel.value === '후식') return Salad
+  if (normalizedLabel.value === '일품') return UtensilsCrossed
+  if (normalizedLabel.value === '볶음밥') return CookingPot
+  return MoreHorizontal
 })
 
 const chipClass = computed(() => [

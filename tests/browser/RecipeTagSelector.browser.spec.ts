@@ -23,7 +23,16 @@ describe('RecipeTagSelector', () => {
   it('toggles tags and resets the selection with the all button', async () => {
     const screen = await render(Harness)
 
-    expect(getButtons()).toHaveLength(13)
+    expect(getButtons()).toHaveLength(7)
+    expect(getButtons().map((button) => button.textContent?.replace(/\s+/g, '').trim())).toEqual([
+      '전체',
+      '반찬',
+      '기타',
+      '국물요리',
+      '후식',
+      '일품',
+      '볶음밥',
+    ])
 
     await getButtons()[1].click()
     await expect.element(screen.getByTestId('selected')).toHaveTextContent('1')

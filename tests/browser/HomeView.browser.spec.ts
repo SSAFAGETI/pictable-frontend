@@ -45,6 +45,11 @@ const pressComposingEnter = async (input: HTMLInputElement) => {
   })
 }
 
+const waitForDomUpdate = () =>
+  new Promise((resolve) => {
+    window.requestAnimationFrame(resolve)
+  })
+
 describe('HomeView ingredient input', () => {
   it('sanitizes punctuation and caps ingredients at twenty', async () => {
     const router = await createTestRouter()
@@ -67,6 +72,17 @@ describe('HomeView ingredient input', () => {
     expect(document.body.textContent).toContain('재료20')
     expect(document.body.textContent).not.toContain('재료21')
     expect(input!.disabled).toBe(true)
+
+    const clearButton = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.includes('전체 삭제'),
+    )
+    expect(clearButton).toBeTruthy()
+
+    clearButton!.click()
+    await waitForDomUpdate()
+
+    expect(document.body.textContent).not.toContain('재료20')
+    expect(input!.disabled).toBe(false)
   })
 
   it('keeps IME composition enter from swallowing the final Korean ingredient', async () => {
@@ -85,5 +101,20 @@ describe('HomeView ingredient input', () => {
     input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }))
 
     await expect.element(screen.getByText('캐')).toBeInTheDocument()
+  })
+
+  it('routes recipe-name searches to the feed page', async () => {
+    const router = await createTestRouter()
+    await render(HomeView, { global: { plugins: [router] } })
+    const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]')
+
+    expect(searchInput).toBeTruthy()
+
+    setIngredientInput(searchInput!, '볶음밥')
+    searchInput!.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await waitForDomUpdate()
+
+    expect(router.currentRoute.value.path).toBe('/feed')
+    expect(router.currentRoute.value.query.search).toBe('볶음밥')
   })
 })

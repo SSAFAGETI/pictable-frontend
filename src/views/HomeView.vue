@@ -91,13 +91,21 @@
               <p v-else class="text-muted-foreground">인식된 재료를 확인하고 필요 없는 항목은 X로 제거해주세요.</p>
             </div>
 
-            <div v-if="ingredients.length > 0" class="mt-4 flex flex-wrap gap-2">
-              <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-                {{ ingredient }}
-                <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 제거`" @click="removeIngredient(ingredient)">
-                  <X class="h-3 w-3" />
+            <div v-if="ingredients.length > 0" class="mt-4">
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <p class="text-xs font-semibold text-muted-foreground">{{ ingredients.length }}/{{ maxIngredients }}개 선택됨</p>
+                <button type="button" class="rounded-md px-2 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-destructive" @click="clearIngredients">
+                  전체 삭제
                 </button>
-              </span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span v-for="ingredient in ingredients" :key="ingredient" class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+                  {{ ingredient }}
+                  <button class="ml-1 rounded-full p-0.5 hover:bg-primary/20" :aria-label="`${ingredient} 제거`" @click="removeIngredient(ingredient)">
+                    <X class="h-3 w-3" />
+                  </button>
+                </span>
+              </div>
             </div>
 
             <button
@@ -117,6 +125,32 @@
           <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="{ path: '/feed', query: { tag: tag.name } }" class="min-w-0">
             <RecipeTagChip :label="tag.name" />
           </RouterLink>
+        </div>
+      </section>
+
+      <section v-if="!isServicePreparing" class="px-4 py-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p class="text-sm font-semibold text-primary">레시피 검색</p>
+              <h2 class="mt-1 text-lg font-bold">이름으로 원하는 레시피를 찾아보세요</h2>
+            </div>
+            <form class="flex gap-2 lg:min-w-[420px]" @submit.prevent="goRecipeSearch">
+              <div class="relative min-w-0 flex-1">
+                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  v-model="recipeSearchQuery"
+                  type="search"
+                  placeholder="예: 볶음밥, 장국, 샐러드"
+                  class="flex h-11 w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label="레시피 이름 검색"
+                />
+              </div>
+              <button type="submit" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
+                검색
+              </button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -269,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Camera, ChefHat, Clock, Heart, Image as ImageIcon, MessageCircle, Plus, Sparkles, TrendingUp, X } from 'lucide-vue-next'
+import { ArrowRight, Camera, ChefHat, Clock, Heart, Image as ImageIcon, MessageCircle, Plus, Search, Sparkles, TrendingUp, X } from 'lucide-vue-next'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
 import ServicePreparingState from '../components/ServicePreparingState.vue'
@@ -282,8 +316,10 @@ const {
   addIngredient,
   cameraVideoRef,
   captureCameraPhoto,
+  clearIngredients,
   closeCamera,
   galleryImageInput,
+  goRecipeSearch,
   goRecommendations,
   handleImageUpload,
   handleIngredientCompositionEnd,
@@ -301,6 +337,7 @@ const {
   openGalleryPicker,
   popularRecipes,
   recentRecipes,
+  recipeSearchQuery,
   removeIngredient,
   removeSelectedImage,
   selectedImageName,

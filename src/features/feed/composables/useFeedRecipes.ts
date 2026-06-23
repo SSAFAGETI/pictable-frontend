@@ -7,7 +7,7 @@ import { resolveRecipePublicImage } from '../../recipe/mapper'
 import { ApiError } from '../../../shared/api/error'
 import { useAuth } from '../../../auth'
 import type { Recipe } from '../../../data'
-import { getRecipeTagByName, getRecipeTagNamesByIds, getRecipeTagQueryNamesByIds } from '../../../tags'
+import { getRecipeTagByName, getRecipeTagNamesByIds, getRecipeTagQueryNamesByIds, normalizeRecipeTagName } from '../../../tags'
 import { showToast } from '../../../toast'
 
 export type FeedSortOption = 'popular' | 'recent' | 'likes'
@@ -29,7 +29,7 @@ const mergeRecipeImage = (recipes: Recipe[], id: string, image: string) =>
 export const useFeedRecipes = () => {
   const route = useRoute()
   const { isAuthenticated } = useAuth()
-  const searchQuery = ref('')
+  const searchQuery = ref(typeof route.query.search === 'string' ? route.query.search : '')
   const initialTag = route.query.tag ? getRecipeTagByName(String(route.query.tag)) : undefined
   const selectedTagIds = ref<number[]>(initialTag ? [initialTag.id] : [])
   const feedRequestId = ref(0)
@@ -239,6 +239,13 @@ export const useFeedRecipes = () => {
   )
 
   watch(
+    () => route.query.search,
+    (search) => {
+      searchQuery.value = typeof search === 'string' ? search : ''
+    },
+  )
+
+  watch(
     () => route.query.source,
     () => {
       void loadFeedPage(true)
@@ -247,15 +254,17 @@ export const useFeedRecipes = () => {
 
   const filteredRecipes = computed(() => {
     const selectedTags = getRecipeTagNamesByIds(selectedTagIds.value)
+    const normalizedSearchQuery = searchQuery.value.trim().toLowerCase()
 
     return feedRecipes.value
       .filter((recipe) => {
+        const recipeTags = recipe.tags.map(normalizeRecipeTagName)
         const queryMatch =
-          !searchQuery.value ||
-          recipe.title.includes(searchQuery.value) ||
-          recipe.description.includes(searchQuery.value) ||
-          recipe.tags.some((tag) => tag.includes(searchQuery.value))
-        const tagMatch = selectedTags.length === 0 || selectedTags.every((tag) => recipe.tags.includes(tag))
+          !normalizedSearchQuery ||
+          recipe.title.toLowerCase().includes(normalizedSearchQuery) ||
+          recipe.description.toLowerCase().includes(normalizedSearchQuery) ||
+          recipeTags.some((tag) => tag.toLowerCase().includes(normalizedSearchQuery))
+        const tagMatch = selectedTags.length === 0 || selectedTags.every((tag) => recipeTags.includes(tag))
         return queryMatch && tagMatch
       })
       .sort((a, b) => {

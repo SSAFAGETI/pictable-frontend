@@ -16,15 +16,6 @@
                 aria-label="레시피 이름 검색"
                 aria-controls="home-recipe-search-suggestions"
               />
-              <button
-                v-if="recipeSearchQuery"
-                type="button"
-                class="absolute right-5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                aria-label="레시피 검색어 지우기"
-                @click="recipeSearchQuery = ''"
-              >
-                <X class="h-4 w-4" />
-              </button>
               <button type="submit" class="sr-only">검색</button>
             </form>
 
@@ -218,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ChefHat, Clock, CookingPot, Heart, Leaf, MessageCircle, MoreHorizontal, Salad, Search, Soup, TrendingUp, UtensilsCrossed, X } from 'lucide-vue-next'
+import { ArrowRight, ChefHat, Clock, CookingPot, Heart, Leaf, MessageCircle, MoreHorizontal, Salad, Search, Soup, TrendingUp, UtensilsCrossed } from 'lucide-vue-next'
 import IngredientPicker from '../components/IngredientPicker.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'

@@ -109,9 +109,26 @@ export const useHomeRecipes = () => {
 
   const handleIngredientInput = (event: Event) => {
     const input = event.target as HTMLInputElement
+
+    if (event instanceof InputEvent && event.isComposing) {
+      inputValue.value = input.value
+      return
+    }
+
     const sanitized = sanitizeIngredientInput(input.value)
     if (input.value !== sanitized) input.value = sanitized
     inputValue.value = sanitized
+  }
+
+  const handleIngredientCompositionEnd = (event: Event) => {
+    handleIngredientInput(event)
+  }
+
+  const handleIngredientEnter = (event: KeyboardEvent) => {
+    if (event.isComposing || event.keyCode === 229) return
+
+    event.preventDefault()
+    addIngredient((event.target as HTMLInputElement).value || inputValue.value)
   }
 
   const addIngredients = (items: string[]) => {
@@ -283,6 +300,8 @@ export const useHomeRecipes = () => {
     galleryImageInput,
     goRecommendations,
     handleImageUpload,
+    handleIngredientCompositionEnd,
+    handleIngredientEnter,
     handleIngredientInput,
     imageAnalyzeError,
     ingredients,

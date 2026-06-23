@@ -44,7 +44,8 @@
                 aria-label="재료 입력"
                 :disabled="ingredients.length >= maxIngredients"
                 @input="handleIngredientInput"
-                @keydown.enter.prevent="addIngredient(inputValue)"
+                @compositionend="handleIngredientCompositionEnd"
+                @keydown.enter="handleIngredientEnter"
               />
               <div class="relative">
                 <input ref="galleryImageInput" class="hidden" type="file" accept="image/*" @change="handleImageUpload" />
@@ -285,6 +286,8 @@ const {
   galleryImageInput,
   goRecommendations,
   handleImageUpload,
+  handleIngredientCompositionEnd,
+  handleIngredientEnter,
   handleIngredientInput,
   imageAnalyzeError,
   ingredients,

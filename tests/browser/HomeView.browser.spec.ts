@@ -36,6 +36,15 @@ const submitIngredient = async (input: HTMLInputElement, value: string) => {
   })
 }
 
+const pressComposingEnter = async (input: HTMLInputElement) => {
+  const event = new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true })
+  Object.defineProperty(event, 'isComposing', { value: true })
+  input.dispatchEvent(event)
+  await new Promise((resolve) => {
+    window.requestAnimationFrame(resolve)
+  })
+}
+
 describe('HomeView ingredient input', () => {
   it('sanitizes punctuation and caps ingredients at twenty', async () => {
     const router = await createTestRouter()
@@ -58,5 +67,23 @@ describe('HomeView ingredient input', () => {
     expect(document.body.textContent).toContain('재료20')
     expect(document.body.textContent).not.toContain('재료21')
     expect(input!.disabled).toBe(true)
+  })
+
+  it('keeps IME composition enter from swallowing the final Korean ingredient', async () => {
+    const router = await createTestRouter()
+    const screen = await render(HomeView, { global: { plugins: [router] } })
+    const input = document.querySelector<HTMLInputElement>('input[type="text"]')
+
+    expect(input).toBeTruthy()
+
+    setIngredientInput(input!, '캐')
+    await pressComposingEnter(input!)
+
+    expect(document.body.textContent).not.toContain('캐')
+    expect(input!.value).toBe('캐')
+
+    input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }))
+
+    await expect.element(screen.getByText('캐')).toBeInTheDocument()
   })
 })

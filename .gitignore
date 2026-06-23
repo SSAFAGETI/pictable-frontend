@@ -16,3 +16,6 @@ node_modules
 dist/
 .figma-captures/
 .DS_Store
+playwright-report/
+test-results/
+__traces__/

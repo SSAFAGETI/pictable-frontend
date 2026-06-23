@@ -1,8 +1,9 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { homeSummaryUnavailable, recipes } from '../../../data'
 import { MAX_INGREDIENTS } from '../../../shared/constants/ingredients'
 import { APP_ROUTES, recommendationsPath } from '../../../shared/constants/routes'
+import { fetchFeedRecipesApi } from '../../feed/api'
 import { normalizeIngredient, sanitizeIngredientInput } from '../../ingredient/input'
 
 export { MAX_INGREDIENTS, normalizeIngredient, sanitizeIngredientInput }
@@ -13,25 +14,16 @@ export const useHomeRecipes = () => {
   const router = useRouter()
   const ingredients = ref<string[]>([])
   const recipeSearchQuery = ref('')
+  const recipeSearchSuggestions = ref<string[]>([])
   const activeIndex = ref(0)
   const isServicePreparing = computed(() => homeSummaryUnavailable.value)
   const todayRecipes = computed(() => recipes.value.slice(0, 4))
   const popularRecipes = computed(() => recipes.value.slice(0, 4))
   const recentRecipes = computed(() => recipes.value.slice(2, 5))
-  const recipeSearchSuggestions = computed(() => {
-    const query = recipeSearchQuery.value.trim().toLowerCase()
-    if (!query) return []
-
-    return recipes.value
-      .filter((recipe) => {
-        const searchable = [recipe.title, recipe.description, ...recipe.tags].join(' ').toLowerCase()
-        return searchable.includes(query)
-      })
-      .slice(0, 5)
-      .map((recipe) => recipe.title)
-  })
 
   let timer: number | undefined
+  let suggestionTimer: number | undefined
+  let suggestionRequestId = 0
 
   const goRecommendations = () => {
     if (ingredients.value.length === 0) return
@@ -56,8 +48,33 @@ export const useHomeRecipes = () => {
     }, CAROUSEL_INTERVAL_MS)
   })
 
+  watch(recipeSearchQuery, (nextQuery) => {
+    if (suggestionTimer) window.clearTimeout(suggestionTimer)
+
+    const search = nextQuery.trim()
+    suggestionRequestId += 1
+
+    if (!search) {
+      recipeSearchSuggestions.value = []
+      return
+    }
+
+    const requestId = suggestionRequestId
+    suggestionTimer = window.setTimeout(async () => {
+      try {
+        const recipes = await fetchFeedRecipesApi({ search, sort: 'popular', pageSize: 5 })
+        if (requestId !== suggestionRequestId) return
+
+        recipeSearchSuggestions.value = Array.from(new Set(recipes.map((recipe) => recipe.title).filter(Boolean))).slice(0, 5)
+      } catch {
+        if (requestId === suggestionRequestId) recipeSearchSuggestions.value = []
+      }
+    }, 250)
+  })
+
   onUnmounted(() => {
     if (timer) window.clearInterval(timer)
+    if (suggestionTimer) window.clearTimeout(suggestionTimer)
   })
 
   return {

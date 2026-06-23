@@ -1,8 +1,11 @@
 import { defineComponent } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { http, HttpResponse } from 'msw'
 import { render } from 'vitest-browser-vue'
 import HomeView from '../../src/views/HomeView.vue'
+import { createApiRecipe } from '../fixtures/recipes'
+import { worker } from '../msw/browser'
 
 const Placeholder = defineComponent({ template: '<div />' })
 
@@ -116,5 +119,38 @@ describe('HomeView ingredient input', () => {
 
     expect(router.currentRoute.value.path).toBe('/feed')
     expect(router.currentRoute.value.query.search).toBe('볶음밥')
+  })
+
+  it('loads recipe-name suggestions from the feed search API', async () => {
+    const feedRequests: string[] = []
+
+    worker.use(
+      http.get('/api/feeds/', ({ request }) => {
+        feedRequests.push(new URL(request.url).search)
+
+        return HttpResponse.json({
+          results: [
+            createApiRecipe('suggestion-1', { title: 'Garlic Butter Rice' }),
+            createApiRecipe('suggestion-2', { title: 'Garlic Soup' }),
+          ],
+          next: null,
+        })
+      }),
+    )
+
+    const router = await createTestRouter()
+    const screen = await render(HomeView, { global: { plugins: [router] } })
+    const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]')
+
+    expect(searchInput).toBeTruthy()
+
+    setIngredientInput(searchInput!, 'garlic')
+
+    await vi.waitFor(() => expect(feedRequests.some((search) => search.includes('search=garlic'))).toBe(true))
+    await expect.element(screen.getByText('Garlic Butter Rice')).toBeInTheDocument()
+
+    await screen.getByText('Garlic Butter Rice').click()
+
+    await vi.waitFor(() => expect(router.currentRoute.value.query.search).toBe('Garlic Butter Rice'))
   })
 })

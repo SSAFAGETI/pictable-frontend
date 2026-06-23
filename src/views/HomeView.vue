@@ -3,7 +3,52 @@
     <main class="flex-1 pb-24 lg:pb-0">
       <ServicePreparingState v-if="isServicePreparing" />
 
-      <section v-else class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <section v-if="!isServicePreparing" class="px-4 pb-2 pt-5 sm:px-6 lg:px-8 lg:pt-7">
+        <div class="mx-auto max-w-7xl">
+          <div class="relative mx-auto max-w-5xl">
+            <form class="relative rounded-full border border-primary/25 bg-gradient-to-r from-primary/10 via-white/90 to-primary/5 p-1.5 shadow-sm shadow-primary/10 backdrop-blur" @submit.prevent="goRecipeSearch()">
+              <Search class="absolute left-6 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <input
+                v-model="recipeSearchQuery"
+                type="search"
+                placeholder="먹고 싶은 레시피 이름을 입력해보세요"
+                class="h-14 w-full rounded-full border-0 bg-white/70 py-2 pl-14 pr-12 text-base font-semibold text-foreground outline-none placeholder:text-muted-foreground focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-ring/40"
+                aria-label="레시피 이름 검색"
+                aria-controls="home-recipe-search-suggestions"
+              />
+              <button
+                v-if="recipeSearchQuery"
+                type="button"
+                class="absolute right-5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                aria-label="레시피 검색어 지우기"
+                @click="recipeSearchQuery = ''"
+              >
+                <X class="h-4 w-4" />
+              </button>
+              <button type="submit" class="sr-only">검색</button>
+            </form>
+
+            <div
+              v-if="recipeSearchSuggestions.length > 0"
+              id="home-recipe-search-suggestions"
+              class="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-3xl border border-primary/15 bg-card/95 p-2 shadow-xl shadow-primary/10 backdrop-blur"
+            >
+              <button
+                v-for="suggestion in recipeSearchSuggestions"
+                :key="suggestion"
+                type="button"
+                class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold hover:bg-primary/10 hover:text-primary"
+                @click="goRecipeSearch(suggestion)"
+              >
+                <Search class="h-4 w-4 shrink-0 text-primary" />
+                <span class="line-clamp-1">{{ suggestion }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="!isServicePreparing" class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-stretch">
           <div class="overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border lg:min-h-[360px]">
             <div class="relative h-full min-h-[260px]">
@@ -35,47 +80,18 @@
       </section>
 
       <section v-if="!isServicePreparing" class="px-4 py-2 sm:px-6 lg:px-8">
-        <div class="mx-auto grid max-w-7xl grid-cols-3 justify-items-center gap-2 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
-          <RouterLink v-for="tag in RECIPE_TAGS" :key="tag.id" :to="{ path: '/feed', query: { tag: tag.name } }" class="flex w-full max-w-[9rem] justify-center sm:w-auto sm:max-w-none">
-            <RecipeTagChip :label="tag.name" />
+        <div class="mx-auto grid max-w-7xl grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
+          <RouterLink
+            v-for="tag in RECIPE_TAGS"
+            :key="tag.id"
+            :to="{ path: '/feed', query: { tag: tag.name } }"
+            class="group flex min-h-24 flex-col items-center justify-center rounded-3xl border border-border bg-card px-2 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md sm:min-h-0 sm:flex-row sm:gap-2 sm:rounded-full sm:px-3 sm:py-1.5"
+          >
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground sm:h-6 sm:w-6 sm:rounded-full">
+              <component :is="homeTagIcon(tag.name)" class="h-6 w-6 sm:h-3.5 sm:w-3.5" />
+            </span>
+            <span class="mt-2 text-sm font-black sm:mt-0 sm:text-sm">{{ tag.name }}</span>
           </RouterLink>
-        </div>
-      </section>
-
-      <section v-if="!isServicePreparing" class="px-4 py-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-7xl">
-          <h2 class="text-center text-xl font-black tracking-tight sm:text-2xl">레시피 찾기</h2>
-          <div class="relative mx-auto mt-4 max-w-4xl">
-            <form class="relative" @submit.prevent="goRecipeSearch()">
-              <Search class="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
-              <input
-                v-model="recipeSearchQuery"
-                type="search"
-                placeholder="먹고 싶은 레시피 이름을 입력해보세요"
-                class="h-14 w-full rounded-full border border-primary/30 bg-primary/5 py-2 pl-14 pr-5 text-base font-semibold text-foreground shadow-sm shadow-primary/10 outline-none backdrop-blur placeholder:text-muted-foreground focus-visible:border-primary focus-visible:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/40"
-                aria-label="레시피 이름 검색"
-                aria-controls="home-recipe-search-suggestions"
-              />
-              <button type="submit" class="sr-only">검색</button>
-            </form>
-
-            <div
-              v-if="recipeSearchSuggestions.length > 0"
-              id="home-recipe-search-suggestions"
-              class="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-3xl border border-primary/15 bg-card/95 p-2 shadow-xl shadow-primary/10 backdrop-blur"
-            >
-              <button
-                v-for="suggestion in recipeSearchSuggestions"
-                :key="suggestion"
-                type="button"
-                class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold hover:bg-primary/10 hover:text-primary"
-                @click="goRecipeSearch(suggestion)"
-              >
-                <Search class="h-4 w-4 shrink-0 text-primary" />
-                <span class="line-clamp-1">{{ suggestion }}</span>
-              </button>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -202,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, ChefHat, Clock, Heart, MessageCircle, Search, TrendingUp } from 'lucide-vue-next'
+import { ArrowRight, ChefHat, Clock, CookingPot, Heart, Leaf, MessageCircle, MoreHorizontal, Salad, Search, Soup, TrendingUp, UtensilsCrossed, X } from 'lucide-vue-next'
 import IngredientPicker from '../components/IngredientPicker.vue'
 import RecipeCard from '../components/RecipeCard.vue'
 import RecipeTagChip from '../components/RecipeTagChip.vue'
@@ -223,4 +239,13 @@ const {
   recipeSearchQuery,
   todayRecipes,
 } = useHomeRecipes()
+
+const homeTagIcon = (tagName: string) => {
+  if (tagName === '반찬') return Leaf
+  if (tagName === '국물요리') return Soup
+  if (tagName === '후식') return Salad
+  if (tagName === '일품') return UtensilsCrossed
+  if (tagName === '볶음밥') return CookingPot
+  return MoreHorizontal
+}
 </script>

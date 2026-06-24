@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>찰칵밥상 사용자 플로우</title>
+    <title>찰칵밥상 사용자 플로우 v2</title>
     <style>
       :root {
         --bg: #f8f3eb;
@@ -12,7 +12,9 @@
         --muted: #75695f;
         --line: #eadcc9;
         --primary: #f45100;
-        --primary-soft: #fff1e7;
+        --green: #1f8a5b;
+        --blue: #155ba6;
+        --purple: #6d4df2;
         --dark: #241812;
       }
 
@@ -26,42 +28,35 @@
 
       body {
         margin: 0;
-        background: var(--bg);
+        background:
+          radial-gradient(circle at 8% 0%, rgba(244, 81, 0, 0.12), transparent 28%),
+          linear-gradient(180deg, #fbf6ee 0%, var(--bg) 44%, #f5eadc 100%);
         color: var(--ink);
         font-family:
-          Inter,
           Pretendard,
+          "Noto Sans KR",
           -apple-system,
           BlinkMacSystemFont,
           "Segoe UI",
           sans-serif;
       }
 
-      a,
-      button {
-        color: inherit;
-        font: inherit;
-      }
-
       a {
+        color: inherit;
         text-decoration: none;
-      }
-
-      button {
-        cursor: pointer;
       }
 
       .page {
         width: min(1480px, 100%);
         margin: 0 auto;
-        padding: 32px 28px 64px;
+        padding: 32px 28px 72px;
       }
 
       .hero {
         overflow: hidden;
         border: 1px solid rgba(244, 81, 0, 0.22);
-        border-radius: 24px;
-        padding: 34px;
+        border-radius: 28px;
+        padding: 36px;
         color: #fff;
         background:
           radial-gradient(circle at 16% 18%, rgba(244, 81, 0, 0.48), transparent 28%),
@@ -70,38 +65,41 @@
         box-shadow: 0 24px 60px rgba(54, 28, 13, 0.18);
       }
 
-      .hero-top {
+      .hero-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) 330px;
+        gap: 30px;
         align-items: end;
-        gap: 28px;
       }
 
-      .eyebrow {
+      .eyebrow,
+      .chip {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 999px;
+        font-weight: 900;
+      }
+
+      .eyebrow {
+        border: 1px solid rgba(255, 255, 255, 0.18);
         padding: 8px 12px;
         background: rgba(255, 255, 255, 0.1);
         color: rgba(255, 255, 255, 0.88);
         font-size: 13px;
-        font-weight: 900;
       }
 
       h1 {
-        margin: 20px 0 0;
-        max-width: 820px;
-        font-size: clamp(34px, 5vw, 64px);
+        margin: 18px 0 0;
+        max-width: 900px;
+        font-size: clamp(36px, 5vw, 64px);
         line-height: 1.02;
-        letter-spacing: 0;
       }
 
       .hero p {
         margin: 18px 0 0;
         max-width: 820px;
-        color: rgba(255, 255, 255, 0.72);
+        color: rgba(255, 255, 255, 0.74);
         font-size: 16px;
         line-height: 1.75;
       }
@@ -123,1045 +121,481 @@
         font-weight: 900;
       }
 
-      .mode-panel {
+      .status-panel {
         display: grid;
-        gap: 14px;
-        min-width: 284px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 20px;
+        gap: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 22px;
         padding: 18px;
         background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(14px);
       }
 
-      .mode-panel span {
-        color: rgba(255, 255, 255, 0.58);
-        font-size: 13px;
+      .status-panel strong {
+        font-size: 28px;
       }
 
-      .mode-panel strong {
-        display: block;
-        margin-top: 5px;
-        font-size: 25px;
-      }
-
-      .view-toggle {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
-        padding: 6px;
-        background: rgba(0, 0, 0, 0.18);
-      }
-
-      .view-toggle button {
-        border: 0;
-        border-radius: 12px;
-        padding: 11px 12px;
-        background: transparent;
+      .status-panel span {
         color: rgba(255, 255, 255, 0.68);
-        font-size: 14px;
-        font-weight: 1000;
-      }
-
-      .view-toggle button.active {
-        background: var(--primary);
-        color: #fff;
-        box-shadow: 0 10px 22px rgba(244, 81, 0, 0.28);
+        font-size: 13px;
+        font-weight: 800;
       }
 
       .summary {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 14px;
-        margin: 22px 0 32px;
+        margin: 22px 0 34px;
       }
 
-      .summary-item {
-        border: 1px solid rgba(244, 81, 0, 0.16);
-        border-radius: 15px;
-        padding: 16px 18px;
-        background: rgba(244, 81, 0, 0.06);
-        font-weight: 900;
-      }
-
-      .flow-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 24px;
-      }
-
-      body[data-view='web'] .flow-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .flow-card,
-      .detail-card {
-        overflow: hidden;
+      .summary-item,
+      .card,
+      .section {
         border: 1px solid var(--line);
-        border-radius: 15px;
-        background: var(--paper);
+        background: rgba(255, 250, 243, 0.88);
         box-shadow: 0 12px 30px rgba(56, 33, 15, 0.08);
       }
 
-      .flow-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        border-bottom: 1px solid var(--line);
-        padding: 14px 16px;
-        background: rgba(255, 255, 255, 0.45);
-      }
-
-      .num {
-        color: var(--primary);
-        font-size: 12px;
-        font-weight: 1000;
-      }
-
-      .flow-head h2 {
-        margin: 3px 0 0;
-        font-size: 17px;
-        line-height: 1.25;
-      }
-
-      body[data-view='web'] .flow-head h2 {
-        font-size: 18px;
-      }
-
-      .arrow {
-        color: var(--muted);
-        font-size: 22px;
-      }
-
-      .shot-zone {
-        display: grid;
-        place-items: center;
-        min-height: 430px;
+      .summary-item {
+        border-radius: 18px;
         padding: 18px;
-        background:
-          linear-gradient(135deg, rgba(244, 81, 0, 0.07), transparent 34%),
-          #f7efe5;
       }
 
-      body[data-view='web'] .shot-zone {
-        min-height: 0;
-      }
-
-      .device {
-        overflow: hidden;
-        border: 3px solid #111;
-        border-radius: 15px;
-        background: #fff;
-        box-shadow:
-          0 18px 36px rgba(60, 35, 16, 0.2),
-          inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-      }
-
-      .device.phone {
-        width: 195px;
-      }
-
-      .device.landscape {
-        width: 100%;
-        max-width: 520px;
-      }
-
-      .device.browser {
-        width: 100%;
-      }
-
-      .browser-bar {
-        display: none;
-        align-items: center;
-        gap: 7px;
-        height: 26px;
-        border-bottom: 2px solid #111;
-        padding: 0 10px;
-        background: #1b1714;
-      }
-
-      body[data-view='web'] .browser-bar {
-        display: flex;
-      }
-
-      .browser-bar span {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: #f45100;
-      }
-
-      .browser-bar span:nth-child(2) {
-        background: #f7b84b;
-      }
-
-      .browser-bar span:nth-child(3) {
-        background: #8bd17c;
-      }
-
-      .device img {
+      .summary-item b {
         display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      .flow-body {
-        display: grid;
-        gap: 12px;
-        padding: 14px 16px 18px;
-      }
-
-      .flow-note {
-        min-height: 48px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.6;
-      }
-
-      .flow-tag {
-        display: inline-flex;
-        align-items: center;
-        width: fit-content;
-        border-radius: 999px;
-        padding: 7px 10px;
-        background: var(--primary-soft);
         color: var(--primary);
-        font-size: 12px;
+        font-size: 24px;
+      }
+
+      .summary-item span {
+        color: var(--muted);
+        font-size: 13px;
         font-weight: 900;
       }
 
-      .detail-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        border: 1px solid rgba(244, 81, 0, 0.22);
-        border-radius: 12px;
-        padding: 11px 12px;
-        background: var(--primary);
-        color: #fff;
-        font-size: 14px;
-        font-weight: 1000;
-      }
-
-      .journey-map {
-        margin: 0 0 34px;
-        border: 1px solid var(--line);
+      .section {
+        margin-top: 24px;
         border-radius: 24px;
         padding: 24px;
-        background:
-          radial-gradient(circle at 12% 10%, rgba(244, 81, 0, 0.14), transparent 28%),
-          radial-gradient(circle at 88% 0%, rgba(255, 209, 153, 0.28), transparent 30%),
-          linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 243, 0.96));
-        box-shadow: 0 20px 50px rgba(56, 33, 15, 0.1);
       }
 
-      .journey-head {
+      .section-head {
         display: flex;
-        align-items: flex-end;
         justify-content: space-between;
-        gap: 18px;
+        gap: 16px;
+        align-items: start;
         margin-bottom: 18px;
       }
 
-      .journey-head h2 {
+      h2 {
         margin: 0;
-        font-size: 30px;
-        line-height: 1.2;
+        font-size: 26px;
       }
 
-      .journey-head p {
+      .section-head p {
         margin: 8px 0 0;
-        max-width: 760px;
         color: var(--muted);
-        font-size: 14px;
-        line-height: 1.7;
+        line-height: 1.65;
       }
 
-      .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .legend span {
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: 7px 10px;
-        background: rgba(255, 255, 255, 0.7);
-        color: var(--muted);
+      .chip {
+        padding: 8px 12px;
+        background: #fff1e7;
+        color: #a33c00;
         font-size: 12px;
-        font-weight: 900;
         white-space: nowrap;
       }
 
-      .flowchart {
+      .flow-line {
         display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 14px;
       }
 
-      .flow-lane {
-        display: grid;
-        grid-template-columns: 154px minmax(0, 1fr);
-        gap: 16px;
-        border: 1px solid rgba(234, 220, 201, 0.88);
-        border-radius: 18px;
-        padding: 14px;
-        background: rgba(255, 255, 255, 0.72);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      .flow-line.four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
-      .flow-lane.main-lane {
-        border-color: rgba(244, 81, 0, 0.3);
-        background:
-          linear-gradient(90deg, rgba(244, 81, 0, 0.08), transparent 34%),
-          rgba(255, 255, 255, 0.82);
-      }
-
-      .lane-label {
-        display: grid;
-        align-content: center;
-        gap: 8px;
-        border-radius: 15px;
-        padding: 14px;
-        background: #2a211b;
-        color: #fff;
-      }
-
-      .lane-label.sub {
-        background: #fff7ed;
-        color: var(--ink);
-        border: 1px solid rgba(244, 81, 0, 0.2);
-      }
-
-      .lane-label strong {
-        font-size: 17px;
-        line-height: 1.25;
-      }
-
-      .lane-label span {
-        color: rgba(255, 255, 255, 0.68);
-        font-size: 12px;
-        font-weight: 800;
-        line-height: 1.45;
-      }
-
-      .lane-label.sub span {
-        color: var(--muted);
-      }
-
-      .lane-track {
+      .card {
         position: relative;
-        display: grid;
-        grid-template-columns: minmax(140px, 1fr) 28px minmax(140px, 1fr) 28px minmax(140px, 1fr) 28px minmax(140px, 1fr);
-        gap: 10px;
-        align-items: stretch;
+        min-height: 156px;
+        border-radius: 20px;
+        padding: 16px;
       }
 
-      .lane-track.three {
-        grid-template-columns: minmax(150px, 1fr) 28px minmax(150px, 1fr) 28px minmax(150px, 1fr);
-      }
-
-      .lane-track.two {
-        grid-template-columns: minmax(150px, 1fr) 28px minmax(150px, 1fr);
-      }
-
-      .flow-arrow {
-        display: grid;
-        place-items: center;
+      .card::after {
+        content: "→";
+        position: absolute;
+        right: -14px;
+        top: 50%;
+        transform: translateY(-50%);
         color: var(--primary);
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 1000;
       }
 
-      .flow-arrow span {
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border: 1px solid rgba(244, 81, 0, 0.24);
-        border-radius: 999px;
-        background: #fff7ed;
+      .flow-line .card:last-child::after,
+      .card.no-arrow::after {
+        display: none;
       }
 
-      .decision-strip {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        margin: 2px 0;
-      }
-
-      .decision-chip {
-        border: 1px dashed rgba(244, 81, 0, 0.36);
-        border-radius: 15px;
-        padding: 12px 14px;
-        background: rgba(255, 247, 237, 0.9);
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 1000;
-        text-align: center;
-      }
-
-      .chart-node {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-height: 132px;
-        border: 1px solid rgba(42, 33, 27, 0.2);
-        border-left: 5px solid var(--primary);
-        border-radius: 15px;
-        padding: 14px;
-        background: #fff;
-        box-shadow: 0 12px 26px rgba(56, 33, 15, 0.08);
-        transition:
-          transform 160ms ease,
-          box-shadow 160ms ease,
-          border-color 160ms ease;
-      }
-
-      .chart-node:hover {
-        transform: translateY(-3px);
-        border-color: var(--primary);
-        box-shadow: 0 16px 32px rgba(244, 81, 0, 0.14);
-      }
-
-      .chart-node.primary {
-        border-left-color: var(--primary);
-        background: linear-gradient(135deg, #fff, #fff3e9);
-      }
-
-      .chart-node.support {
-        border-left-color: #73b95b;
-      }
-
-      .chart-node.decision {
-        border-left-color: #2a211b;
-        background: linear-gradient(135deg, #fff, #faf6ef);
-      }
-
-      .chart-node.complete {
-        background: linear-gradient(135deg, #211814, #382217);
-        border-color: #211814;
-        border-left-color: var(--primary);
-        color: #fff;
-      }
-
-      .chart-node.complete .node-desc,
-      .chart-node.complete .node-route {
-        color: rgba(255, 255, 255, 0.68);
-      }
-
-      .node-kicker {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
+      .kicker {
         color: var(--primary);
         font-size: 12px;
         font-weight: 1000;
+        letter-spacing: 0.04em;
       }
 
-      .node-kicker span:first-child {
-        display: inline-grid;
-        place-items: center;
-        min-width: 32px;
-        height: 28px;
-        border-radius: 999px;
-        background: var(--primary);
-        color: #fff;
-      }
-
-      .chart-node.support .node-kicker span:first-child {
-        background: #73b95b;
-      }
-
-      .chart-node.decision .node-kicker span:first-child {
-        background: #2a211b;
-      }
-
-      .node-title {
+      .card h3 {
+        margin: 8px 0 0;
         font-size: 18px;
-        font-weight: 1000;
-        line-height: 1.25;
       }
 
-      .node-desc {
-        flex: 1;
+      .card p {
+        margin: 10px 0 0;
         color: var(--muted);
         font-size: 13px;
         line-height: 1.55;
       }
 
-      .node-route {
-        align-self: end;
-        color: var(--primary);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 12px;
+      .route {
+        display: inline-flex;
+        margin-top: 12px;
+        border-radius: 999px;
+        padding: 6px 9px;
+        background: rgba(42, 33, 27, 0.07);
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
         font-weight: 900;
       }
 
-      .lane-divider {
+      .grid-2 {
         display: grid;
-        place-items: center;
-        min-height: 30px;
-        color: rgba(244, 81, 0, 0.78);
-        font-size: 22px;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .mapping {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+      }
+
+      .mapping th {
+        color: var(--muted);
+        font-size: 12px;
+        text-align: left;
+      }
+
+      .mapping td {
+        padding: 14px;
+        background: #fffaf3;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .mapping td:first-child {
+        border-left: 1px solid var(--line);
+        border-radius: 14px 0 0 14px;
         font-weight: 1000;
       }
 
-      .section-title {
-        margin: 48px 0 18px;
-      }
-
-      .section-title h2 {
-        margin: 0;
-        font-size: 32px;
-      }
-
-      .section-title p {
-        margin: 8px 0 0;
+      .mapping td:last-child {
+        border-right: 1px solid var(--line);
+        border-radius: 0 14px 14px 0;
         color: var(--muted);
-        line-height: 1.7;
       }
 
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 18px;
-      }
-
-      .detail-card {
-        padding: 18px;
-        scroll-margin-top: 24px;
-      }
-
-      .detail-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 14px;
-      }
-
-      .detail-card h3 {
-        margin: 0;
-        font-size: 20px;
-      }
-
-      .route {
+      .badge {
         display: inline-flex;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 7px 9px;
-        background: #fff;
-        color: var(--primary);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 12px;
-        font-weight: 800;
-      }
-
-      .moves {
-        display: grid;
-        gap: 9px;
-        margin: 14px 0;
-      }
-
-      .move {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        border: 1px solid rgba(234, 220, 201, 0.84);
-        border-radius: 12px;
-        padding: 11px 12px;
-        background: rgba(255, 255, 255, 0.48);
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.45;
-      }
-
-      .dot {
-        width: 8px;
-        height: 8px;
-        flex: 0 0 auto;
         border-radius: 999px;
+        padding: 5px 8px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 1000;
+      }
+
+      .done {
+        background: var(--green);
+      }
+
+      .partial {
         background: var(--primary);
       }
 
-      .back-top {
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 900;
+      .external {
+        background: var(--blue);
       }
 
-      @media (max-width: 1080px) {
-        .flow-grid,
-        body[data-view='web'] .flow-grid,
-        .detail-grid {
+      @media (max-width: 1100px) {
+        .hero-grid,
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+
+        .summary {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .flow-lane {
-          grid-template-columns: 1fr;
+        .flow-line,
+        .flow-line.four {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card::after {
+          display: none;
         }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 680px) {
         .page {
-          padding: 18px 14px 42px;
+          padding: 18px 14px 48px;
         }
 
-        .hero {
-          border-radius: 18px;
-          padding: 24px;
+        .hero,
+        .section {
+          padding: 22px;
+          border-radius: 22px;
         }
 
-        .hero-top,
         .summary,
-        .flow-grid,
-        body[data-view='web'] .flow-grid,
-        .detail-grid,
-        .decision-strip,
-        .lane-track,
-        .lane-track.three,
-        .lane-track.two {
+        .flow-line,
+        .flow-line.four {
           grid-template-columns: 1fr;
-          display: grid;
-        }
-
-        .mode-panel {
-          min-width: 0;
-        }
-
-        .journey-map {
-          padding: 16px;
-        }
-
-        .journey-head {
-          display: grid;
-        }
-
-        .flow-arrow span {
-          transform: rotate(90deg);
         }
       }
     </style>
   </head>
-  <body data-view="mobile">
-    <main class="page" id="top">
+  <body>
+    <main class="page">
       <section class="hero">
-        <div class="hero-top">
+        <div class="hero-grid">
           <div>
-            <div class="eyebrow">Responsive Capture Flow</div>
-            <h1>찰칵밥상 사용자 플로우</h1>
+            <span class="eyebrow">찰칵밥상 사용자 플로우 v2</span>
+            <h1>재료 추천부터 커뮤니티까지 이어지는 최신 사용자 여정</h1>
             <p>
-              하나의 사용자 여정 안에서 앱/웹 화면 디자인을 토글로 전환해 볼 수 있는 와이어프레임 보드입니다.
-              실제 dev 페이지 캡쳐를 사용해 화면 이동과 권한 분기를 함께 정리했습니다.
+              현재 Vue SPA와 Django REST API 구현 기준으로 사용자 흐름을 다시 정리했습니다.
+              오래된 요리모드 중심 흐름을 걷어내고, 실제 라우트와 API 연결 구조를 기준으로 구성했습니다.
             </p>
             <div class="hero-actions">
-              <a class="hero-link" href="#details">이동 경로 상세보기</a>
-              <a class="hero-link" href="#flow-chart">Flow Chart 보기</a>
-              <a class="hero-link" href="/backend-api">API 명세 보기</a>
+              <a class="hero-link" href="/backend-api">API 명세 최신</a>
+              <a class="hero-link" href="/backend-api-v2">API 명세 v2</a>
+              <a class="hero-link" href="/user-flow-wireframe-v2.html">v2 별도 페이지</a>
+              <a class="hero-link" href="/">서비스 홈</a>
             </div>
           </div>
-          <div class="mode-panel">
-            <div>
-              <span>Current View</span>
-              <strong id="viewport-label">App 390 x 844</strong>
-            </div>
-            <div class="view-toggle" aria-label="화면 타입 선택">
-              <button type="button" class="active" data-mode="mobile">앱 디자인</button>
-              <button type="button" data-mode="web">웹 디자인</button>
-            </div>
+          <div class="status-panel">
+            <span>Latest routes</span>
+            <strong>11 screens</strong>
+            <span>인증 · 추천 · 피드 · 커뮤니티 · 마이페이지</span>
           </div>
         </div>
       </section>
 
       <section class="summary">
-        <div class="summary-item">인증 → 홈</div>
-        <div class="summary-item">피드 → 상세 → 소셜</div>
-        <div class="summary-item">등록/저장/추천 → 요리모드</div>
+        <div class="summary-item"><b>Vue 3</b><span>SPA 사용자 흐름</span></div>
+        <div class="summary-item"><b>DRF</b><span>REST API 연동</span></div>
+        <div class="summary-item"><b>3 APIs</b><span>Google · Gemini · Food Safety</span></div>
+        <div class="summary-item"><b>v2</b><span>최신 구현 기준 문서</span></div>
       </section>
 
-      <section class="journey-map" id="flow-chart">
-        <div class="journey-head">
+      <section class="section">
+        <div class="section-head">
           <div>
-            <h2>User Journey Flow Chart</h2>
-            <p>
-              같은 사용자 여정을 기준으로 앱/웹 화면만 토글해 확인합니다. 노드를 누르면 해당 화면 카드로 이동합니다.
-            </p>
+            <h2>메인 런타임 흐름</h2>
+            <p>사용자가 서비스에 진입해 레시피를 탐색하고 커뮤니티 액션까지 이어지는 기본 흐름입니다.</p>
           </div>
-          <div class="legend">
-            <span>실선: 주요 이동</span>
-            <span>분기: 권한/상태</span>
-            <span>앱 전용: 요리모드</span>
-          </div>
+          <span class="chip">Solid user flow</span>
         </div>
-        <div class="flowchart">
-          <div class="flow-lane main-lane">
-            <div class="lane-label">
-              <strong>메인 여정</strong>
-              <span>처음 진입부터 레시피 상세까지 이어지는 핵심 흐름</span>
-            </div>
-            <div class="lane-track">
-            <a class="chart-node primary" href="#card-01">
-              <div class="node-kicker"><span>01</span><span>AUTH</span></div>
-              <div class="node-title">Login / Signup</div>
-              <div class="node-desc">이메일 또는 구글로 가입하고 환영 알림을 생성합니다.</div>
-              <div class="node-route">/login · /signup</div>
-            </a>
-              <div class="flow-arrow"><span>→</span></div>
-            <a class="chart-node primary" href="#card-03">
-              <div class="node-kicker"><span>03</span><span>HOME</span></div>
-              <div class="node-title">Home Discovery</div>
-              <div class="node-desc">추천 요리, 인기 레시피, 최근 마이 레시피를 탐색합니다.</div>
-              <div class="node-route">/</div>
-            </a>
-              <div class="flow-arrow"><span>→</span></div>
-            <a class="chart-node primary" href="#card-04">
-              <div class="node-kicker"><span>04</span><span>FEED</span></div>
-              <div class="node-title">Search / Tag Filter</div>
-              <div class="node-desc">검색어와 태그 AND 필터로 원하는 레시피를 좁힙니다.</div>
-              <div class="node-route">/feed</div>
-            </a>
-              <div class="flow-arrow"><span>→</span></div>
-            <a class="chart-node primary" href="#card-06">
-              <div class="node-kicker"><span>06</span><span>DETAIL</span></div>
-              <div class="node-title">Recipe Detail</div>
-              <div class="node-desc">좋아요, 저장, 댓글, 작성자 수정 권한이 모이는 중심 화면입니다.</div>
-              <div class="node-route">/recipe/{id}</div>
-            </a>
-            </div>
-          </div>
-
-          <div class="decision-strip">
-            <div class="decision-chip">미로그인 액션 → 로그인 유도</div>
-            <div class="decision-chip">로그인 사용자 → 소셜 액션 가능</div>
-            <div class="decision-chip">작성자 → 수정/답글 가능</div>
-          </div>
-
-          <div class="lane-divider">↓</div>
-
-          <div class="flow-lane">
-            <div class="lane-label sub">
-              <strong>상세 액션</strong>
-              <span>레시피 상세에서 발생하는 저장, 댓글, 알림 흐름</span>
-            </div>
-            <div class="lane-track three">
-              <a class="chart-node decision" href="#card-07">
-                <div class="node-kicker"><span>07</span><span>COMMENT</span></div>
-                <div class="node-title">Comment Thread</div>
-                <div class="node-desc">댓글과 작성자 답글을 한 상세 페이지 안에서 이어 봅니다.</div>
-                <div class="node-route">detail comments</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node support" href="#card-13">
-                <div class="node-kicker"><span>13</span><span>NOTICE</span></div>
-                <div class="node-title">Notifications</div>
-                <div class="node-desc">환영, 좋아요, 댓글 알림을 카운트 배지와 드롭다운으로 확인합니다.</div>
-                <div class="node-route">Header Notification</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node support" href="#card-10">
-                <div class="node-kicker"><span>10</span><span>SAVED</span></div>
-                <div class="node-title">Saved Recipes</div>
-                <div class="node-desc">저장한 레시피를 다시 찾아 상세 페이지로 복귀합니다.</div>
-                <div class="node-route">/saved</div>
-              </a>
-            </div>
-          </div>
-
-          <div class="flow-lane">
-            <div class="lane-label sub">
-              <strong>개인화 흐름</strong>
-              <span>내 레시피 등록, 수정, 추천으로 확장되는 흐름</span>
-            </div>
-            <div class="lane-track three">
-              <a class="chart-node decision" href="#card-11">
-                <div class="node-kicker"><span>11</span><span>MY</span></div>
-                <div class="node-title">My Page</div>
-                <div class="node-desc">내 활동과 저장한 레시피, API 명세 진입점을 관리합니다.</div>
-                <div class="node-route">/mypage</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node support" href="#card-08">
-                <div class="node-kicker"><span>08</span><span>CREATE</span></div>
-                <div class="node-title">Register Recipe</div>
-                <div class="node-desc">새 레시피를 등록하고 최근 마이 레시피에 반영합니다.</div>
-                <div class="node-route">/my-recipe/new</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node support" href="#card-09">
-                <div class="node-kicker"><span>09</span><span>EDIT</span></div>
-                <div class="node-title">Edit My Recipe</div>
-                <div class="node-desc">내가 만든 레시피는 상세 페이지에서 수정 흐름으로 연결됩니다.</div>
-                <div class="node-route">/my-recipe/new?edit</div>
-              </a>
-            </div>
-          </div>
-
-          <div class="flow-lane">
-            <div class="lane-label sub">
-              <strong>추천과 요리모드</strong>
-              <span>재료 기반 추천과 모바일 가로모드 조리 UX</span>
-            </div>
-            <div class="lane-track three">
-              <a class="chart-node support" href="#card-12">
-                <div class="node-kicker"><span>12</span><span>RECOMMEND</span></div>
-                <div class="node-title">Ingredient Recommendation</div>
-                <div class="node-desc">냉장고 재료 입력 또는 인식 결과로 추천 레시피를 확인합니다.</div>
-                <div class="node-route">/recommendations</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node decision" href="#card-14">
-                <div class="node-kicker"><span>14</span><span>APP ONLY</span></div>
-                <div class="node-title">Cooking Mode</div>
-                <div class="node-desc">모바일 가로 화면에서 단계별 조리와 완료 팝업을 진행합니다.</div>
-                <div class="node-route">landscape mode</div>
-              </a>
-              <div class="flow-arrow"><span>→</span></div>
-              <a class="chart-node complete" href="#details">
-                <div class="node-kicker"><span>END</span><span>LOOP</span></div>
-                <div class="node-title">Like / Save / Return</div>
-                <div class="node-desc">요리 완료 후 좋아요, 저장, 상세 복귀로 다시 탐색 흐름에 합류합니다.</div>
-                <div class="node-route">back to detail</div>
-              </a>
-            </div>
-          </div>
+        <div class="flow-line">
+          <article class="card">
+            <div class="kicker">01 AUTH</div>
+            <h3>로그인 / 회원가입</h3>
+            <p>이메일 또는 Google OAuth로 서비스에 진입합니다.</p>
+            <span class="route">/login · /signup</span>
+          </article>
+          <article class="card">
+            <div class="kicker">02 HOME</div>
+            <h3>홈 탐색</h3>
+            <p>오늘의 추천, 인기 레시피, 최근 레시피를 확인합니다.</p>
+            <span class="route">/</span>
+          </article>
+          <article class="card">
+            <div class="kicker">03 FEED</div>
+            <h3>피드 / 검색</h3>
+            <p>검색어, 태그, 인기순/최신순으로 레시피를 탐색합니다.</p>
+            <span class="route">/feed</span>
+          </article>
+          <article class="card">
+            <div class="kicker">04 DETAIL</div>
+            <h3>레시피 상세</h3>
+            <p>재료, 단계, 좋아요, 저장, 댓글을 확인합니다.</p>
+            <span class="route">/recipe/:id</span>
+          </article>
+          <article class="card">
+            <div class="kicker">05 SOCIAL</div>
+            <h3>저장 / 댓글</h3>
+            <p>좋아요, 저장, 댓글, 답글로 커뮤니티 흐름을 만듭니다.</p>
+            <span class="route">/recipes/:id/*</span>
+          </article>
+          <article class="card">
+            <div class="kicker">06 MY</div>
+            <h3>마이페이지</h3>
+            <p>내 레시피, 저장/좋아요 목록, 구독과 알림을 관리합니다.</p>
+            <span class="route">/mypage</span>
+          </article>
         </div>
       </section>
 
-      <section class="flow-grid" id="flow-grid"></section>
-
-      <section class="section-title" id="details">
-        <h2>상세 이동 경로</h2>
-        <p>각 화면에서 사용자가 어떤 액션을 통해 다음 페이지나 상태로 이동하는지 정리했습니다.</p>
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>재료 기반 추천 흐름</h2>
+            <p>찰칵밥상의 핵심 가치인 “가진 재료로 만들 수 있는 요리 추천” 흐름입니다.</p>
+          </div>
+          <span class="chip">Recommendation v2</span>
+        </div>
+        <div class="flow-line four">
+          <article class="card">
+            <div class="kicker">01 INPUT</div>
+            <h3>재료 입력</h3>
+            <p>사용자가 가진 재료를 직접 입력하거나 이미지로 감지합니다.</p>
+            <span class="route">/ingredients</span>
+          </article>
+          <article class="card">
+            <div class="kicker">02 AI</div>
+            <h3>이미지 재료 감지</h3>
+            <p>업로드 이미지가 Gemini API를 통해 재료 목록으로 변환됩니다.</p>
+            <span class="route">/media/upload</span>
+          </article>
+          <article class="card">
+            <div class="kicker">03 MATCH</div>
+            <h3>추천 계산</h3>
+            <p>ingredient_aliases로 정규화하고 match_rate와 부족 재료를 계산합니다.</p>
+            <span class="route">/recipes/recommendations</span>
+          </article>
+          <article class="card">
+            <div class="kicker">04 RESULT</div>
+            <h3>추천 결과</h3>
+            <p>바로 가능한 레시피와 부족 재료가 적은 레시피를 나누어 보여줍니다.</p>
+            <span class="route">/recommendations</span>
+          </article>
+        </div>
       </section>
-      <section class="detail-grid" id="detail-grid"></section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>OAuth 인증 흐름</h2>
+            <p>Google OAuth 콜백이 GitHub나 저장소가 아니라 프론트 라우트로 돌아온 뒤 백엔드 인증 요청으로 이어집니다.</p>
+          </div>
+          <span class="chip">OAuth callback</span>
+        </div>
+        <div class="flow-line four">
+          <article class="card">
+            <div class="kicker">01 REQUEST</div>
+            <h3>로그인 요청</h3>
+            <p>Auth 화면에서 Google 인증 페이지로 이동합니다.</p>
+            <span class="route">/login</span>
+          </article>
+          <article class="card">
+            <div class="kicker">02 CALLBACK</div>
+            <h3>콜백 / 인증 코드</h3>
+            <p>Google이 authorization code를 프론트 콜백 라우트로 전달합니다.</p>
+            <span class="route">/oauth/callback</span>
+          </article>
+          <article class="card">
+            <div class="kicker">03 EXCHANGE</div>
+            <h3>백엔드 인증 요청</h3>
+            <p>프론트가 code를 백엔드로 보내 JWT 발급을 요청합니다.</p>
+            <span class="route">POST /auth/google/</span>
+          </article>
+          <article class="card">
+            <div class="kicker">04 TOKEN</div>
+            <h3>토큰 저장</h3>
+            <p>발급된 access/refresh token을 Auth State에 저장하고 API 요청에 사용합니다.</p>
+            <span class="route">Auth State</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>기획/설계 산출물 → 구현 대조</h2>
+            <p>Linear 기획 산출물, 사용자 플로우, ERD, API 명세가 실제 구현과 어떻게 연결되는지 발표용으로 정리했습니다.</p>
+          </div>
+          <span class="chip">Planning to Build</span>
+        </div>
+        <table class="mapping">
+          <thead>
+            <tr>
+              <th>산출물</th>
+              <th>실제 구현 연결</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>서비스 기획서</td>
+              <td>자취생/요리 초보자를 위한 재료 기반 레시피 추천과 커뮤니티 서비스로 구현</td>
+              <td><span class="badge done">구현 완료</span></td>
+            </tr>
+            <tr>
+              <td>사용자 플로우</td>
+              <td>로그인, 홈, 피드, 상세, 등록/수정, 추천, 저장, 마이페이지 라우트 구현</td>
+              <td><span class="badge done">구현 완료</span></td>
+            </tr>
+            <tr>
+              <td>ERD</td>
+              <td>users, recipes, ingredients, comments, likes, saves, media, notifications 중심 모델 구현</td>
+              <td><span class="badge done">구현 완료</span></td>
+            </tr>
+            <tr>
+              <td>API 명세</td>
+              <td>Django REST API와 프론트 apiRequest, Vercel rewrite로 연결</td>
+              <td><span class="badge done">구현 완료</span></td>
+            </tr>
+            <tr>
+              <td>추천 알고리즘</td>
+              <td>재료 정규화, match_rate, missing_ingredients 기반 추천 결과 제공</td>
+              <td><span class="badge done">구현 완료</span></td>
+            </tr>
+            <tr>
+              <td>요리모드</td>
+              <td>초기 기획에는 포함했으나 발표 핵심에서는 추천/커뮤니티 구현을 중심으로 설명</td>
+              <td><span class="badge partial">향후 개선</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>외부 연동 분리</h2>
+            <p>사용자 흐름에서 외부 서비스와 내부 백엔드 API가 섞여 보이지 않도록 분리했습니다.</p>
+          </div>
+          <span class="chip">External Services</span>
+        </div>
+        <div class="grid-2">
+          <article class="card no-arrow">
+            <div class="kicker">DIRECT FRONTEND</div>
+            <h3>식품안전나라 API</h3>
+            <p>공공 레시피 이미지/데이터 조회는 프론트 API 키가 있을 때 직접 호출합니다. 키는 env로 관리합니다.</p>
+            <span class="route">VITE_FOODSAFETY_API_KEY</span>
+          </article>
+          <article class="card no-arrow">
+            <div class="kicker">BACKEND MEDIATED</div>
+            <h3>Google OAuth / Gemini</h3>
+            <p>OAuth code exchange와 이미지 재료 감지는 백엔드에서 처리해 인증과 API key 노출을 관리합니다.</p>
+            <span class="route">/auth/google · /media/upload</span>
+          </article>
+        </div>
+      </section>
     </main>
-
-    <script>
-      const flows = [
-        {
-          no: '01',
-          tag: '인증',
-          title: 'Auth / Login',
-          route: '/login',
-          note: '첫 진입, 로그인 후 홈 이동',
-          mobile: '01-login.png',
-          web: '01-login.png',
-          moves: ['로그인 성공 → /', '회원가입 링크 → /signup', '구글 로그인 성공 → /'],
-        },
-        {
-          no: '02',
-          tag: '가입',
-          title: 'Auth / Signup',
-          route: '/signup',
-          note: '회원가입, 환영 알림 생성',
-          mobile: '02-signup.png',
-          web: '02-signup.png',
-          moves: ['이메일 가입 성공 → /', '구글 가입 성공 → /', '이미 계정 있음 → /login', '가입 성공 → 환영 알림 생성'],
-        },
-        {
-          no: '03',
-          tag: '홈',
-          title: 'Home Discovery',
-          route: '/',
-          note: '인기/추천/마이 레시피 탐색',
-          mobile: '03-home.png',
-          web: '03-home.png',
-          moves: ['재료 입력 → /recommendations', '인기 레시피 카드 → /recipe/{id}', '최근 마이 레시피 더보기 → /feed?source=my&sort=recent', '피드 탭 → /feed'],
-        },
-        {
-          no: '04',
-          tag: '피드',
-          title: 'Feed Search + Tags',
-          route: '/feed',
-          note: '검색, 태그 AND 필터',
-          mobile: '04-feed.png',
-          web: '04-feed.png',
-          moves: ['검색어 입력 → 피드 결과 갱신', '태그 다중 선택 → AND 필터 적용', '검색 결과 없음 → 검색 초기화', '레시피 카드 → /recipe/{id}'],
-        },
-        {
-          no: '05',
-          tag: '상세',
-          title: 'Recipe Detail / Cooking Hint',
-          route: '/recipe/{id}',
-          note: '가로 요리모드 안내 또는 상세 진입',
-          mobile: '05-detail-onboarding.png',
-          web: '05-detail.png',
-          moves: ['앱 첫 상세 진입 → 요리모드 안내 바텀시트', '웹 상세 진입 → 일반 상세 화면', '화면 회전 → 앱 가로 요리모드'],
-        },
-        {
-          no: '06',
-          tag: '소셜',
-          title: 'Recipe Detail / Social',
-          route: '/recipe/{id}',
-          note: '좋아요, 댓글, 수정 권한',
-          mobile: '06-detail.png',
-          web: '05-detail.png',
-          moves: ['좋아요 버튼 → 좋아요 토글 + 작성자 알림', '댓글 버튼 → 댓글 섹션 이동', '내 레시피 수정 → /my-recipe/new?edit={id}', '저장 버튼 → /saved에서 확인'],
-        },
-        {
-          no: '07',
-          tag: '댓글',
-          title: 'Recipe Detail / Comments',
-          route: '/recipe/{id}#comments',
-          note: '댓글, 작성자 답글',
-          mobile: '07-detail-comments.png',
-          web: '06-detail-comments.png',
-          moves: ['댓글 작성 → 작성자 알림 생성', '작성자 답글 → 댓글 하위 스레드 생성', '미로그인 댓글 시도 → /login 유도'],
-        },
-        {
-          no: '08',
-          tag: '등록',
-          title: 'Register Recipe',
-          route: '/my-recipe/new',
-          note: '레시피 등록',
-          mobile: '08-register.png',
-          web: '07-register.png',
-          moves: ['등록 완료 → /recipe/{newId}', '등록 완료 → 홈 최근 마이 레시피 반영', '미로그인 진입 → /login 유도'],
-        },
-        {
-          no: '09',
-          tag: '수정',
-          title: 'Edit My Recipe',
-          route: '/my-recipe/new?edit={id}',
-          note: '내 레시피 수정',
-          mobile: '09-edit.png',
-          web: '08-edit.png',
-          moves: ['수정 저장 → /recipe/{id}', '작성자 권한 검증 실패 → 상세로 복귀 또는 에러', '단계/재료 수정 → 상세/피드 데이터 갱신'],
-        },
-        {
-          no: '10',
-          tag: '저장',
-          title: 'Saved Recipes',
-          route: '/saved',
-          note: '저장한 레시피 관리',
-          mobile: '10-saved.png',
-          web: '09-saved.png',
-          moves: ['저장 카드 → /recipe/{id}', '저장 해제 → 목록에서 제거', '미로그인 진입 → /login 유도'],
-        },
-        {
-          no: '11',
-          tag: '마이',
-          title: 'My Page',
-          route: '/mypage',
-          note: '내 활동과 API 명세 접근',
-          mobile: '11-mypage.png',
-          web: '10-mypage.png',
-          moves: ['내 레시피 카드 → /recipe/{id}', '계정 메뉴 API 명세 → /backend-api', '로그아웃 → /login 필요 상태'],
-        },
-        {
-          no: '12',
-          tag: '추천',
-          title: 'Ingredient Recommendation',
-          route: '/recommendations',
-          note: '재료 기반 추천',
-          mobile: '12-recommendations.png',
-          web: '11-recommendations.png',
-          moves: ['재료 선택 → 추천 결과 갱신', '추천 카드 → /recipe/{id}', '저장/좋아요 → 로그인 필요 시 /login'],
-        },
-        {
-          no: '13',
-          tag: '알림',
-          title: 'Notifications',
-          route: 'Header Notification',
-          note: '환영/좋아요/댓글 알림',
-          mobile: '13-notifications.png',
-          web: '12-notifications.png',
-          moves: ['알림 아이콘 클릭 → 알림 드롭다운', '알림 항목 클릭 → 관련 /recipe/{id}', '모두 읽음 → 카운트 배지 갱신'],
-        },
-        {
-          no: '14',
-          tag: '요리모드',
-          title: 'Mobile Cooking Mode / API Spec',
-          route: 'App: landscape / Web: /backend-api',
-          note: '앱은 가로 요리모드, 웹은 API 명세 흐름',
-          mobile: '14-cooking-landscape.png',
-          web: '13-api-spec.png',
-          mobileLandscape: true,
-          moves: ['앱 이 단계 완료 → 다음 Step', '앱 마지막 Step 완료 → 좋아요 팝업', '웹 마이페이지 API 명세 → /backend-api'],
-        },
-      ]
-
-      let currentMode = new URLSearchParams(window.location.search).get('view') === 'web' ? 'web' : 'mobile'
-
-      const body = document.body
-      const flowGrid = document.querySelector('#flow-grid')
-      const detailGrid = document.querySelector('#detail-grid')
-      const viewportLabel = document.querySelector('#viewport-label')
-      const buttons = [...document.querySelectorAll('[data-mode]')]
-
-      function render() {
-        body.dataset.view = currentMode
-        viewportLabel.textContent = currentMode === 'web' ? 'Web 1440 x 920' : 'App 390 x 844'
-        buttons.forEach((button) => button.classList.toggle('active', button.dataset.mode === currentMode))
-
-        flowGrid.innerHTML = flows
-          .map((flow, index) => {
-            const image = currentMode === 'web' ? flow.web : flow.mobile
-            const dir = currentMode === 'web' ? 'user-flow-web' : 'user-flow-mobile'
-            const deviceClass =
-              currentMode === 'web' ? 'browser' : flow.mobileLandscape ? 'landscape' : 'phone'
-            return `
-              <article class="flow-card" id="card-${flow.no}">
-                <div class="flow-head">
-                  <div><div class="num">${flow.no}</div><h2>${flow.title}</h2></div>
-                  ${index < flows.length - 1 ? '<div class="arrow">→</div>' : ''}
-                </div>
-                <div class="shot-zone">
-                  <div class="device ${deviceClass}">
-                    <div class="browser-bar"><span></span><span></span><span></span></div>
-                    <img src="/figma-captures/${dir}/${image}" alt="${flow.title}" />
-                  </div>
-                </div>
-                <div class="flow-body">
-                  <span class="flow-tag">${flow.tag}</span>
-                  <div class="flow-note">${flow.note}</div>
-                  <a class="detail-button" href="#detail-${flow.no}">상세보기</a>
-                </div>
-              </article>
-            `
-          })
-          .join('')
-
-        detailGrid.innerHTML = flows
-          .map(
-            (flow) => `
-              <article class="detail-card" id="detail-${flow.no}">
-                <div class="detail-top">
-                  <div>
-                    <div class="num">${flow.no}</div>
-                    <h3>${flow.title}</h3>
-                  </div>
-                  <span class="route">${flow.route}</span>
-                </div>
-                <span class="flow-tag">${flow.tag}</span>
-                <div class="moves">
-                  ${flow.moves.map((move) => `<div class="move"><span class="dot"></span><span>${move}</span></div>`).join('')}
-                </div>
-                <a class="back-top" href="#top">맨 위로 이동</a>
-              </article>
-            `
-          )
-          .join('')
-      }
-
-      buttons.forEach((button) => {
-        button.addEventListener('click', () => {
-          currentMode = button.dataset.mode
-          const nextUrl = new URL(window.location.href)
-          nextUrl.searchParams.set('view', currentMode)
-          history.replaceState(null, '', nextUrl)
-          render()
-        })
-      })
-
-      render()
-    </script>
   </body>
 </html>

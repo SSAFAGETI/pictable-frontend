@@ -99,6 +99,9 @@ Vue Router 기준 주요 페이지는 다음과 같습니다.
 - `/recommendations`: 재료 기반 추천
 - `/ingredients`: 재료 선택/감지
 - `/backend-api`: 프론트-백엔드 API 명세
+- `/backend-api-v2`: 최신 백엔드 API 명세 v2
+- `/user-flow-wireframe.html`: 최신 사용자 플로우 와이어프레임
+- `/user-flow-wireframe-v2.html`: 최신 사용자 플로우 와이어프레임 v2 별도 페이지
 
 ## CI/CD 흐름
 
@@ -114,7 +117,7 @@ Vue Router 기준 주요 페이지는 다음과 같습니다.
 | 추천 기능 | `/recommendations`, 재료 기반 추천 API 연동 |
 | API 활용 | 식품안전나라 API 이미지/레시피 조회, Google OAuth, Django REST API |
 | 커뮤니티 | 피드, 좋아요, 저장, 댓글, 답글, 알림 UI |
-| RESTful 원칙 | 리소스 중심 API client와 `/backend-api` 명세 |
+| RESTful 원칙 | 리소스 중심 API client와 `/backend-api`, `/backend-api-v2` 명세 |
 | 5개 이상 페이지 | 홈, 피드, 상세, 등록, 저장, 마이, 로그인, 추천 등 |
 | API Key 관리 | Vite `.env` 기반 관리, 하드코딩 fallback 제거 |
 | 데이터 | `recipeFixtures` 50개 + 백엔드 식품안전나라 import 데이터와 연동 |

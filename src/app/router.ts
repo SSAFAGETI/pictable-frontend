@@ -29,6 +29,7 @@ export const router = createRouter({
     { path: APP_ROUTES.recommendations, component: RecommendationsView },
     { path: APP_ROUTES.ingredients, component: IngredientsView },
     { path: APP_ROUTES.backendApi, component: BackendApiView },
+    { path: APP_ROUTES.backendApiV2, component: BackendApiView },
     { path: APP_ROUTES.serverError, component: ServerErrorView },
   ],
   scrollBehavior() {

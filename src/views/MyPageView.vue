@@ -164,7 +164,9 @@ const tabs = [
 
 const menuItems = [
   { icon: Server, label: '백엔드 API 명세', href: APP_ROUTES.backendApi },
+  { icon: Server, label: '백엔드 API 명세 v2', href: APP_ROUTES.backendApiV2 },
   { icon: FileText, label: '사용자 플로우 와이어프레임', href: '/user-flow-wireframe.html', external: true },
+  { icon: FileText, label: '사용자 플로우 와이어프레임 v2', href: '/user-flow-wireframe-v2.html', external: true },
   { icon: Bell, label: '알림 설정', href: '/settings/notifications' },
   { icon: HelpCircle, label: '고객센터', href: '/help' },
   { icon: FileText, label: '이용약관', href: '/terms' },

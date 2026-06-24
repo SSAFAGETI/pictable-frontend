@@ -7,23 +7,26 @@
           <div class="space-y-5">
             <span class="inline-flex w-fit items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-sm font-bold text-white ring-1 ring-white/20">
               <Sparkles class="h-3.5 w-3.5" />
-              찰칵밥상 Frontend x Backend Contract
+              찰칵밥상 API Contract {{ isV2 ? 'v2' : 'latest' }}
             </span>
             <div class="max-w-3xl space-y-3">
               <h1 class="text-3xl font-black tracking-normal sm:text-4xl lg:text-5xl">
-                프론트 기능을 백엔드 API로 연결하는 명세서
+                실제 구현 기준 프론트-백엔드 API 명세
               </h1>
               <p class="text-sm leading-7 text-white/72 sm:text-base">
-                회원가입 환영 알림부터 레시피 등록, 피드 태그 AND 검색, 좋아요/댓글 알림,
-                모바일 가로 요리모드까지 실제 구현 기준으로 정리했습니다.
+                Vue SPA가 사용하는 Django REST API를 최신 구현 기준으로 정리했습니다.
+                인증, 레시피, 피드, 추천, 미디어, 알림까지 실제 라우팅과 요청 흐름에 맞춰 업데이트했습니다.
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <a href="/user-flow-wireframe.html?view=mobile" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white/90 transition-colors hover:bg-white/18">
-                앱 프레임워크 보기
+              <a href="/backend-api-v2" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white/90 transition-colors hover:bg-white/18">
+                API v2 별도 페이지
               </a>
-              <a href="/user-flow-wireframe.html?view=web" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white/90 transition-colors hover:bg-white/18">
-                웹 프레임워크 보기
+              <a href="/user-flow-wireframe.html" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white/90 transition-colors hover:bg-white/18">
+                사용자 흐름 보기
+              </a>
+              <a href="/user-flow-wireframe-v2.html" class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white/90 transition-colors hover:bg-white/18">
+                사용자 흐름 v2
               </a>
             </div>
           </div>
@@ -40,25 +43,23 @@
       <section class="mt-5 grid gap-4 md:grid-cols-3">
         <article class="rounded-xl border border-primary/15 bg-primary/5 p-5">
           <Database class="mb-3 h-5 w-5 text-primary" />
-          <h2 class="font-black">공통 성공 응답</h2>
+          <h2 class="font-black">응답 포맷</h2>
           <p class="mt-2 text-sm leading-6 text-muted-foreground">
-            모든 성공 응답은 <code class="rounded bg-background px-1">ok: true</code>와
-            <code class="ml-1 rounded bg-background px-1">data</code>를 기준으로 통일합니다.
-          </p>
-        </article>
-        <article class="rounded-xl border border-rose-200 bg-rose-50/70 p-5">
-          <AlertTriangle class="mb-3 h-5 w-5 text-rose-600" />
-          <h2 class="font-black">공통 실패 응답</h2>
-          <p class="mt-2 text-sm leading-6 text-muted-foreground">
-            실패 응답은 <code class="rounded bg-background px-1">ok: false</code>와
-            <code class="ml-1 rounded bg-background px-1">error.code/message</code>로 처리합니다.
+            백엔드는 DRF 기본 JSON을 반환하고, 프론트는 mapper와 apiRequest에서 화면용 데이터로 정규화합니다.
           </p>
         </article>
         <article class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-5">
           <KeyRound class="mb-3 h-5 w-5 text-emerald-700" />
-          <h2 class="font-black">인증 원칙</h2>
+          <h2 class="font-black">인증 방식</h2>
           <p class="mt-2 text-sm leading-6 text-muted-foreground">
-            등록, 저장, 마이, 좋아요, 댓글, 알림은 서버에서 인증과 권한을 한 번 더 검증합니다.
+            JWT Access/Refresh Token과 Google OAuth code exchange를 사용합니다.
+          </p>
+        </article>
+        <article class="rounded-xl border border-sky-200 bg-sky-50/70 p-5">
+          <RouteIcon class="mb-3 h-5 w-5 text-sky-700" />
+          <h2 class="font-black">프록시 경로</h2>
+          <p class="mt-2 text-sm leading-6 text-muted-foreground">
+            Vercel은 <code class="rounded bg-background px-1">/api</code>와 <code class="rounded bg-background px-1">/media</code> 요청을 백엔드로 전달합니다.
           </p>
         </article>
       </section>
@@ -107,9 +108,9 @@
                 <p class="mt-1 text-sm leading-relaxed text-muted-foreground">{{ endpoint.description }}</p>
               </div>
               <div class="grid gap-3 p-4 sm:p-5 xl:grid-cols-3">
-                <JsonPanel title="Request Body" tone="request" :value="endpoint.request" />
-                <JsonPanel title="Success Response" tone="success" :value="endpoint.success" />
-                <JsonPanel title="Failure Response" tone="failure" :value="endpoint.failure" />
+                <JsonPanel title="Request" tone="request" :value="endpoint.request" />
+                <JsonPanel title="Success" tone="success" :value="endpoint.success" />
+                <JsonPanel title="Failure" tone="failure" :value="endpoint.failure" />
               </div>
             </article>
           </section>
@@ -121,6 +122,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, type Component } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   AlertTriangle,
   Bell,
@@ -132,11 +134,13 @@ import {
   Heart,
   KeyRound,
   Layers3,
+  Route as RouteIcon,
   Server,
   ShieldCheck,
   Sparkles,
+  UploadCloud,
+  UserRound,
   Utensils,
-  Zap,
 } from 'lucide-vue-next'
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
@@ -159,6 +163,9 @@ interface ApiGroup {
   endpoints: ApiEndpoint[]
 }
 
+const route = useRoute()
+const isV2 = computed(() => route.path.includes('v2'))
+
 const methodStyles: Record<Method, string> = {
   GET: 'bg-emerald-500 text-white',
   POST: 'bg-primary text-primary-foreground',
@@ -170,147 +177,337 @@ const apiGroups: ApiGroup[] = [
   {
     id: 'auth',
     title: '인증 / 회원',
-    summary: '이메일, 구글 가입, 로그인, 내 정보 조회까지 앱 진입에 필요한 인증 계약입니다.',
+    summary: '이메일 인증, JWT 토큰, Google OAuth code exchange를 담당합니다.',
     icon: ShieldCheck,
     endpoints: [
       {
         method: 'POST',
         path: '/auth/signup/',
-        title: '이메일 회원가입',
-        description: '가입 즉시 환영 알림을 생성하고 로그인 가능한 사용자 세션을 반환합니다.',
-        request: { name: '홍길동', email: 'example@email.com', password: 'password123', passwordConfirm: 'password123' },
-        success: { ok: true, data: { user: { id: 'user_1', name: '홍길동', email: 'example@email.com', provider: 'email' }, accessToken: 'jwt.access.token', welcomeNotificationId: 'noti_1' } },
-        failure: { ok: false, error: { code: 'EMAIL_ALREADY_EXISTS', message: '이미 가입된 이메일입니다.' } },
+        title: '회원가입',
+        description: '신규 사용자를 생성하고 환영 알림을 함께 생성합니다.',
+        request: { email: 'user@example.com', nickname: '자취요리러', password: 'password123' },
+        success: { message: '회원가입이 완료되었습니다.', email: 'user@example.com', nickname: '자취요리러' },
+        failure: { email: ['이미 가입된 이메일입니다.'] },
+      },
+      {
+        method: 'POST',
+        path: '/auth/login/',
+        title: '이메일 로그인',
+        description: '이메일과 비밀번호를 검증하고 Access/Refresh Token을 발급합니다.',
+        request: { email: 'user@example.com', password: 'password123' },
+        success: { message: '로그인 성공', access: 'jwt.access.token', refresh: 'jwt.refresh.token', email: 'user@example.com', nickname: '자취요리러' },
+        failure: { non_field_errors: ['이메일 또는 비밀번호가 올바르지 않습니다.'] },
       },
       {
         method: 'POST',
         path: '/auth/google/',
-        title: '구글 회원가입 / 로그인',
-        description: '구글 OAuth 사용자를 생성하거나 기존 계정을 로그인 처리하고 동일하게 환영 알림을 만듭니다.',
-        request: { idToken: 'google.id.token', profile: { name: '구글유저', email: 'google@email.com', avatarUrl: 'https://...' } },
-        success: { ok: true, data: { isNewUser: true, user: { id: 'user_google_1', name: '구글유저', provider: 'google' }, accessToken: 'jwt.access.token' } },
-        failure: { ok: false, error: { code: 'GOOGLE_TOKEN_INVALID', message: '구글 인증 정보가 유효하지 않습니다.' } },
+        title: 'Google OAuth 로그인',
+        description: '프론트가 받은 authorization code를 백엔드로 전달하고, 백엔드는 Google token/userinfo API로 사용자 정보를 확인합니다.',
+        request: { code: 'google_authorization_code', redirect_uri: 'https://pictable.online/oauth/callback' },
+        success: { access: 'jwt.access.token', refresh: 'jwt.refresh.token', created: false },
+        failure: { error: '구글 토큰 요청 실패', detail: { error: 'invalid_grant' } },
       },
+      {
+        method: 'POST',
+        path: '/auth/refresh/',
+        title: '토큰 갱신',
+        description: 'Refresh Token으로 새 Access Token을 발급합니다.',
+        request: { refresh: 'jwt.refresh.token' },
+        success: { access: 'new.jwt.access.token' },
+        failure: { detail: 'Token is invalid or expired', code: 'token_not_valid' },
+      },
+      {
+        method: 'POST',
+        path: '/auth/logout/',
+        title: '로그아웃',
+        description: 'Refresh Token을 blacklist 처리해 로그아웃합니다.',
+        request: { refresh: 'jwt.refresh.token' },
+        success: { message: '로그아웃 되었습니다.' },
+        failure: { refresh: ['유효하지 않은 토큰입니다.'] },
+      },
+    ],
+  },
+  {
+    id: 'users',
+    title: '사용자 / 마이페이지',
+    summary: '내 정보, 저장/좋아요/작성 레시피, 구독 관계를 관리합니다.',
+    icon: UserRound,
+    endpoints: [
       {
         method: 'GET',
         path: '/users/me/',
         title: '내 정보 조회',
-        description: '마이페이지, 등록/저장 접근 제어, 작성자 권한 판별에 사용하는 현재 사용자 정보입니다.',
+        description: '마이페이지와 작성자 권한 판별에 사용하는 현재 사용자 정보입니다.',
         request: null,
-        success: { ok: true, data: { id: 'user_1', name: '홍길동', email: 'example@email.com', avatarUrl: 'https://...', stats: { recipeCount: 8, savedCount: 12, followerCount: 5 } } },
-        failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '로그인이 필요합니다.' } },
+        success: { id: 1, email: 'user@example.com', nickname: '자취요리러', provider: 'google' },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'PATCH',
+        path: '/users/me/',
+        title: '내 정보 수정',
+        description: '닉네임 등 사용자 프로필 정보를 수정합니다.',
+        request: { nickname: '집밥러' },
+        success: { id: 1, email: 'user@example.com', nickname: '집밥러' },
+        failure: { nickname: ['이 필드는 blank일 수 없습니다.'] },
+      },
+      {
+        method: 'GET',
+        path: '/users/me/saved-recipes/',
+        title: '저장한 레시피',
+        description: '저장 페이지와 마이페이지 저장 탭에서 사용합니다.',
+        request: null,
+        success: { results: [{ id: 12, title: '김치볶음밥', is_saved: true }] },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'GET',
+        path: '/users/me/liked-recipes/',
+        title: '좋아요한 레시피',
+        description: '마이페이지 좋아요 탭에서 사용합니다.',
+        request: null,
+        success: { results: [{ id: 15, title: '라면 업그레이드', is_liked: true }] },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'GET',
+        path: '/users/me/recipes/',
+        title: '내가 작성한 레시피',
+        description: '마이페이지 내 레시피와 마이 피드에서 사용합니다.',
+        request: null,
+        success: { results: [{ id: 21, title: '전자레인지 계란찜', author: '자취요리러' }] },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'POST',
+        path: '/users/{userId}/subscribe/',
+        title: '사용자 구독',
+        description: '레시피 작성자를 구독하거나 구독을 해제합니다.',
+        request: null,
+        success: { subscribed: true, follower_count: 12 },
+        failure: { detail: '자기 자신은 구독할 수 없습니다.' },
       },
     ],
   },
   {
-    id: 'recipe',
-    title: '레시피 / 피드',
-    summary: '홈, 피드, 상세, 수정, 가로 요리모드까지 이어지는 핵심 레시피 API입니다.',
+    id: 'recipes',
+    title: '레시피 / 추천',
+    summary: '레시피 CRUD, 재료 검색, 재료 기반 추천 알고리즘을 제공합니다.',
     icon: BookOpen,
     endpoints: [
+      {
+        method: 'GET',
+        path: '/recipes/',
+        title: '레시피 목록',
+        description: '전체 공개 레시피 목록을 조회합니다.',
+        request: null,
+        success: [{ id: 1, title: '김치볶음밥', ingredients: [{ name: '김치', amount: '1/2컵' }] }],
+        failure: { detail: '레시피를 불러오지 못했습니다.' },
+      },
       {
         method: 'POST',
         path: '/recipes/',
         title: '레시피 등록',
-        description: '등록된 레시피는 최근 올라온 마이 레시피와 피드에 즉시 노출됩니다.',
-        request: {
-          title: '초간단 참치마요 덮밥',
-          description: '5분이면 완성되는 자취생 한 그릇 메뉴',
-          imageIds: ['media_1'],
-          tags: ['자취요리', '초간단', '한식'],
-          servings: 1,
-          cookTimeMinutes: 5,
-          ingredients: [{ name: '밥', amount: '1공기' }],
-          steps: [{ order: 1, description: '밥 위에 참치마요를 올립니다.', imageId: 'media_2' }],
-        },
-        success: { ok: true, data: { id: 'recipe_1', authorId: 'user_1', title: '초간단 참치마요 덮밥', createdAt: '2026-05-06T09:00:00.000Z' } },
-        failure: { ok: false, error: { code: 'VALIDATION_ERROR', message: '필수 입력값을 확인해주세요.', fieldErrors: { title: ['제목은 필수입니다.'] } } },
+        description: '로그인 사용자가 직접 레시피를 등록합니다.',
+        request: { title: '참치마요덮밥', description: '5분 완성 한 그릇', ingredients: [{ name: '참치', amount: '1캔' }], steps: [{ order: 1, description: '밥 위에 재료를 올립니다.' }] },
+        success: { id: 33, title: '참치마요덮밥', author: 1 },
+        failure: { title: ['이 필드는 필수입니다.'] },
       },
       {
         method: 'GET',
         path: '/recipes/{recipeId}/',
-        title: '상세 레시피 조회',
-        description: '재료, 조리법, 댓글, 좋아요/저장 상태, 작성자 수정 권한을 한 번에 내려줍니다.',
+        title: '레시피 상세',
+        description: '재료, 조리 단계, 좋아요/저장/댓글 수를 상세 화면에 제공합니다.',
         request: null,
-        success: { ok: true, data: { id: 'recipe_1', title: '라면 업그레이드 레시피', isMine: true, isLiked: false, isSaved: true, likeCount: 256, commentCount: 3, cookMode: { enabled: true, stepCount: 3 } } },
-        failure: { ok: false, error: { code: 'RECIPE_NOT_FOUND', message: '레시피를 찾을 수 없습니다.' } },
+        success: { id: 33, title: '참치마요덮밥', like_count: 10, save_count: 4, comment_count: 2 },
+        failure: { detail: 'Not found.' },
       },
       {
         method: 'PATCH',
         path: '/recipes/{recipeId}/',
-        title: '내 레시피 수정',
-        description: '작성자만 레시피 본문, 이미지, 재료, 조리 순서를 수정할 수 있습니다.',
-        request: { title: '피카츄 돈까스 만들기', description: '추억의 간식을 집에서 만드는 레시피', tags: ['간식', '자취요리'], ingredients: [{ name: '돈까스', amount: '1장' }], steps: [{ order: 1, description: '돈까스를 노릇하게 튀깁니다.' }] },
-        success: { ok: true, data: { id: 'recipe_1', updatedAt: '2026-05-06T10:00:00.000Z' } },
-        failure: { ok: false, error: { code: 'FORBIDDEN', message: '내가 작성한 레시피만 수정할 수 있습니다.' } },
+        title: '레시피 수정',
+        description: '작성자만 레시피 내용을 수정할 수 있습니다.',
+        request: { title: '초간단 참치마요덮밥' },
+        success: { id: 33, title: '초간단 참치마요덮밥' },
+        failure: { detail: '작성자만 수정할 수 있습니다.' },
+      },
+      {
+        method: 'DELETE',
+        path: '/recipes/{recipeId}/',
+        title: '레시피 삭제',
+        description: '작성자만 레시피를 삭제할 수 있습니다.',
+        request: null,
+        success: { status: 204 },
+        failure: { detail: '작성자만 삭제할 수 있습니다.' },
       },
       {
         method: 'GET',
-        path: '/recipes/?source=my&sort=recent&tags=한식,초간단',
-        title: '피드 / 태그 AND 검색',
-        description: '태그는 AND 조건으로 필터링하며 검색 결과 없음 상태도 동일 계약으로 처리합니다.',
+        path: '/recipes/ingredients/?search=계란',
+        title: '재료 검색',
+        description: '레시피 재료명에서 검색어와 일치하는 후보를 반환합니다.',
         request: null,
-        success: { ok: true, data: { items: [{ id: 'recipe_1', title: '초간단 참치마요 덮밥', likeCount: 42, commentCount: 4, tags: ['한식', '초간단'] }], meta: { total: 1, page: 1, hasNext: false } } },
-        failure: { ok: false, error: { code: 'INVALID_TAG_QUERY', message: '태그 검색 조건이 올바르지 않습니다.' } },
+        success: [{ id: 516, name: '계란', amount: '1개' }],
+        failure: { detail: '검색어가 올바르지 않습니다.' },
       },
+      {
+        method: 'GET',
+        path: '/recipes/recommendations/?ingredients=계란,김치,밥',
+        title: '재료 기반 추천',
+        description: 'ingredient_aliases로 재료를 정규화하고 match_rate와 부족 재료를 계산합니다.',
+        request: null,
+        success: { input_ingredients: ['계란', '김치', '밥'], can_make: [{ recipe_id: 1, title: '김치볶음밥', match_rate: 1, missing_ingredients: [] }], almost: [{ recipe_id: 2, title: '계란볶음밥', match_rate: 0.75, missing_ingredients: ['대파'] }] },
+        failure: { detail: 'ingredients를 입력해주세요.' },
+      },
+    ],
+  },
+  {
+    id: 'feed-social',
+    title: '피드 / 소셜 액션',
+    summary: '피드 탐색, 태그, 좋아요, 저장, 댓글/답글을 담당합니다.',
+    icon: Heart,
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/feeds/?sort=popular&search=김치&tag=한식&cursor=...',
+        title: '피드 조회',
+        description: '검색어, 정렬, 태그 필터와 cursor 기반 페이지네이션으로 피드를 조회합니다.',
+        request: null,
+        success: { results: [{ id: 1, title: '김치볶음밥', tags: ['한식', '초간단'] }], next_cursor: 'cursor-token' },
+        failure: { detail: '피드를 불러오지 못했습니다.' },
+      },
+      {
+        method: 'GET',
+        path: '/feeds/tags/',
+        title: '태그 목록',
+        description: '피드 필터와 레시피 등록 화면에서 사용할 태그를 조회합니다.',
+        request: null,
+        success: [{ id: 1, name: '한식' }, { id: 2, name: '초간단' }],
+        failure: { detail: '태그를 불러오지 못했습니다.' },
+      },
+      {
+        method: 'POST',
+        path: '/recipes/{recipeId}/like/',
+        title: '좋아요 토글',
+        description: '좋아요 생성/삭제를 토글하고 작성자에게 알림을 생성합니다.',
+        request: null,
+        success: { liked: true, like_count: 11 },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'POST',
+        path: '/recipes/{recipeId}/save/',
+        title: '저장 토글',
+        description: '저장 생성/삭제를 토글하고 저장 페이지에 반영합니다.',
+        request: null,
+        success: { saved: true, save_count: 5 },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'GET',
+        path: '/recipes/{recipeId}/comments/',
+        title: '댓글 목록',
+        description: '레시피 상세 댓글과 답글 스레드를 조회합니다.',
+        request: null,
+        success: [{ id: 1, content: '따라 만들기 쉬웠어요!', replies: [{ id: 2, content: '감사합니다!' }] }],
+        failure: { detail: '댓글을 불러오지 못했습니다.' },
+      },
+      {
+        method: 'POST',
+        path: '/recipes/{recipeId}/comments/',
+        title: '댓글 작성',
+        description: '댓글을 작성하고 레시피 작성자에게 알림을 생성합니다.',
+        request: { content: '오늘 저녁으로 해볼게요!' },
+        success: { id: 3, content: '오늘 저녁으로 해볼게요!' },
+        failure: { content: ['이 필드는 필수입니다.'] },
+      },
+      {
+        method: 'POST',
+        path: '/recipes/{recipeId}/comments/{commentId}/replies/',
+        title: '답글 작성',
+        description: '댓글에 답글을 작성하고 알림을 생성합니다.',
+        request: { content: '맛있게 드세요!' },
+        success: { id: 4, content: '맛있게 드세요!', parent_comment: 3 },
+        failure: { detail: 'Not found.' },
+      },
+    ],
+  },
+  {
+    id: 'media',
+    title: '미디어 / AI 재료 감지',
+    summary: '이미지 업로드와 Gemini 기반 재료 감지 결과를 제공합니다.',
+    icon: UploadCloud,
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/media/upload/',
+        title: '이미지 업로드',
+        description: '레시피 대표 이미지, 단계 이미지, 재료 감지 이미지를 업로드합니다.',
+        request: { file: 'multipart/form-data', purpose: 'thumbnail | step | ingredient_detection' },
+        success: { id: 8889, url: '/media/thumbnail/file.jpg', detection_job_id: 7 },
+        failure: { error: '파일이 없습니다.' },
+      },
+      {
+        method: 'GET',
+        path: '/media/{mediaId}/',
+        title: '미디어 상세',
+        description: '업로드된 미디어의 url, 원본 파일명, mime type을 조회합니다.',
+        request: null,
+        success: { id: 8889, url: '/media/thumbnail/file.jpg', original_name: 'food.jpg', mime_type: 'image/jpeg' },
+        failure: { detail: 'Not found.' },
+      },
+      {
+        method: 'GET',
+        path: '/media/detection/{jobId}/',
+        title: '재료 감지 결과',
+        description: 'Gemini가 인식한 재료 목록을 조회합니다.',
+        request: null,
+        success: { status: 'completed', items: [{ name: '계란' }, { name: '대파' }] },
+        failure: { detail: 'Not found.' },
+      },
+    ],
+  },
+  {
+    id: 'home-notifications',
+    title: '홈 / 알림',
+    summary: '홈 요약 콘텐츠와 사용자 알림을 제공합니다.',
+    icon: Bell,
+    endpoints: [
       {
         method: 'GET',
         path: '/home/summary/',
-        title: '홈 요약 콘텐츠',
-        description: '인기 레시피, 오늘의 추천 요리 캐러셀, 최근 마이 레시피 섹션을 구성합니다.',
+        title: '홈 요약',
+        description: '오늘의 추천, 인기 레시피, 최근 레시피를 홈 화면에 제공합니다.',
         request: null,
-        success: { ok: true, data: { popularRecipes: [{ id: 'recipe_popular_1', title: '라면', likeCount: 3421 }], recommendedRecipes: [{ id: 'recipe_today_1', title: '김치볶음밥' }], recentMyRecipes: [{ id: 'recipe_my_1', title: '전자레인지 계란찜' }] } },
-        failure: { ok: false, error: { code: 'HOME_SUMMARY_FAILED', message: '홈 콘텐츠를 불러오지 못했습니다.' } },
+        success: { recommended: { id: 1, title: '김치볶음밥' }, popular: [{ id: 2, title: '라면 업그레이드' }], recent: [{ id: 3, title: '참치마요덮밥' }] },
+        failure: { detail: '홈 데이터를 불러오지 못했습니다.' },
       },
-    ],
-  },
-  {
-    id: 'social',
-    title: '좋아요 / 댓글 / 저장',
-    summary: '로그인 후 인기 레시피, 추천 요리, 피드, 상세에서 동일하게 작동하는 소셜 액션입니다.',
-    icon: Heart,
-    endpoints: [
-      { method: 'POST', path: '/recipes/{recipeId}/like/', title: '좋아요 토글', description: '내 레시피가 아닌 경우 작성자에게 좋아요 알림을 생성합니다.', request: { liked: true }, success: { ok: true, data: { recipeId: 'recipe_1', isLiked: true, likeCount: 257, notificationCreated: true } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '좋아요는 로그인 후 사용할 수 있습니다.' } } },
-      { method: 'POST', path: '/recipes/{recipeId}/save/', title: '저장 토글', description: '저장 섹션과 마이페이지에서 저장한 레시피 목록을 관리합니다.', request: { saved: true }, success: { ok: true, data: { recipeId: 'recipe_1', isSaved: true, savedCount: 33 } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '저장은 로그인 후 사용할 수 있습니다.' } } },
-      { method: 'GET', path: '/recipes/{recipeId}/comments/', title: '댓글 목록', description: '댓글과 작성자 답글을 인터랙티브 스레드 형태로 반환합니다.', request: null, success: { ok: true, data: { items: [{ id: 'comment_1', content: '따라 만들기 쉬웠어요!', author: { id: 'user_2', name: '자취러' }, replies: [{ id: 'reply_1', content: '맛있게 드셨다니 좋아요!', isAuthorReply: true }] }] } }, failure: { ok: false, error: { code: 'COMMENTS_LOAD_FAILED', message: '댓글을 불러오지 못했습니다.' } } },
-      { method: 'POST', path: '/recipes/{recipeId}/comments/', title: '댓글 작성', description: '댓글 작성 시 레시피 작성자에게 알림을 생성합니다.', request: { content: '오늘 저녁으로 바로 해볼게요!' }, success: { ok: true, data: { id: 'comment_2', recipeId: 'recipe_1', content: '오늘 저녁으로 바로 해볼게요!', notificationCreated: true } }, failure: { ok: false, error: { code: 'COMMENT_TOO_LONG', message: '댓글은 500자 이하로 입력해주세요.' } } },
-      { method: 'POST', path: '/recipes/{recipeId}/comments/{commentId}/replies/', title: '작성자 답글', description: '레시피 작성자만 댓글에 공식 답글을 남길 수 있습니다.', request: { content: '참치 기름을 조금 빼면 더 담백해요.' }, success: { ok: true, data: { id: 'reply_2', commentId: 'comment_1', isAuthorReply: true } }, failure: { ok: false, error: { code: 'FORBIDDEN', message: '작성자만 답글을 남길 수 있습니다.' } } },
-    ],
-  },
-  {
-    id: 'notifications',
-    title: '알림 / 마이페이지',
-    summary: '환영 알림, 좋아요/댓글 알림, 읽음 처리, 빨간 카운트 배지를 위한 데이터입니다.',
-    icon: Bell,
-    endpoints: [
-      { method: 'GET', path: '/notifications/', title: '알림 목록', description: '웹/앱에 맞는 알림 카드와 카운트 배지를 구성합니다.', request: null, success: { ok: true, data: { unreadCount: 3, items: [{ id: 'noti_1', type: 'WELCOME', title: '찰칵밥상에 오신 걸 환영해요!', isRead: false }, { id: 'noti_2', type: 'LIKE', title: '내 레시피에 좋아요가 눌렸어요.', isRead: false }] } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '알림은 로그인 후 확인할 수 있습니다.' } } },
-      { method: 'PATCH', path: '/notifications/{notificationId}/read/', title: '알림 읽음 처리', description: '읽음 처리 후 빨간 카운트 배지를 즉시 갱신합니다.', request: null, success: { ok: true, data: { is_read: true } }, failure: { ok: false, error: { code: 'NOTIFICATION_NOT_FOUND', message: '읽음 처리할 알림을 찾을 수 없습니다.' } } },
-      { method: 'PATCH', path: '/notifications/read-all/', title: '알림 전체 읽음', description: '알림 메뉴의 모두 읽음 버튼과 연결됩니다.', request: null, success: { ok: true, data: { message: '전체 읽음 처리 완료' } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '알림은 로그인 후 확인할 수 있습니다.' } } },
-      { method: 'GET', path: '/users/me/saved-recipes/', title: '저장한 레시피', description: '저장 섹션과 마이페이지 저장 탭에서 같은 카드 레이아웃으로 사용합니다.', request: null, success: { ok: true, data: { items: [{ id: 'recipe_1', title: '김치볶음밥', isSaved: true }], meta: { total: 1 } } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '저장한 레시피는 로그인 후 볼 수 있습니다.' } } },
-      { method: 'GET', path: '/users/me/liked-recipes/', title: '좋아요한 레시피', description: '마이페이지 좋아요 탭에서 사용합니다.', request: null, success: { ok: true, data: { items: [{ id: 'recipe_2', title: '라면 업그레이드 레시피' }] } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '좋아요한 레시피는 로그인 후 볼 수 있습니다.' } } },
-      { method: 'GET', path: '/users/me/recipes/', title: '내가 작성한 레시피', description: '마이페이지 내 레시피 탭과 마이 피드에서 사용합니다.', request: null, success: { ok: true, data: { items: [{ id: 'recipe_3', title: '김치찌개' }] } }, failure: { ok: false, error: { code: 'UNAUTHORIZED', message: '내 레시피는 로그인 후 볼 수 있습니다.' } } },
-    ],
-  },
-  {
-    id: 'ingredients',
-    title: '재료 / 추천 / 업로드',
-    summary: '재료 입력 제한, AI 인식, 냉장고 기반 추천, 레시피 이미지 업로드를 연결합니다.',
-    icon: Utensils,
-    endpoints: [
-      { method: 'GET', path: '/recipes/ingredients/?search=계란', title: '재료 검색', description: '프론트는 20자 제한을 두고, 서버는 search 쿼리로 검색합니다.', request: null, success: { ok: true, data: [{ id: 516, name: '굴', amount: '40g' }, { id: 99, name: '꿀', amount: '1/3작은술' }] }, failure: { ok: false, error: { code: 'QUERY_TOO_LONG', message: '재료 검색어는 20자 이하로 입력해주세요.' } } },
-      { method: 'POST', path: '/recommendations/by-ingredients/', title: '재료 기반 추천', description: '사용자가 가진 재료와 부족한 재료를 함께 보여주는 추천 결과입니다.', request: { ingredients: ['계란', '김치', '밥'], serving: 1 }, success: { ok: true, data: { items: [{ id: 'recipe_2', title: '김치볶음밥', matchRate: 0.92, missingIngredients: ['대파'] }] } }, failure: { ok: false, error: { code: 'NOT_ENOUGH_INGREDIENTS', message: '추천을 위해 최소 1개 이상의 재료가 필요합니다.' } } },
-      { method: 'POST', path: '/media/upload/', title: '이미지 업로드', description: '레시피 대표 이미지, 단계 이미지, 재료 인식 이미지에 공통으로 사용합니다.', request: { file: 'multipart/form-data', purpose: 'thumbnail | steps | ingredient' }, success: { ok: true, data: { id: 8889, url: '/media/thumbnail/file.jpg' } }, failure: { ok: false, error: { code: 'FILE_REQUIRED', message: '이미지 파일을 선택해주세요.' } } },
-    ],
-  },
-  {
-    id: 'cook-mode',
-    title: '요리모드',
-    summary: '모바일 가로 화면에서 단계별 진행, 완료, 좋아요 팝업을 서버와 동기화할 때 사용할 선택 API입니다.',
-    icon: Zap,
-    endpoints: [
-      { method: 'POST', path: '/recipes/{recipeId}/cook-sessions/', title: '요리모드 시작', description: '가로모드 진입 시 세션을 만들고 현재 단계 진행률을 기록합니다.', request: { device: 'mobile-landscape', startedAt: '2026-05-06T11:00:00.000Z' }, success: { ok: true, data: { sessionId: 'cook_1', recipeId: 'recipe_1', currentStep: 1, totalSteps: 3 } }, failure: { ok: false, error: { code: 'RECIPE_NOT_FOUND', message: '요리모드를 시작할 레시피를 찾을 수 없습니다.' } } },
-      { method: 'PATCH', path: '/cook-sessions/{sessionId}/steps/', title: '단계 완료', description: '이 단계 완료 버튼을 누르면 다음 단계로 이동하고 마지막 단계에서는 완료 팝업을 띄웁니다.', request: { completedStep: 2 }, success: { ok: true, data: { sessionId: 'cook_1', completedStep: 2, nextStep: 3, isFinished: false } }, failure: { ok: false, error: { code: 'INVALID_STEP', message: '요리 단계 정보가 올바르지 않습니다.' } } },
-      { method: 'PATCH', path: '/cook-sessions/{sessionId}/finish/', title: '요리모드 완료', description: '모든 단계 완료 후 좋아요 팝업 액션과 상세페이지 복귀 흐름을 기록합니다.', request: { likedRecipe: true, finishedAt: '2026-05-06T11:08:00.000Z' }, success: { ok: true, data: { sessionId: 'cook_1', isFinished: true, recipeLiked: true, likeCount: 258 } }, failure: { ok: false, error: { code: 'SESSION_NOT_FOUND', message: '요리모드 세션을 찾을 수 없습니다.' } } },
+      {
+        method: 'GET',
+        path: '/notifications/',
+        title: '알림 목록',
+        description: '환영, 좋아요, 댓글, 답글, 구독 알림을 조회합니다.',
+        request: null,
+        success: [{ id: 1, type: 'LIKE', title: '내 레시피에 좋아요가 눌렸어요.', is_read: false }],
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
+      {
+        method: 'PATCH',
+        path: '/notifications/{notificationId}/read/',
+        title: '알림 읽음',
+        description: '단일 알림을 읽음 처리합니다.',
+        request: null,
+        success: { id: 1, is_read: true },
+        failure: { detail: 'Not found.' },
+      },
+      {
+        method: 'PATCH',
+        path: '/notifications/read-all/',
+        title: '전체 알림 읽음',
+        description: '읽지 않은 모든 알림을 읽음 처리합니다.',
+        request: null,
+        success: { message: '전체 읽음 처리 완료' },
+        failure: { detail: 'Authentication credentials were not provided.' },
+      },
     ],
   },
 ]
@@ -320,8 +517,8 @@ const endpointCount = computed(() => apiGroups.reduce((total, group) => total + 
 const highlights = computed(() => [
   { label: 'API 그룹', value: String(apiGroups.length), icon: Layers3 },
   { label: '엔드포인트', value: String(endpointCount.value), icon: Server },
-  { label: '공통 응답', value: 'ok/data/error', icon: FileJson },
-  { label: '프론트 연결', value: '웹/앱 플로우', icon: CheckCircle2 },
+  { label: '응답 스타일', value: 'DRF JSON', icon: FileJson },
+  { label: '최신 추천 API', value: '/recipes/recommendations', icon: Utensils },
 ])
 
 const stringify = (value: unknown | null) => (value === null ? 'Request Body 없음' : JSON.stringify(value, null, 2))

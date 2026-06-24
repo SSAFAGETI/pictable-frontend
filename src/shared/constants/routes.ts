@@ -12,6 +12,7 @@ export const APP_ROUTES = {
   recommendations: '/recommendations',
   ingredients: '/ingredients',
   backendApi: '/backend-api',
+  backendApiV2: '/backend-api-v2',
   serverError: '/server-error',
 } as const
 
@@ -33,6 +34,7 @@ export const PAGE_TITLES: Record<string, string> = {
   [APP_ROUTES.recommendations]: '추천',
   [APP_ROUTES.ingredients]: '재료',
   [APP_ROUTES.backendApi]: '백엔드 API 명세',
+  [APP_ROUTES.backendApiV2]: '백엔드 API 명세 v2',
 }
 
 export const isRecipeDetailRoute = (path: string) => path.startsWith('/recipe/')

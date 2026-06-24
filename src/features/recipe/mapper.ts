@@ -134,7 +134,7 @@ type MediaPurpose = 'thumbnail' | 'steps' | 'ingredient' | 'ingredient_detection
 
 const mediaPurposes: MediaPurpose[] = ['thumbnail', 'steps', 'ingredient', 'ingredient_detection']
 const FOODSAFETY_ORIGIN = 'https://www.foodsafetykorea.go.kr'
-const FOODSAFETY_API_KEY = import.meta.env.VITE_FOODSAFETY_API_KEY || '1db71fdb6a3e4d9593eb'
+const FOODSAFETY_API_KEY = String(import.meta.env.VITE_FOODSAFETY_API_KEY || '').trim()
 
 const toFoodSafetyImageUrl = (value: string) => encodeURI(`${FOODSAFETY_ORIGIN}/${value.replace(/^\/+/, '')}`)
 
@@ -178,6 +178,7 @@ const readFoodSafetyRows = (body: unknown) => {
 }
 
 const fetchFoodSafetyCatalog = async () => {
+  if (!FOODSAFETY_API_KEY) return []
   if (foodSafetyCatalogRequest) return foodSafetyCatalogRequest
 
   foodSafetyCatalogRequest = fetch(`https://openapi.foodsafetykorea.go.kr/api/${FOODSAFETY_API_KEY}/COOKRCP01/json/1/1500`)
@@ -199,6 +200,8 @@ const findFoodSafetyImageInRows = (rows: unknown[], title: string) => {
 }
 
 const fetchFoodSafetyImageByTitle = async (title: string) => {
+  if (!FOODSAFETY_API_KEY) return ''
+
   const normalizedTitle = normalizeRecipeName(title)
   if (!normalizedTitle) return ''
 

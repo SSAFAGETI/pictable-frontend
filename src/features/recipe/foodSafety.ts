@@ -2,7 +2,7 @@ import type { Difficulty, Ingredient, Recipe } from './types'
 import { fallbackImage } from './mock'
 import { normalizeRecipeTagName } from '../../tags'
 
-const apiKey = import.meta.env.VITE_FOODSAFETY_API_KEY || '1db71fdb6a3e4d9593eb'
+const apiKey = String(import.meta.env.VITE_FOODSAFETY_API_KEY || '').trim()
 const apiBaseUrl = 'https://openapi.foodsafetykorea.go.kr/api'
 
 const textOf = (row: Element, tagName: string) => row.getElementsByTagName(tagName)[0]?.textContent?.trim() ?? ''
@@ -91,6 +91,8 @@ const mapApiRowToRecipe = (row: Element, index: number): Recipe => {
 
 export async function fetchFoodSafetyRecipes(start = 1, end = 30) {
   try {
+    if (!apiKey) return []
+
     const response = await fetch(`${apiBaseUrl}/${apiKey}/COOKRCP01/xml/${start}/${end}`)
     if (!response.ok) throw new Error(`API 응답 오류: ${response.status}`)
 

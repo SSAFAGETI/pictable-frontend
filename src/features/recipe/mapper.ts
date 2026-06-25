@@ -138,9 +138,27 @@ const FOODSAFETY_API_KEY = String(import.meta.env.VITE_FOODSAFETY_API_KEY || '')
 
 const toFoodSafetyImageUrl = (value: string) => encodeURI(`${FOODSAFETY_ORIGIN}/${value.replace(/^\/+/, '')}`)
 
-const isFoodSafetyFileViewPath = (value: string) => value.startsWith('/common/ecmFileView.do') || value.startsWith('common/ecmFileView.do')
+const isFoodSafetyFileViewPath = (value: string) => {
+  const url = value.trim()
+  if (url.startsWith('/common/ecmFileView.do') || url.startsWith('common/ecmFileView.do')) return true
 
-const hasFoodSafetyFileQuery = (value: string) => value.includes('?') || value.includes('ecm_file_no=')
+  try {
+    const parsed = new URL(url)
+    return parsed.hostname === 'www.foodsafetykorea.go.kr' && parsed.pathname === '/common/ecmFileView.do'
+  } catch {
+    return false
+  }
+}
+
+const hasFoodSafetyFileQuery = (value: string) => {
+  if (value.includes('?') || value.includes('ecm_file_no=')) return true
+
+  try {
+    return Boolean(new URL(value).search)
+  } catch {
+    return false
+  }
+}
 
 const isUnresolvedFoodSafetyFileView = (value: unknown) => {
   const record = isRecord(value) ? value : null
@@ -199,11 +217,20 @@ const findFoodSafetyImageInRows = (rows: unknown[], title: string) => {
   return getFoodSafetyImageFromRow(matched)
 }
 
-const fetchFoodSafetyImageByTitle = async (title: string) => {
-  if (!FOODSAFETY_API_KEY) return ''
+const fetchFoodSafetyImageFromBackend = async (title: string) => {
+  try {
+    const body = await apiRequest<Record<string, unknown>>(`/recipes/public-image/?title=${encodeURIComponent(title)}`)
+    return normalizeMediaUrl(body.url || body.image_url || body.image)
+  } catch {
+    return ''
+  }
+}
 
+const fetchFoodSafetyImageByTitle = async (title: string) => {
   const normalizedTitle = normalizeRecipeName(title)
   if (!normalizedTitle) return ''
+
+  if (!FOODSAFETY_API_KEY) return fetchFoodSafetyImageFromBackend(title)
 
   const catalogImage = findFoodSafetyImageInRows(await fetchFoodSafetyCatalog(), title)
   if (catalogImage) return catalogImage
@@ -223,7 +250,7 @@ const fetchFoodSafetyImageByTitle = async (title: string) => {
     }
   }
 
-  return ''
+  return fetchFoodSafetyImageFromBackend(title)
 }
 
 const resolveFoodSafetyImageByTitle = (title: string) => {
@@ -438,11 +465,15 @@ export const mapDjangoRecipeWithMedia = async (raw: unknown): Promise<Recipe> =>
 export const mapDjangoRecipeListItemWithMedia = async (raw: unknown): Promise<Recipe> => {
   const record = isRecord(raw) ? raw : {}
   const recipe = mapDjangoRecipe(raw)
-  const mainImage = await resolveMediaUrl(getRecipeImageSource(record), 'thumbnail')
+  const [mainImage, publicRecipeImage] = await Promise.all([
+    resolveMediaUrl(getRecipeImageSource(record), 'thumbnail'),
+    hasUnresolvedFoodSafetyImage(record) ? resolveFoodSafetyImageByTitle(recipe.title) : Promise.resolve(''),
+  ])
 
   return {
     ...recipe,
-    image: mainImage || recipe.image,
+    image: mainImage || publicRecipeImage || recipe.image,
+    needsPublicImageLookup: mainImage || publicRecipeImage ? false : recipe.needsPublicImageLookup,
   }
 }
 

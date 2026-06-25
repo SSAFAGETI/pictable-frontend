@@ -3,23 +3,55 @@ import { fetchNotificationsApi, markAllNotificationsReadApi, markNotificationRea
 
 const apiNotifications = ref<NotificationItem[]>([])
 const isEnabled = ref(false)
+const NOTIFICATION_POLL_INTERVAL_MS = 30_000
+
+let pollingTimer: number | null = null
+let pendingLoad: Promise<void> | null = null
 
 const visibleNotifications = computed(() => (isEnabled.value ? apiNotifications.value : []))
 const unreadCount = computed(() => visibleNotifications.value.filter((notification) => !notification.isRead).length)
+
+const stopPolling = () => {
+  if (typeof window !== 'undefined' && pollingTimer !== null) window.clearInterval(pollingTimer)
+  pollingTimer = null
+}
+
+const startPolling = () => {
+  if (typeof window === 'undefined' || pollingTimer !== null) return
+  pollingTimer = window.setInterval(() => {
+    if (isEnabled.value) void refreshNotifications()
+  }, NOTIFICATION_POLL_INTERVAL_MS)
+}
+
+const refreshNotifications = async () => {
+  if (!isEnabled.value) return
+  if (pendingLoad) return pendingLoad
+
+  pendingLoad = fetchNotificationsApi()
+    .then((items) => {
+      apiNotifications.value = items
+    })
+    .catch(() => {
+      apiNotifications.value = []
+    })
+    .finally(() => {
+      pendingLoad = null
+    })
+
+  return pendingLoad
+}
 
 const loadNotifications = async (enabled: boolean) => {
   isEnabled.value = enabled
 
   if (!enabled) {
+    stopPolling()
     apiNotifications.value = []
     return
   }
 
-  try {
-    apiNotifications.value = await fetchNotificationsApi()
-  } catch {
-    apiNotifications.value = []
-  }
+  await refreshNotifications()
+  startPolling()
 }
 
 const markAsRead = async (id: string) => {
@@ -51,6 +83,7 @@ export const useNotifications = () => ({
   notifications: visibleNotifications,
   unreadCount,
   loadNotifications,
+  refreshNotifications,
   markAsRead,
   markAllAsRead,
 })

@@ -39,7 +39,7 @@
       <button
         type="button"
         class="relative flex h-12 w-full items-center justify-center gap-0 overflow-hidden rounded-2xl text-left text-sm font-bold text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/70 hover:text-foreground hover:shadow-sm group-hover:justify-start group-hover:gap-3 group-hover:px-2"
-        @click="noticeOpen = !noticeOpen"
+        @click="toggleNotifications"
       >
         <span class="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl">
           <Bell class="h-5 w-5" />
@@ -94,9 +94,14 @@ import { APP_ROUTES, PRIMARY_NAV_LINKS, isActiveRoute } from '../shared/constant
 const route = useRoute()
 const noticeOpen = ref(false)
 const { isAuthenticated } = useAuth()
-const { notifications, unreadCount, loadNotifications, markAsRead, markAllAsRead } = useNotifications()
+const { notifications, unreadCount, loadNotifications, refreshNotifications, markAsRead, markAllAsRead } = useNotifications()
 
 watch(isAuthenticated, (authenticated) => void loadNotifications(authenticated), { immediate: true })
+
+const toggleNotifications = () => {
+  noticeOpen.value = !noticeOpen.value
+  if (noticeOpen.value && isAuthenticated.value) void refreshNotifications()
+}
 
 const navIconMap = {
   home: Home,

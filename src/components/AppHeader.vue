@@ -51,7 +51,7 @@
             unreadCount > 0 && 'bg-primary/10 text-primary hover:bg-primary/15',
           ]"
           aria-label="알림"
-          @click="open = !open"
+          @click="toggleNotifications"
         >
           <Bell class="h-5 w-5" />
           <template v-if="unreadCount > 0">
@@ -105,9 +105,14 @@ const route = useRoute()
 const router = useRouter()
 const open = ref(false)
 const { isAuthenticated } = useAuth()
-const { notifications, unreadCount, loadNotifications, markAsRead, markAllAsRead } = useNotifications()
+const { notifications, unreadCount, loadNotifications, refreshNotifications, markAsRead, markAllAsRead } = useNotifications()
 
 watch(isAuthenticated, (authenticated) => void loadNotifications(authenticated), { immediate: true })
+
+const toggleNotifications = () => {
+  open.value = !open.value
+  if (open.value && isAuthenticated.value) void refreshNotifications()
+}
 
 const pageTitle = computed(() => {
   if (isRecipeDetailRoute(route.path)) return ''

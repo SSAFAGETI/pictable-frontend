@@ -93,14 +93,7 @@
         <h2 class="text-lg font-bold">계정 메뉴</h2>
         <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
           <template v-for="(item, index) in menuItems" :key="item.label">
-            <a v-if="item.external" :href="item.href" :class="['flex items-center justify-between p-4 transition-colors hover:bg-muted', index !== menuItems.length - 1 && 'border-b border-border']">
-              <div class="flex items-center gap-3">
-                <component :is="item.icon" class="h-5 w-5 text-muted-foreground" />
-                <span>{{ item.label }}</span>
-              </div>
-              <ChevronRight class="h-5 w-5 text-muted-foreground" />
-            </a>
-            <RouterLink v-else :to="item.href" :class="['flex items-center justify-between p-4 transition-colors hover:bg-muted', index !== menuItems.length - 1 && 'border-b border-border']">
+            <RouterLink :to="item.href" :class="['flex items-center justify-between p-4 transition-colors hover:bg-muted', index !== menuItems.length - 1 && 'border-b border-border']">
               <div class="flex items-center gap-3">
                 <component :is="item.icon" class="h-5 w-5 text-muted-foreground" />
                 <span>{{ item.label }}</span>
@@ -122,7 +115,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, Bookmark, ChefHat, ChevronRight, Edit3, FileText, Heart, HelpCircle, LogOut, Server, Settings, Shield, Trash2, UserCheck } from 'lucide-vue-next'
+import { Bell, Bookmark, ChefHat, ChevronRight, Edit3, FileText, Heart, HelpCircle, LogOut, Settings, Shield, Trash2, UserCheck } from 'lucide-vue-next'
 import {
   deleteRecipeApi,
   fetchLikedRecipesPageApi,
@@ -163,10 +156,6 @@ const tabs = [
 ] as const
 
 const menuItems = [
-  { icon: Server, label: '백엔드 API 명세', href: APP_ROUTES.backendApi },
-  { icon: Server, label: '백엔드 API 명세 v2', href: APP_ROUTES.backendApiV2 },
-  { icon: FileText, label: '사용자 플로우 와이어프레임', href: '/user-flow-wireframe.html', external: true },
-  { icon: FileText, label: '사용자 플로우 와이어프레임 v2', href: '/user-flow-wireframe-v2.html', external: true },
   { icon: Bell, label: '알림 설정', href: '/settings/notifications' },
   { icon: HelpCircle, label: '고객센터', href: '/help' },
   { icon: FileText, label: '이용약관', href: '/terms' },

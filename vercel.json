@@ -14,6 +14,14 @@
       "dest": "http://3.38.26.186/media/$1"
     },
     {
+      "src": "/admin",
+      "dest": "http://3.38.26.186/admin/"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "http://3.38.26.186/admin/$1"
+    },
+    {
       "handle": "filesystem"
     },
     {

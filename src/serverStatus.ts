@@ -17,11 +17,22 @@ type ServerErrorInput = Omit<ServerErrorState, 'id' | 'happenedAt'> & {
 
 const STORAGE_KEY = 'chalkkak_server_errors'
 const LEGACY_STORAGE_KEY = 'chalkkak_server_error'
+const SHOW_SERVER_ERROR_DEBUG_UI = import.meta.env.DEV || import.meta.env.VITE_SHOW_SERVER_ERROR_DEBUG_UI === 'true'
 
 const canUseStorage = () => typeof window !== 'undefined' && Boolean(window.localStorage)
 
+const clearStoredErrors = () => {
+  if (!canUseStorage()) return
+  window.localStorage.removeItem(STORAGE_KEY)
+  window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+}
+
 const readStoredErrors = (): ServerErrorState[] => {
   if (!canUseStorage()) return []
+  if (!SHOW_SERVER_ERROR_DEBUG_UI) {
+    clearStoredErrors()
+    return []
+  }
 
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY)
@@ -48,6 +59,10 @@ const readStoredErrors = (): ServerErrorState[] => {
 
 const persistErrors = (errors: ServerErrorState[]) => {
   if (!canUseStorage()) return
+  if (!SHOW_SERVER_ERROR_DEBUG_UI) {
+    clearStoredErrors()
+    return
+  }
 
   if (errors.length === 0) {
     window.localStorage.removeItem(STORAGE_KEY)
@@ -64,6 +79,11 @@ export const getServerErrorId = (error: Pick<ServerErrorInput, 'id' | 'endpoint'
   error.id || `${error.method || 'GET'} ${error.endpoint || error.title}`
 
 export const reportServerError = (error: ServerErrorInput) => {
+  if (!SHOW_SERVER_ERROR_DEBUG_UI) {
+    clearStoredErrors()
+    return
+  }
+
   const id = getServerErrorId(error)
   const nextError: ServerErrorState = {
     ...error,

@@ -3,7 +3,6 @@
     <DesktopSideNav v-if="!isAuthPage" />
     <div :class="!isAuthPage ? 'lg:pl-20' : ''">
       <AppHeader v-if="!isAuthPage" />
-      <ServerErrorBanner v-if="showServerErrorBanner" />
       <RouterView />
     </div>
     <BottomNav v-if="!isAuthPage" />
@@ -17,26 +16,14 @@ import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import BottomNav from './components/BottomNav.vue'
 import DesktopSideNav from './components/DesktopSideNav.vue'
-import ServerErrorBanner from './components/ServerErrorBanner.vue'
 import ToastViewport from './components/ToastViewport.vue'
-import { initializeAuth, useAuth } from './auth'
+import { initializeAuth } from './auth'
 import { loadDjangoRecipes } from './data'
-import { APP_ROUTES, isAppChromeHiddenRoute, isAuthRoute } from './shared/constants/routes'
+import { isAppChromeHiddenRoute, isAuthRoute } from './shared/constants/routes'
 
 const route = useRoute()
-const { isAuthenticated } = useAuth()
 const isAuthPage = computed(() => isAuthRoute(route.path))
 const recipesLoaded = ref(false)
-const protectedAuthRequiredRoutes = new Set<string>([APP_ROUTES.myRecipeNew, APP_ROUTES.saved, APP_ROUTES.mypage])
-const isProtectedAuthRequiredRoute = (path: string) =>
-  protectedAuthRequiredRoutes.has(path) || /^\/my-recipe\/[^/]+\/edit$/.test(path)
-const showServerErrorBanner = computed(
-  () =>
-    route.path !== APP_ROUTES.home &&
-    route.path !== APP_ROUTES.feed &&
-    !isAuthPage.value &&
-    (isAuthenticated.value || !isProtectedAuthRequiredRoute(route.path)),
-)
 
 const shouldLoadRecipes = computed(() => !isAppChromeHiddenRoute(route.path))
 

@@ -136,7 +136,20 @@ const mediaPurposes: MediaPurpose[] = ['thumbnail', 'steps', 'ingredient', 'ingr
 const FOODSAFETY_ORIGIN = 'https://www.foodsafetykorea.go.kr'
 const FOODSAFETY_API_KEY = String(import.meta.env.VITE_FOODSAFETY_API_KEY || '').trim()
 
-const toFoodSafetyImageUrl = (value: string) => encodeURI(`${FOODSAFETY_ORIGIN}/${value.replace(/^\/+/, '')}`)
+const toFoodSafetyImageUrl = (value: string) => {
+  const url = value.trim()
+  if (/^https?:\/\//.test(url)) {
+    try {
+      const parsed = new URL(url)
+      if (parsed.hostname === 'www.foodsafetykorea.go.kr') parsed.protocol = 'https:'
+      return encodeURI(parsed.toString())
+    } catch {
+      return encodeURI(url)
+    }
+  }
+
+  return encodeURI(`${FOODSAFETY_ORIGIN}/${url.replace(/^\/+/, '')}`)
+}
 
 const isFoodSafetyFileViewPath = (value: string) => {
   const url = value.trim()
@@ -187,7 +200,11 @@ const getFoodSafetySearchTerms = (title: string) => {
 
 const getFoodSafetyImageFromRow = (row: unknown) => {
   if (!isRecord(row)) return ''
-  return normalizeMediaUrl(row.ATT_FILE_NO_MAIN || row.ATT_FILE_NO_MK || row.MANUAL_IMG01)
+  for (const value of [row.ATT_FILE_NO_MAIN, row.ATT_FILE_NO_MK, row.MANUAL_IMG01]) {
+    const image = normalizeMediaUrl(value)
+    if (image) return image
+  }
+  return ''
 }
 
 const readFoodSafetyRows = (body: unknown) => {
@@ -243,7 +260,7 @@ const fetchFoodSafetyImageByTitle = async (title: string) => {
       if (!response.ok) continue
 
       const rows = readFoodSafetyRows(await response.json())
-      const image = findFoodSafetyImageInRows(rows, title) || getFoodSafetyImageFromRow(rows[0])
+      const image = findFoodSafetyImageInRows(rows, title)
       if (image) return image
     } catch {
       // Keep the feed usable even when the public image lookup is unavailable.

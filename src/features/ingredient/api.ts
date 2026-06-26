@@ -129,7 +129,7 @@ export const analyzeIngredientImageApi = async (file: File) => {
   const uploadIngredients = uniqueIngredients(collectIngredientNames(uploadBody))
   const jobId = getDetectionJobId(uploadBody)
 
-  if (uploadIngredients.length > 0) return uploadIngredients
+  if (!jobId && uploadIngredients.length > 0) return uploadIngredients
   if (!jobId) throw new Error('이미지 업로드는 완료됐지만 재료 인식 작업 ID를 받지 못했어요.')
 
   let lastBody: unknown = null
@@ -137,8 +137,10 @@ export const analyzeIngredientImageApi = async (file: File) => {
     if (attempt > 0) await delay(DETECTION_POLL_DELAY_MS)
     lastBody = await fetchDetectionResult(jobId)
     const ingredients = uniqueIngredients(collectIngredientNames(lastBody))
-    if (ingredients.length > 0 || !isDetectionPending(lastBody)) return ingredients
+    if (ingredients.length > 0) return ingredients
+    if (!isDetectionPending(lastBody)) return []
   }
 
-  return uniqueIngredients(collectIngredientNames(lastBody))
+  const lastIngredients = uniqueIngredients(collectIngredientNames(lastBody))
+  return lastIngredients.length > 0 ? lastIngredients : uploadIngredients
 }

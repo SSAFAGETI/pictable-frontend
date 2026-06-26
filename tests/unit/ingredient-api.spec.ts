@@ -42,4 +42,23 @@ describe('ingredient API helpers', () => {
       expect.objectContaining({ auth: false }),
     )
   })
+
+  it('waits for completed detection instead of returning partial processing items', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ detection_job_id: 9 })
+      .mockResolvedValueOnce({
+        status: 'processing',
+        items: [{ name: 'first partial item' }],
+      })
+      .mockResolvedValueOnce({
+        status: 'completed',
+        items: [{ name: 'tofu' }, { name: 'green onion' }, { name: 'mushroom' }],
+      })
+
+    const image = new Blob(['image'], { type: 'image/png' }) as File
+    const ingredients = await analyzeIngredientImageApi(image)
+
+    expect(ingredients).toEqual(['tofu', 'green onion', 'mushroom'])
+    expect(apiRequestMock).toHaveBeenCalledTimes(3)
+  })
 })

@@ -139,7 +139,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Camera, Image as ImageIcon, Plus, Search, Sparkles, X } from 'lucide-vue-next'
 import { searchIngredientsApi, analyzeIngredientImageApi } from '../features/ingredient/api'
-import { normalizeIngredient, sanitizeIngredientInput } from '../features/ingredient/input'
+import { mergeIngredients, normalizeIngredient, sanitizeIngredientInput } from '../features/ingredient/input'
 import { ApiError } from '../shared/api/error'
 import { MAX_INGREDIENTS } from '../shared/constants/ingredients'
 import { showToast } from '../toast'
@@ -222,7 +222,7 @@ const addIngredient = (ingredient: string) => {
 }
 
 const addIngredients = (items: string[]) => {
-  items.forEach(addIngredient)
+  ingredients.value = mergeIngredients(ingredients.value, items)
 }
 
 const removeIngredient = (ingredient: string) => {
